@@ -220,7 +220,7 @@ const fr = {
   accessModal: {
     title: "Accès au dashboard",
     codeLabel: "Nom de l'entreprise",
-    codePlaceholder: "Ex: Lynxeo",
+    codePlaceholder: "Ex : Acme",
     emailLabel: "Votre email",
     emailPlaceholder: "votre@email.com",
     accessButton: "Accéder au dashboard",
@@ -434,7 +434,7 @@ const en = {
   accessModal: {
     title: "Dashboard Access",
     codeLabel: "Company name",
-    codePlaceholder: "E.g. Lynxeo",
+    codePlaceholder: "E.g. Acme",
     emailLabel: "Your email",
     emailPlaceholder: "your@email.com",
     accessButton: "Access dashboard",
