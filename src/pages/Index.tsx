@@ -207,16 +207,16 @@ const Index = () => {
             {L('Internal · AI Maturity Assessment', 'Interne · AI Maturity Assessment')}
           </span>
           <h1 className="lp-pop mx-auto mt-5 max-w-3xl text-[40px] font-semibold leading-[1.05] tracking-[-0.03em] text-foreground sm:text-[56px]" style={{ animationDelay: '0.1s' }}>
-            {L('Stop starting every deployment ', 'Arrêtons de démarrer chaque déploiement ')}
+            {L('Know the client ', 'Connaître le client ')}
             <span className="relative inline-block">
-              <span className="relative z-10">{L('from zero.', 'de zéro.')}</span>
+              <span className="relative z-10">{L('before the kickoff.', 'avant le kickoff.')}</span>
               <span className="lp-grow absolute inset-x-0 bottom-1 z-0 h-4 rounded-sm bg-lime" style={{ animationDelay: '0.9s' }} />
             </span>
           </h1>
           <p className="lp-pop mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-slate" style={{ animationDelay: '0.2s' }}>
             {L(
-              'One 10-minute link sent before kickoff tells us where teams stand, who our champions are and what to roll out first. Then it proves progress.',
-              'Un lien de 10 minutes envoyé avant le kickoff nous dit où en sont les équipes, qui sont nos champions et quoi déployer d’abord. Puis il prouve la progression.'
+              'A 10-minute assessment sent before kickoff: team maturity, champions, priority use cases, and a baseline to measure progress.',
+              'Un questionnaire de 10 minutes envoyé avant le kickoff : maturité des équipes, champions, cas d’usage prioritaires et une baseline pour mesurer la progression.'
             )}
           </p>
           <div className="lp-pop mt-7 flex flex-col justify-center gap-2 sm:flex-row" style={{ animationDelay: '0.3s' }}>
