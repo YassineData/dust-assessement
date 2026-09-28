@@ -25,6 +25,7 @@ interface DemoCompany {
   offsets: Partial<Record<DimensionId, number>>;
   teams: string[];
   createdAt: string;
+  label?: string;
 }
 
 // Four companies from 234 to 1,192 employees, one per readiness band.
@@ -52,6 +53,13 @@ const COMPANIES: DemoCompany[] = [
     employees: 1192, registered: 286, completedShare: 0.85, level: 84,
     offsets: { depth: 6, reach: 4, gov: 10, pain: 4, value: 14 },
     teams: ['engineering', 'data', 'product', 'legal', 'marketing', 'hr', 'success'], createdAt: '2026-09-12T08:00:00Z',
+  },
+  {
+    // Earlier pilot at the same client: lets the demo compare two rollouts of one account.
+    id: 'demo-veloria-pilot', code: 'VELOPIL1', name: 'Veloria Santé', domain: 'veloria-sante.fr',
+    employees: 1192, registered: 96, completedShare: 0.9, level: 60, label: 'Dust pilot · spring 2026',
+    offsets: { depth: -6, reach: -4, gov: -12, pain: 10, value: 2 },
+    teams: ['engineering', 'data', 'product'], createdAt: '2026-04-14T08:00:00Z',
   },
 ];
 
@@ -134,7 +142,7 @@ export const getDemoData = () => {
     id: c.id,
     code: c.code,
     company_name: c.name,
-    campaign_name: `Déploiement Dust · ${c.employees} salariés`,
+    campaign_name: c.label ?? `Dust rollout · ${c.employees.toLocaleString('en-US')} employees`,
     creator_email: 'demo@dust.tt',
     creator_first_name: 'Dust',
     creator_last_name: 'Demo',
