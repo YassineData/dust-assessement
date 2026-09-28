@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Loader2, Users, Clock, CheckCircle2, CircleDashed, Copy, Check, Mail, Trash2, Plus, Info, Upload, Search, Link2, ExternalLink, KeyRound, Timer, Save, MessageSquare, ArrowRight } from 'lucide-react';
+import { Loader2, Users, Clock, CheckCircle2, CircleDashed, Copy, Check, Mail, Trash2, Plus, Info, Upload, Search, Link2, ExternalLink, KeyRound, Timer, Save, MessageSquare, ArrowRight, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AUDIENCES, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
 import { SectionCard } from '@/components/console/SectionCard';
@@ -562,6 +562,32 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
             </div>
           ))}
         </dl>
+      </SectionCard>
+
+      {/* Kit for the client champion: one-pager to send before the links */}
+      <SectionCard
+        title={fr ? 'Kit pour le champion côté client' : 'Kit for the client champion'}
+        description={fr
+          ? 'Un one-pager à envoyer au contact client avant les liens : ce qu’est le questionnaire, pourquoi, ce qu’on attend, ce qu’il obtient, et les liens par équipe. Imprimable en PDF.'
+          : 'A one-pager to send to the client contact before the links: what the survey is, why, what we need, what they get back, and the links per team. Prints to PDF.'}
+      >
+        <div className="flex flex-wrap gap-2">
+          {([
+            ['deployment', fr ? 'Version Deployment / CS (kickoff)' : 'Deployment / CS version (kickoff)'],
+            ['sales', fr ? 'Version Sales (avant le déploiement)' : 'Sales version (before the rollout)'],
+          ] as const).map(([v, label]) => (
+            <Button key={v} variant="outline" asChild>
+              <a
+                href={`/kit?variant=${v}&code=${encodeURIComponent(campaignCode || '')}&company=${encodeURIComponent(companyShort || '')}&lang=${language}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <FileText className="h-4 w-4" />
+                {label}
+              </a>
+            </Button>
+          ))}
+        </div>
       </SectionCard>
 
       {/* 2. Who has / hasn't answered */}

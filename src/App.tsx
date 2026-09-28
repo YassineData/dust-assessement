@@ -11,6 +11,7 @@ import CreateCampaign from "./pages/CreateCampaign";
 import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import ParticipantResult from "./pages/ParticipantResult";
+import ChampionKit from "./pages/ChampionKit";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/exemple/sales" element={<Navigate to="/assessment?preview=1&for=sales" replace />} />
             <Route path="/exemple/cs" element={<Navigate to="/assessment?preview=1&for=cs" replace />} />
             <Route path="/create-campaign" element={<CreateCampaign />} />
+            <Route path="/kit" element={<ChampionKit />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/participant-result/:id" element={<ParticipantResult />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -609,8 +609,8 @@ export const AUDIENCE_PARAM: Record<SurveyAudience, string | null> = { general: 
 
 /** Who Dust is, shown at the top of every survey. */
 export const DUST_ABOUT: L = {
-  en: 'Dust is the platform your company is rolling out to build AI agents that work with your own knowledge and tools. Our deployment team runs these rollouts end to end, and this survey is how we tailor yours to the way your team actually works.',
-  fr: "Dust est la plateforme que votre entreprise déploie pour créer des agents IA qui travaillent avec vos propres connaissances et outils. Notre équipe de déploiement accompagne ces déploiements de bout en bout, et ce questionnaire nous permet d'adapter le vôtre à la façon dont votre équipe travaille vraiment.",
+  en: 'Dust is your new AI platform. We want to learn more about you and what you do in your organization, so we can tailor the rollout to the way your team actually works. Our deployment team runs these rollouts end to end.',
+  fr: "Dust est votre nouvelle plateforme d'IA. Nous voulons en savoir plus sur vous et sur ce que vous faites dans votre organisation, pour adapter le déploiement à la façon dont votre équipe travaille vraiment. Notre équipe de déploiement accompagne ces déploiements de bout en bout.",
 };
 
 export interface AudienceInfo {
