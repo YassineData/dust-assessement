@@ -207,9 +207,9 @@ const Index = () => {
             {L('Internal · AI Maturity Assessment', 'Interne · AI Maturity Assessment')}
           </span>
           <h1 className="lp-pop mx-auto mt-5 max-w-3xl text-[40px] font-semibold leading-[1.05] tracking-[-0.03em] text-foreground sm:text-[56px]" style={{ animationDelay: '0.1s' }}>
-            {L('Know the client ', 'Connaître le client ')}
+            {L('Deploy with data, ', 'Déployer avec la donnée, ')}
             <span className="relative inline-block">
-              <span className="relative z-10">{L('before the kickoff.', 'avant le kickoff.')}</span>
+              <span className="relative z-10">{L('not guesswork.', 'pas à l’intuition.')}</span>
               <span className="lp-grow absolute inset-x-0 bottom-1 z-0 h-4 rounded-sm bg-lime" style={{ animationDelay: '0.9s' }} />
             </span>
           </h1>
