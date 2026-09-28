@@ -1,14 +1,16 @@
-import { Sparkle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Placeholder brand mark. Swap for the official Dust SVG when available.
+// Dust logo mark (same drawing as public/favicon.svg).
 export const DustMark = ({ className }: { className?: string }) => (
-  <span
-    className={cn('inline-flex items-center justify-center rounded-md bg-brand text-white', className)}
-    aria-hidden
-  >
-    <Sparkle className="h-[60%] w-[60%]" strokeWidth={2} />
-  </span>
+  <svg viewBox="0 0 136 136" className={cn('inline-block', className)} aria-hidden focusable="false">
+    <rect x="0" y="0" width="34" height="68" fill="#418B5C" />
+    <path d="M34 0 A34 34 0 0 1 34 68 Z" fill="#E2F78C" />
+    <rect x="68" y="0" width="68" height="34" fill="#E14322" />
+    <path d="M68 34 H136 A34 34 0 0 1 68 34 Z" fill="#FFC3DF" />
+    <path d="M33 68 H136 V102 H33 A17 17 0 0 1 33 68 Z" fill="#3B82F6" />
+    <path d="M17 102 H51 V136 H17 A17 17 0 0 1 17 102 Z" fill="#9FDBFF" />
+    <rect x="68" y="102" width="34" height="34" fill="#FE9C1A" />
+  </svg>
 );
 
 /** Logo + product name, for light top bars (respondent flow, landing). */

@@ -15,7 +15,7 @@ const LANGUAGE_KEY = 'preferred_language';
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem(LANGUAGE_KEY);
-    return (stored as Language) || 'fr';
+    return (stored as Language) || 'en';
   });
 
   const setLanguage = (lang: Language) => {

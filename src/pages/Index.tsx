@@ -2,23 +2,24 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
-  BarChart3,
+  BadgeCheck,
   Check,
-  Clock,
+  ClipboardList,
   GraduationCap,
+  LineChart,
   Link2,
   PlayCircle,
-  ShieldCheck,
+  RefreshCw,
   Sparkles,
-  Users,
+  Target,
+  X,
   Zap,
-  BadgeCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { DustWordmark } from '@/components/DustMark';
-import { DIMENSIONS, RESULT_CLASSES, V2_QUESTIONS } from '@/lib/assessment-v2';
+import { DIMENSIONS, RESULT_CLASSES } from '@/lib/assessment-v2';
 import { PROFILE_COLORS } from '@/lib/profile-style';
 import { enterDemo } from '@/demo/demo-data';
 import { cn } from '@/lib/utils';
@@ -64,32 +65,13 @@ const Reveal = ({ children, delay = 0, className }: { children: ReactNode; delay
 const reducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-const CountUp = ({ to, duration = 1400, suffix = '' }: { to: number; duration?: number; suffix?: string }) => {
-  const { ref, inView } = useInView<HTMLSpanElement>(0.4);
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    if (!inView) return;
-    if (reducedMotion()) {
-      setValue(to);
-      return;
-    }
-    let raf = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / duration);
-      setValue(Math.round(to * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [inView, to, duration]);
-  return (
-    <span ref={ref} className="tabular-nums">
-      {value}
-      {suffix}
-    </span>
-  );
-};
+const SectionHead = ({ eyebrow, title, sub, dark }: { eyebrow: string; title: string; sub?: string; dark?: boolean }) => (
+  <Reveal className="max-w-2xl">
+    <p className={cn('eyebrow', dark && 'text-sky')}>{eyebrow}</p>
+    <h2 className={cn('mt-2 text-[32px] font-semibold leading-tight tracking-tight', dark ? 'text-white' : 'text-foreground')}>{title}</h2>
+    {sub && <p className={cn('mt-3 text-[15px] leading-relaxed', dark ? 'text-white/70' : 'text-muted-foreground')}>{sub}</p>}
+  </Reveal>
+);
 
 /* ------------------------------------------------------------------ */
 /* Hero product mock (animated)                                          */
@@ -99,14 +81,14 @@ const HeroMock = ({ fr }: { fr: boolean }) => {
   const [score, setScore] = useState(0);
   useEffect(() => {
     if (reducedMotion()) {
-      setScore(72);
+      setScore(78);
       return;
     }
     let raf = 0;
     const start = performance.now() + 400;
     const tick = (now: number) => {
       const p = Math.max(0, Math.min(1, (now - start) / 1600));
-      setScore(Math.round(72 * (1 - Math.pow(1 - p, 3))));
+      setScore(Math.round(78 * (1 - Math.pow(1 - p, 3))));
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -116,20 +98,19 @@ const HeroMock = ({ fr }: { fr: boolean }) => {
   const r = 42;
   const c = 2 * Math.PI * r;
   const bars = [
-    { name: fr ? 'Pratique de l’IA' : 'AI fluency', v: 81, bench: 64 },
-    { name: fr ? 'Motivation' : 'Motivation', v: 76, bench: 58 },
-    { name: fr ? 'Capacité à construire' : 'Builder depth', v: 63, bench: 52 },
-    { name: fr ? 'Gouvernance' : 'Governance', v: 44, bench: 55 },
+    { name: fr ? 'Pratique de l’IA' : 'AI fluency', v: 79, bench: 67 },
+    { name: fr ? 'Motivation' : 'Motivation', v: 81, bench: 71 },
+    { name: fr ? 'Capacité à construire' : 'Builder depth', v: 78, bench: 60 },
+    { name: fr ? 'Posture de formateur' : 'Teaching posture', v: 48, bench: 55 },
   ];
 
   return (
     <div className="relative">
-      {/* Floating chips */}
       <div className="lp-pop absolute -left-6 top-10 z-20 hidden sm:block" style={{ animationDelay: '1.4s' }}>
         <div className="lp-float rounded-lg bg-card px-3 py-2 shadow-xl ring-1 ring-border">
           <p className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
             <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-soft text-brand-ink"><GraduationCap className="h-3.5 w-3.5" /></span>
-            {fr ? '+3 formateurs identifiés' : '+3 trainers found'}
+            {fr ? '67 formateurs potentiels' : '67 peer trainers found'}
           </p>
         </div>
       </div>
@@ -137,18 +118,17 @@ const HeroMock = ({ fr }: { fr: boolean }) => {
         <div className="lp-float rounded-lg bg-card px-3 py-2 shadow-xl ring-1 ring-border" style={{ animationDelay: '-3s' }}>
           <p className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
             <span className="flex h-6 w-6 items-center justify-center rounded-md bg-lime text-ink"><BadgeCheck className="h-3.5 w-3.5" /></span>
-            {fr ? '14 champions prêts' : '14 champions ready'}
+            {fr ? 'Pilote 53 → déploiement 78' : 'Pilot 53 → rollout 78'}
           </p>
         </div>
       </div>
 
       <div className="lp-pop relative z-10 overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border" style={{ animationDelay: '0.2s' }}>
-        {/* window chrome */}
         <div className="flex items-center gap-1.5 border-b border-border bg-paper px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-risk/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-warn/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-ok/70" />
-          <span className="ml-3 truncate text-[11px] text-muted-foreground">Dust Assessment · {fr ? 'Vue d’ensemble' : 'Overview'}</span>
+          <span className="ml-3 truncate text-[11px] text-muted-foreground">Veloria Santé · {fr ? 'Vue d’ensemble' : 'Overview'}</span>
           <span className="ml-auto flex items-center gap-1.5 text-[11px] font-medium text-ok-ink">
             <span className="relative flex h-2 w-2">
               <span className="lp-ping absolute inline-flex h-full w-full rounded-full bg-ok" />
@@ -170,7 +150,7 @@ const HeroMock = ({ fr }: { fr: boolean }) => {
                 <span className="mono mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">/ 100</span>
               </div>
             </div>
-            <span className="pill pill-green mt-2">{fr ? 'De bonnes bases' : 'Good foundations'}</span>
+            <span className="pill pill-green mt-2">{fr ? 'Des bases solides' : 'Strong foundations'}</span>
           </div>
 
           <div className="space-y-3">
@@ -209,39 +189,247 @@ const HeroMock = ({ fr }: { fr: boolean }) => {
 };
 
 /* ------------------------------------------------------------------ */
+/* Product screens (real captures, demo data)                            */
+/* ------------------------------------------------------------------ */
+
+const ProductTour = ({ fr }: { fr: boolean }) => {
+  const tabs = [
+    {
+      id: 'overview',
+      label: fr ? 'Vue d’ensemble' : 'Overview',
+      img: '/landing/01-overview.jpg',
+      title: fr ? 'Une lecture claire de l’entreprise' : 'A clear read of the account',
+      body: fr
+        ? 'Indice de maturité comparé à tous les autres déploiements, diagnostic, formateurs, champions et sceptiques identifiés automatiquement.'
+        : 'Readiness index benchmarked against every other rollout, a diagnosis, and trainers, champions and skeptics found automatically.',
+    },
+    {
+      id: 'compare',
+      label: fr ? 'Comparer' : 'Compare',
+      img: '/landing/04-compare.jpg',
+      title: fr ? 'Comparer avec d’autres déploiements et secteurs' : 'Compare with past rollouts and sectors',
+      body: fr
+        ? 'Pilote de printemps à 53, déploiement complet à 78 : +25 points sur le même compte. Et la position face au secteur, thème par thème.'
+        : 'Spring pilot at 53, full rollout at 78: +25 points on the same account. Plus where the client stands against its sector, theme by theme.',
+    },
+    {
+      id: 'people',
+      label: fr ? 'Personnes' : 'People',
+      img: '/landing/06-participants.jpg',
+      title: fr ? 'Savoir qui mobiliser en premier' : 'Know who to mobilize first',
+      body: fr
+        ? 'Le profil complet de chaque personne en un clic. Garde-fou : personne n’est désigné formateur sans l’avoir accepté.'
+        : 'Each person’s full profile in one click. Guardrail: nobody is named a trainer unless they opted in.',
+    },
+    {
+      id: 'plan',
+      label: fr ? 'Plan' : 'Plan',
+      img: '/landing/08-plan.jpg',
+      title: fr ? 'Un plan de déploiement par profil' : 'A rollout plan per profile',
+      body: fr
+        ? 'Qui former en premier, quelles équipes prioriser, quelles sessions organiser. Prêt pour le kickoff.'
+        : 'Who to train first, which teams to prioritize, which sessions to run. Ready for the kickoff.',
+    },
+  ];
+  const [active, setActive] = useState(tabs[0].id);
+  const current = tabs.find((t) => t.id === active) ?? tabs[0];
+
+  return (
+    <div className="mt-10 grid gap-6 lg:grid-cols-[320px_1fr]">
+      <div role="tablist" aria-label={fr ? 'Écrans du produit' : 'Product screens'} className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
+        {tabs.map((t, i) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={t.id === active}
+            onClick={() => setActive(t.id)}
+            className={cn(
+              'min-w-[220px] rounded-xl p-4 text-left ring-1 transition-all duration-200 lg:min-w-0',
+              t.id === active ? 'bg-card shadow-md ring-brand' : 'bg-transparent ring-border hover:bg-card/70'
+            )}
+          >
+            <span className="mono text-[12px] text-muted-foreground">0{i + 1} · {t.label}</span>
+            <p className="mt-1 text-[15px] font-semibold text-foreground">{t.title}</p>
+            <p className={cn('mt-1 text-[13px] leading-relaxed text-muted-foreground', t.id !== active && 'hidden lg:line-clamp-2 lg:block')}>{t.body}</p>
+          </button>
+        ))}
+      </div>
+      <div className="overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border">
+        <div className="flex items-center gap-1.5 border-b border-border bg-paper px-4 py-2.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-risk/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-warn/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-ok/70" />
+          <span className="ml-3 truncate text-[11px] text-muted-foreground">Dust Assessment · {current.label}</span>
+        </div>
+        <img key={current.id} src={current.img} alt={current.title} className="lp-pop block w-full" loading="lazy" width={1600} height={1000} />
+      </div>
+    </div>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* ROI calculator                                                        */
+/* ------------------------------------------------------------------ */
+
+const RoiCalculator = ({ fr }: { fr: boolean }) => {
+  const [v, setV] = useState({ deploys: 15, disc: 8, champ: 4, qbr: 3, rate: 90 });
+  const per = v.disc + v.champ + v.qbr;
+  const quarter = per * v.deploys;
+  const eur = quarter * v.rate;
+  const n = (x: number) => Math.round(x).toLocaleString(fr ? 'fr-FR' : 'en-US');
+
+  const fields: { key: keyof typeof v; label: string; step: number }[] = [
+    { key: 'deploys', label: fr ? 'Nouveaux déploiements par trimestre' : 'New deployments per quarter', step: 1 },
+    { key: 'disc', label: fr ? 'Heures de discovery économisées / déploiement' : 'Discovery hours saved / deployment', step: 0.5 },
+    { key: 'champ', label: fr ? 'Heures de recherche de champions économisées' : 'Champion-search hours saved / deployment', step: 0.5 },
+    { key: 'qbr', label: fr ? 'Heures de préparation QBR économisées' : 'QBR / renewal prep hours saved / deployment', step: 0.5 },
+    { key: 'rate', label: fr ? 'Coût horaire chargé (€)' : 'Loaded cost per hour (€)', step: 5 },
+  ];
+
+  return (
+    <div className="mt-10 grid gap-4 lg:grid-cols-[1fr_380px]">
+      <div className="rounded-2xl bg-white/[0.06] p-6 ring-1 ring-white/10">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/60">{fr ? 'Hypothèses (modifiables)' : 'Hypotheses (edit them)'}</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {fields.map((f) => (
+            <label key={f.key} className="grid gap-1.5 text-[13px] text-white/70">
+              {f.label}
+              <input
+                type="number"
+                min={0}
+                step={f.step}
+                value={v[f.key]}
+                onChange={(e) => {
+                  const x = parseFloat(e.target.value);
+                  setV((s) => ({ ...s, [f.key]: Number.isFinite(x) && x >= 0 ? x : 0 }));
+                }}
+                className="h-10 rounded-lg border border-white/15 bg-ink px-3 text-[15px] font-medium tabular-nums text-white outline-none focus-visible:ring-2 focus-visible:ring-sky"
+              />
+            </label>
+          ))}
+        </div>
+        <p className="mt-4 text-[12px] leading-relaxed text-white/50">
+          {fr
+            ? 'Ce sont des hypothèses de travail, pas des résultats mesurés. Remplacez-les par les vrais chiffres de l’équipe.'
+            : 'These are working hypotheses, not measured results. Replace them with the team’s real numbers.'}
+        </p>
+      </div>
+      <div className="flex flex-col justify-between rounded-2xl bg-lime p-6 text-ink">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em]">{fr ? 'Temps rendu par trimestre' : 'Time back per quarter'}</p>
+          <p className="mt-2 text-[56px] font-bold leading-none tracking-tight tabular-nums">{n(quarter)} h</p>
+          <p className="mt-2 text-[14px] font-medium">
+            {fr ? `≈ ${n(quarter / 8)} jours d’équipe · ${n(per)} h par déploiement` : `≈ ${n(quarter / 8)} team days · ${n(per)} h per deployment`}
+          </p>
+        </div>
+        <div className="mt-6 border-t border-ink/15 pt-5">
+          <p className="text-[40px] font-bold leading-none tracking-tight tabular-nums">€{n(eur)}</p>
+          <p className="mt-2 text-[14px] font-medium">{fr ? `par trimestre · €${n(eur * 4)} par an` : `per quarter · €${n(eur * 4)} per year`}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ------------------------------------------------------------------ */
 /* Page                                                                  */
 /* ------------------------------------------------------------------ */
 
 const Index = () => {
   const { language } = useLanguage();
-  const fr = language !== 'en';
+  const fr = language === 'fr';
+  const L = (en: string, frText: string) => (fr ? frText : en);
+
+  const pains = [
+    [L('We don’t know where teams really stand with AI', 'On ne sait pas où en sont vraiment les équipes avec l’IA'), L('Maturity is guessed during the first calls.', 'La maturité se devine pendant les premiers calls.')],
+    [L('Use cases are discovered call after call', 'Les cas d’usage se découvrent call après call'), L('The same exploration, repeated at every kickoff.', 'La même exploration, répétée à chaque kickoff.')],
+    [L('Champions are found by chance', 'Les champions se trouvent au hasard'), L('Whoever speaks up first, not whoever can lead.', 'Celui qui parle en premier, pas celui qui peut porter.')],
+    [L('Training stays generic', 'Les formations restent génériques'), L('Same onboarding for experts and beginners.', 'Le même onboarding pour les experts et les débutants.')],
+    [L('Impact is hard to prove after a few months', 'L’impact est difficile à prouver après quelques mois'), L('No baseline, so renewals rely on anecdotes.', 'Pas de baseline : les renouvellements reposent sur des anecdotes.')],
+  ];
 
   const steps = [
     {
       icon: Link2,
       tint: 'bg-brand-soft text-brand-ink',
-      title: fr ? 'Créez un lien' : 'Create a link',
-      body: fr ? 'Un lien et un code par client. Pas de liste de noms à importer : vous l’envoyez, c’est tout.' : 'One link and one code per client. No list of names to import: just send it.',
-    },
-    {
-      icon: Clock,
-      tint: 'bg-pink-soft text-pink-ink',
-      title: fr ? 'Les équipes répondent en 10 minutes' : 'Teams answer in 10 minutes',
-      body: fr ? '44 affirmations, en français ou en anglais, avec sauvegarde automatique à chaque étape.' : '44 statements, in French or English, saved automatically at each step.',
+      title: L('Send one link before kickoff', 'Envoyer un lien avant le kickoff'),
+      body: L('One link and one code per client. No list of names to import. 10 minutes, no account, English or French.', 'Un lien et un code par client. Pas de liste de noms. 10 minutes, sans compte, en français ou en anglais.'),
     },
     {
       icon: Sparkles,
+      tint: 'bg-pink-soft text-pink-ink',
+      title: L('Get the segmentation automatically', 'Obtenir la segmentation automatiquement'),
+      body: L('Maturity by team, champions and trainers, priority use cases, risks and opportunities.', 'Maturité par équipe, champions et formateurs, cas d’usage prioritaires, risques et opportunités.'),
+    },
+    {
+      icon: ClipboardList,
       tint: 'bg-lime-soft text-ok-ink ring-1 ring-lime',
-      title: fr ? 'Déployez avec les bonnes personnes' : 'Roll out with the right people',
-      body: fr ? 'Indice de maturité, formateurs, champions, sponsors et actions prioritaires, prêts pour le kickoff.' : 'Readiness index, trainers, champions, sponsors and priority actions, ready for the kickoff.',
+      title: L('Start with a rollout plan', 'Démarrer avec un plan de déploiement'),
+      body: L('Which teams first, which 2–3 use cases, who to train first, which sessions, which governance topics.', 'Quelles équipes d’abord, quels 2–3 cas d’usage, qui former en premier, quelles sessions, quels sujets de gouvernance.'),
+    },
+    {
+      icon: RefreshCw,
+      tint: 'bg-lav-100 text-brand-ink',
+      title: L('Re-measure a few months later', 'Remesurer quelques mois plus tard'),
+      body: L('Same link, second pass. The score moves, and we can show it: pilot 53 → rollout 78.', 'Même lien, second passage. Le score bouge et on peut le montrer : pilote 53 → déploiement 78.'),
     },
   ];
 
-  const stats = [
-    { value: 10, suffix: ' min', label: fr ? 'pour répondre' : 'to answer' },
-    { value: V2_QUESTIONS.length, suffix: '', label: fr ? 'affirmations' : 'statements' },
-    { value: DIMENSIONS.length, suffix: '', label: fr ? 'dimensions mesurées' : 'dimensions measured' },
-    { value: RESULT_CLASSES.length, suffix: '', label: fr ? 'profils de déploiement' : 'rollout profiles' },
+  const before = [
+    L('Kickoff with little context', 'Kickoff avec peu de contexte'),
+    L('Weeks of discovery calls', 'Des semaines de calls de discovery'),
+    L('Champions found by chance', 'Champions trouvés au hasard'),
+    L('Generic onboarding for everyone', 'Onboarding générique pour tous'),
+    L('Impact told as anecdotes', 'Impact raconté en anecdotes'),
+  ];
+  const after = [
+    L('Assessment sent before kickoff', 'Assessment envoyé avant le kickoff'),
+    L('Kickoff opens with a plan', 'Le kickoff s’ouvre sur un plan'),
+    L('Trainers & champions known on day one', 'Formateurs et champions connus dès le jour 1'),
+    L('Training adapted to each profile', 'Formation adaptée à chaque profil'),
+    L('Re-measure: a score that moves', 'Remesure : un score qui progresse'),
+  ];
+
+  const gains = [
+    { title: L('Faster time-to-value', 'Valeur plus rapide'), body: L('The kickoff starts with the right people and 2–3 use cases, not a blank page.', 'Le kickoff démarre avec les bonnes personnes et 2–3 cas d’usage, pas une page blanche.'), bar: 'bg-sky' },
+    { title: L('Proof for renewals', 'Preuve pour les renouvellements'), body: L('Baseline, then re-measure: “your score went from 53 to 78” beats anecdotes.', 'Baseline puis remesure : « votre score est passé de 53 à 78 » vaut mieux que des anecdotes.'), bar: 'bg-lime' },
+    { title: L('Expansion signals', 'Signaux d’expansion'), body: L('Teams with high potential and low usage show where to grow the account.', 'Les équipes à fort potentiel et faible usage montrent où développer le compte.'), bar: 'bg-pink' },
+    { title: L('A repeatable playbook', 'Un playbook répétable'), body: L('Same base for every client, personalization only where it adds value.', 'Une base commune pour chaque client, de la personnalisation seulement là où elle compte.'), bar: 'bg-white' },
+  ];
+
+  const teams = [
+    {
+      name: 'ADS / Deployment',
+      tint: 'bg-brand-soft',
+      dot: 'bg-brand',
+      items: [
+        L('Start every deployment with a clear plan', 'Démarrer chaque déploiement avec un plan clair'),
+        L('Identify champions fast', 'Identifier vite les champions'),
+        L('Adapt onboarding to the client’s real level', 'Adapter l’onboarding au niveau réel du client'),
+        L('Stop re-exploring the same topics at each kickoff', 'Ne plus réexplorer les mêmes sujets à chaque kickoff'),
+        L('Build a more repeatable playbook', 'Construire un playbook plus répétable'),
+      ],
+    },
+    {
+      name: 'Customer Success',
+      tint: 'bg-lime-soft',
+      dot: 'bg-ok',
+      items: [
+        L('A baseline to measure before / after', 'Une baseline pour mesurer l’avant / après'),
+        L('Spot the teams that need help', 'Repérer les équipes qui ont besoin d’aide'),
+        L('Prepare QBRs, renewals and expansions with concrete signals', 'Préparer QBR, renouvellements et expansions avec des signaux concrets'),
+      ],
+    },
+    {
+      name: 'Sales',
+      tint: 'bg-pink-soft',
+      dot: 'bg-pink-ink',
+      items: [
+        L('Pass richer context at handoff', 'Transmettre plus de contexte au handoff'),
+        L('An early view of account potential and teams to address', 'Une première idée du potentiel du compte et des équipes à adresser'),
+        L('Fuel expansion once the deployment shows results', 'Alimenter l’expansion quand le déploiement montre des résultats'),
+      ],
+    },
   ];
 
   const marqueeItems = [...DIMENSIONS, ...DIMENSIONS];
@@ -256,18 +444,20 @@ const Index = () => {
             <DustWordmark subtitle="Assessment" />
           </Link>
           <nav className="hidden items-center gap-6 text-[13px] text-muted-foreground md:flex">
-            <a href="#how" className="transition-colors hover:text-foreground">{fr ? 'Comment ça marche' : 'How it works'}</a>
-            <a href="#profiles" className="transition-colors hover:text-foreground">{fr ? 'Profils' : 'Profiles'}</a>
-            <a href="#console" className="transition-colors hover:text-foreground">{fr ? 'La console' : 'The console'}</a>
+            <a href="#problem" className="transition-colors hover:text-foreground">{L('Why', 'Pourquoi')}</a>
+            <a href="#how" className="transition-colors hover:text-foreground">{L('How it works', 'Comment ça marche')}</a>
+            <a href="#product" className="transition-colors hover:text-foreground">{L('Product', 'Produit')}</a>
+            <a href="#roi" className="transition-colors hover:text-foreground">ROI</a>
+            <a href="#teams" className="transition-colors hover:text-foreground">{L('For our teams', 'Pour nos équipes')}</a>
           </nav>
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
             <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
-              <Link to="/dashboard">{fr ? 'Se connecter' : 'Sign in'}</Link>
+              <Link to="/dashboard">{L('Sign in', 'Se connecter')}</Link>
             </Button>
             <Button size="sm" onClick={enterDemo}>
               <PlayCircle className="h-4 w-4" />
-              {fr ? 'Voir la démo' : 'View demo'}
+              {L('View demo', 'Voir la démo')}
             </Button>
           </div>
         </div>
@@ -289,35 +479,35 @@ const Index = () => {
           <div>
             <span className="lp-pop inline-flex items-center gap-2 rounded-full bg-card/80 px-3 py-1 text-[12px] font-medium text-foreground shadow-sm ring-1 ring-border">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white"><Zap className="h-3 w-3" /></span>
-              {fr ? 'Évaluation de maturité IA · par Dust' : 'AI readiness assessment · by Dust'}
+              {L('Internal · AI Maturity Assessment for deployments', 'Interne · AI Maturity Assessment pour les déploiements')}
             </span>
             <h1 className="lp-pop mt-5 text-[40px] font-semibold leading-[1.05] tracking-[-0.03em] text-foreground sm:text-[54px]" style={{ animationDelay: '0.1s' }}>
-              {fr ? 'Trouvez les personnes qui feront ' : 'Find the people who will make '}
+              {L('Stop starting every deployment ', 'Arrêtons de démarrer chaque déploiement ')}
               <span className="relative inline-block">
-                <span className="relative z-10">{fr ? 'décoller' : 'your rollout'}</span>
+                <span className="relative z-10">{L('from zero.', 'de zéro.')}</span>
                 <span className="lp-grow absolute inset-x-0 bottom-1 z-0 h-4 rounded-sm bg-lime" style={{ animationDelay: '0.9s' }} />
-              </span>{' '}
-              {fr ? 'votre déploiement IA.' : 'take off.'}
+              </span>
             </h1>
             <p className="lp-pop mt-5 max-w-xl text-[17px] leading-relaxed text-slate" style={{ animationDelay: '0.2s' }}>
-              {fr
-                ? 'En 10 minutes, vos équipes révèlent leur pratique de l’IA, leur envie et leurs freins. Vous repartez avec un indice de maturité, vos futurs formateurs et champions, et un plan de déploiement concret.'
-                : 'In 10 minutes, your teams reveal their AI practice, appetite and blockers. You get a readiness index, your future trainers and champions, and a concrete rollout plan.'}
+              {L(
+                'A 10-minute assessment sent to the client before kickoff. It tells us where teams stand with AI, who our champions are and what to roll out first, then proves progress a few months later.',
+                'Un questionnaire de 10 minutes envoyé au client avant le kickoff. Il nous dit où en sont les équipes avec l’IA, qui sont nos champions et quoi déployer d’abord, puis prouve la progression quelques mois plus tard.'
+              )}
             </p>
             <div className="lp-pop mt-8 flex flex-col gap-2 sm:flex-row" style={{ animationDelay: '0.3s' }}>
               <Button size="lg" className="h-11 px-6 text-[14px]" onClick={enterDemo}>
                 <PlayCircle className="h-4 w-4" />
-                {fr ? 'Explorer la démo' : 'Explore the demo'}
+                {L('Explore the demo', 'Explorer la démo')}
               </Button>
               <Button size="lg" variant="outline" className="h-11 bg-card/80 px-6 text-[14px]" asChild>
-                <Link to="/create-campaign">
-                  <Link2 className="h-4 w-4" />
-                  {fr ? 'Créer un lien d’évaluation' : 'Create an assessment link'}
+                <Link to="/exemple">
+                  <ClipboardList className="h-4 w-4" />
+                  {L('Take the 10-min quiz', 'Faire le quiz (10 min)')}
                 </Link>
               </Button>
             </div>
             <ul className="lp-pop mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-muted-foreground" style={{ animationDelay: '0.4s' }}>
-              {[fr ? 'Sans compte pour les répondants' : 'No account for respondents', fr ? 'Français & anglais' : 'French & English', fr ? 'Résultats en temps réel' : 'Real-time results'].map((t) => (
+              {[L('One link per client', 'Un lien par client'), L('No account for respondents', 'Sans compte pour les répondants'), L('English & French', 'Anglais & français')].map((t) => (
                 <li key={t} className="flex items-center gap-1.5">
                   <Check className="h-4 w-4 text-ok" />
                   {t}
@@ -330,31 +520,57 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="border-y border-border bg-card">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-2 px-4 md:grid-cols-4 md:px-6">
-          {stats.map((s, i) => (
-            <Reveal key={s.label} delay={i * 80} className={cn('px-4 py-8 text-center', i % 2 === 1 && 'border-l border-border', i === 2 && 'md:border-l md:border-border')}>
-              <p className="text-[40px] font-semibold leading-none tracking-tight text-foreground">
-                <CountUp to={s.value} suffix={s.suffix} />
-              </p>
-              <p className="mt-2 text-[13px] text-muted-foreground">{s.label}</p>
+      {/* Problem */}
+      <section id="problem" className="scroll-mt-16 border-y border-border bg-card">
+        <div className="mx-auto max-w-[1200px] px-4 py-20 md:px-6">
+          <SectionHead
+            eyebrow={L('The problem today', 'Le problème aujourd’hui')}
+            title={L('Deployments run on intuition.', 'Les déploiements reposent sur l’intuition.')}
+            sub={L('Today a deployment can start with very little context on the client.', 'Aujourd’hui, un déploiement peut démarrer avec très peu de contexte sur le client.')}
+          />
+          <div className="mt-10 grid gap-4 lg:grid-cols-[1fr_380px]">
+            <div className="grid gap-3">
+              {pains.map(([title, body], i) => (
+                <Reveal key={title} delay={i * 70}>
+                  <div className="flex items-start gap-4 rounded-xl bg-paper p-4 ring-1 ring-border">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-risk-soft text-risk"><X className="h-4 w-4" /></span>
+                    <div>
+                      <p className="text-[15px] font-semibold text-foreground">{title}</p>
+                      <p className="mt-0.5 text-[13px] text-muted-foreground">{body}</p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+            <Reveal delay={200}>
+              <div className="flex h-full flex-col justify-between rounded-2xl bg-pink p-7 text-ink">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em]">{L('Result', 'Résultat')}</p>
+                  <p className="mt-3 text-[28px] font-semibold leading-tight tracking-tight">
+                    {L('Each deployment depends on who is in the room.', 'Chaque déploiement dépend de qui est dans la pièce.')}
+                  </p>
+                </div>
+                <ul className="mt-6 space-y-2 text-[15px] font-medium">
+                  {[L('Slow to start', 'Long à démarrer'), L('Hard to standardize', 'Difficile à standardiser'), L('Hard to replicate', 'Difficile à répliquer'), L('Hard to prove', 'Difficile à prouver')].map((t) => (
+                    <li key={t} className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm bg-ink" />{t}</li>
+                  ))}
+                </ul>
+              </div>
             </Reveal>
-          ))}
+          </div>
         </div>
       </section>
 
-      {/* How it works */}
+      {/* How it simplifies */}
       <section id="how" className="mx-auto max-w-[1200px] scroll-mt-16 px-4 py-20 md:px-6">
-        <Reveal className="max-w-2xl">
-          <p className="eyebrow">{fr ? 'Comment ça marche' : 'How it works'}</p>
-          <h2 className="mt-2 text-[32px] font-semibold leading-tight tracking-tight text-foreground">
-            {fr ? 'Du lien envoyé au plan de déploiement, en une semaine.' : 'From the link you send to a rollout plan, in a week.'}
-          </h2>
-        </Reveal>
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
+        <SectionHead
+          eyebrow={L('The idea', 'L’idée')}
+          title={L('One standard assessment, then personalization where it matters.', 'Un assessment standard, puis de la personnalisation là où ça compte.')}
+          sub={L('Instead of starting from scratch with each client, the deployment becomes productized.', 'Au lieu de repartir de zéro à chaque client, le déploiement devient productisé.')}
+        />
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s, i) => (
-            <Reveal key={s.title} delay={i * 120}>
+            <Reveal key={s.title} delay={i * 110}>
               <div className="group h-full rounded-xl bg-card p-6 shadow-sm ring-1 ring-border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <div className="flex items-center justify-between">
                   <span className={cn('flex h-11 w-11 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110', s.tint)}>
@@ -362,18 +578,48 @@ const Index = () => {
                   </span>
                   <span className="mono text-[13px] text-muted-foreground">0{i + 1}</span>
                 </div>
-                <h3 className="mt-5 text-[18px] font-semibold tracking-tight text-foreground">{s.title}</h3>
+                <h3 className="mt-5 text-[17px] font-semibold tracking-tight text-foreground">{s.title}</h3>
                 <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{s.body}</p>
               </div>
             </Reveal>
           ))}
+        </div>
+
+        {/* Before / after */}
+        <div className="mt-12 grid items-stretch gap-4 md:grid-cols-2">
+          <Reveal>
+            <div className="h-full rounded-2xl bg-paper p-6 ring-1 ring-border">
+              <p className="eyebrow">{L('Without the assessment', 'Sans l’assessment')}</p>
+              <ul className="mt-4 divide-y divide-border">
+                {before.map((t) => (
+                  <li key={t} className="flex items-center gap-3 py-3 text-[15px] text-muted-foreground">
+                    <X className="h-4 w-4 shrink-0 text-risk" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+          <Reveal delay={150}>
+            <div className="h-full rounded-2xl bg-ink p-6 text-white">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-sky">{L('With the assessment', 'Avec l’assessment')}</p>
+              <ul className="mt-4 divide-y divide-white/10">
+                {after.map((t) => (
+                  <li key={t} className="flex items-center gap-3 py-3 text-[15px] font-medium">
+                    <Check className="h-4 w-4 shrink-0 text-lime" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Dimensions marquee */}
       <section className="overflow-hidden border-y border-border bg-card py-10">
         <Reveal className="mx-auto mb-6 max-w-[1200px] px-4 md:px-6">
-          <p className="eyebrow">{fr ? 'Ce que l’on mesure' : 'What we measure'}</p>
+          <p className="eyebrow">{L('What comes back: 9 dimensions, 6 rollout profiles', 'Ce qu’on récupère : 9 dimensions, 6 profils de déploiement')}</p>
         </Reveal>
         <div className="relative">
           <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-card to-transparent" />
@@ -387,117 +633,126 @@ const Index = () => {
             ))}
           </div>
         </div>
+        <div className="mx-auto mt-6 flex max-w-[1200px] flex-wrap gap-2 px-4 md:px-6">
+          {RESULT_CLASSES.map((cl) => (
+            <span key={cl.id} className="inline-flex items-center gap-2 rounded-full bg-paper px-3 py-1.5 text-[13px] font-medium text-foreground ring-1 ring-border">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: PROFILE_COLORS[cl.id] }} />
+              {fr ? cl.name.fr : cl.name.en}
+            </span>
+          ))}
+        </div>
       </section>
 
-      {/* Profiles */}
-      <section id="profiles" className="mx-auto max-w-[1200px] scroll-mt-16 px-4 py-20 md:px-6">
-        <Reveal className="max-w-2xl">
-          <p className="eyebrow">{fr ? '6 profils de déploiement' : '6 rollout profiles'}</p>
-          <h2 className="mt-2 text-[32px] font-semibold leading-tight tracking-tight text-foreground">
-            {fr ? 'Chacun a un rôle. Sachez lequel avant le kickoff.' : 'Everyone has a role. Know which one before the kickoff.'}
-          </h2>
-          <p className="mt-3 text-[15px] text-muted-foreground">
-            {fr ? 'Des signaux, pas des verdicts : chaque profil vient avec l’action à mener.' : 'Signals, not verdicts: each profile comes with what to do next.'}
-          </p>
-        </Reveal>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {RESULT_CLASSES.map((cl, i) => (
-            <Reveal key={cl.id} delay={(i % 3) * 100}>
-              <div className="group relative h-full overflow-hidden rounded-xl bg-card p-6 shadow-sm ring-1 ring-border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                <span
-                  className="absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-25 transition-transform duration-500 group-hover:scale-150"
-                  style={{ backgroundColor: PROFILE_COLORS[cl.id] }}
-                  aria-hidden
-                />
-                <span className="relative block h-1.5 w-10 rounded-full" style={{ backgroundColor: PROFILE_COLORS[cl.id] }} />
-                <h3 className="relative mt-4 text-[17px] font-semibold tracking-tight text-foreground">{fr ? cl.name.fr : cl.name.en}</h3>
-                <p className="relative mt-2 text-[14px] leading-relaxed text-muted-foreground">{fr ? cl.meaning.fr : cl.meaning.en}</p>
-                <p className="relative mt-4 border-t border-border pt-3 text-[13px] leading-relaxed text-foreground">
-                  <span className="font-semibold">{fr ? 'À faire : ' : 'Next: '}</span>
-                  {fr ? cl.action.fr : cl.action.en}
-                </p>
+      {/* Product */}
+      <section id="product" className="mx-auto max-w-[1200px] scroll-mt-16 px-4 py-20 md:px-6">
+        <SectionHead
+          eyebrow={L('The product', 'Le produit')}
+          title={L('What the deployment team sees.', 'Ce que voit l’équipe de déploiement.')}
+          sub={L('Real screens from the platform, with demo data (fictional companies).', 'De vraies captures de la plateforme, avec des données de démo (entreprises fictives).')}
+        />
+        <ProductTour fr={fr} />
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+          <Button size="lg" className="h-11 px-6 text-[14px]" onClick={enterDemo}>
+            {L('Open the live demo', 'Ouvrir la démo')}
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+          <Button size="lg" variant="outline" className="h-11 px-6 text-[14px]" asChild>
+            <Link to="/exemple">{L('See what the client answers', 'Voir ce que le client remplit')}</Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* ROI */}
+      <section id="roi" className="relative scroll-mt-16 overflow-hidden bg-ink py-20 text-white">
+        <div aria-hidden className="lp-blob pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-brand opacity-30 blur-3xl" />
+        <div aria-hidden className="lp-blob pointer-events-none absolute -bottom-24 left-10 h-64 w-64 rounded-full bg-pink opacity-20 blur-3xl" style={{ animationDelay: '-9s' }} />
+        <div className="relative mx-auto max-w-[1200px] px-4 md:px-6">
+          <SectionHead
+            dark
+            eyebrow={L('Why push it: the ROI', 'Pourquoi pousser : le ROI')}
+            title={L('Hours back on every deployment, and revenue on top.', 'Des heures gagnées sur chaque déploiement, et du revenu en plus.')}
+            sub={L('Time saved on discovery, champion search and QBR prep, multiplied by every deployment we run.', 'Le temps gagné sur la discovery, la recherche de champions et la préparation des QBR, multiplié par chaque déploiement.')}
+          />
+          <RoiCalculator fr={fr} />
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {gains.map((g, i) => (
+              <Reveal key={g.title} delay={i * 90}>
+                <div className="h-full rounded-2xl bg-white/[0.06] p-6 ring-1 ring-white/10">
+                  <span className={cn('block h-1.5 w-10 rounded-full', g.bar)} />
+                  <h3 className="mt-4 text-[17px] font-semibold tracking-tight">{g.title}</h3>
+                  <p className="mt-2 text-[14px] leading-relaxed text-white/70">{g.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Teams */}
+      <section id="teams" className="mx-auto max-w-[1200px] scroll-mt-16 px-4 py-20 md:px-6">
+        <SectionHead
+          eyebrow={L('Value for the Dust team', 'Valeur pour l’équipe Dust')}
+          title={L('One tool, three teams.', 'Un outil, trois équipes.')}
+        />
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {teams.map((t, i) => (
+            <Reveal key={t.name} delay={i * 110}>
+              <div className={cn('h-full rounded-2xl p-6', t.tint)}>
+                <h3 className="text-[20px] font-semibold tracking-tight text-foreground">{t.name}</h3>
+                <ul className="mt-4 space-y-3">
+                  {t.items.map((it) => (
+                    <li key={it} className="flex gap-3 text-[14px] leading-relaxed text-foreground">
+                      <span className={cn('mt-2 h-2 w-2 shrink-0 rounded-sm', t.dot)} />
+                      {it}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </Reveal>
           ))}
         </div>
       </section>
 
-      {/* Console preview */}
-      <section id="console" className="relative scroll-mt-16 overflow-hidden bg-ink py-20 text-white">
-        <div aria-hidden className="lp-blob pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-brand opacity-30 blur-3xl" />
-        <div aria-hidden className="lp-blob pointer-events-none absolute -bottom-24 left-10 h-64 w-64 rounded-full bg-pink opacity-20 blur-3xl" style={{ animationDelay: '-9s' }} />
-        <div className="relative mx-auto grid max-w-[1200px] items-center gap-10 px-4 md:px-6 lg:grid-cols-2">
-          <Reveal>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-sky">{fr ? 'La console' : 'The console'}</p>
-            <h2 className="mt-2 text-[32px] font-semibold leading-tight tracking-tight">
-              {fr ? 'Tout ce qu’il faut pour piloter le déploiement.' : 'Everything you need to run the rollout.'}
-            </h2>
-            <ul className="mt-6 space-y-3 text-[15px] text-white/80">
-              {[
-                { icon: BarChart3, text: fr ? 'Indice de maturité et comparaison au benchmark global' : 'Readiness index benchmarked against every rollout' },
-                { icon: Users, text: fr ? 'Formateurs, champions et sponsors identifiés, avec garde-fou sur le rôle déclaré' : 'Trainers, champions and sponsors, checked against the declared role' },
-                { icon: ShieldCheck, text: fr ? 'Actions prioritaires par dimension, prêtes pour le kickoff' : 'Priority actions per dimension, ready for the kickoff' },
-                { icon: Sparkles, text: fr ? 'Cas d’usage et freins remontés par les équipes' : 'Use cases and blockers raised by the teams' },
-              ].map(({ icon: Icon, text }) => (
-                <li key={text} className="flex gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/10 text-sky"><Icon className="h-4 w-4" /></span>
-                  <span className="pt-0.5">{text}</span>
-                </li>
-              ))}
-            </ul>
-            <Button size="lg" className="mt-8 h-11 bg-white px-6 text-[14px] text-ink hover:bg-white/90" onClick={enterDemo}>
-              {fr ? 'Ouvrir la démo' : 'Open the demo'}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Reveal>
-
-          <Reveal delay={150}>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: fr ? 'Participation' : 'Participation', value: 244, suffix: '', sub: fr ? '85 % de complétion' : '85% completion', tint: 'text-sky' },
-                { label: fr ? 'Formateurs potentiels' : 'Peer trainers', value: 67, suffix: '', sub: fr ? '27 % de la cohorte' : '27% of cohort', tint: 'text-sky' },
-                { label: 'Champions', value: 137, suffix: '', sub: fr ? 'builders qui rayonnent' : 'active builders', tint: 'text-lime' },
-                { label: fr ? 'Indice de maturité' : 'Readiness index', value: 76, suffix: '/100', sub: fr ? 'Des bases solides' : 'Strong foundations', tint: 'text-pink' },
-              ].map((k) => (
-                <div key={k.label} className="rounded-xl bg-white/[0.06] p-5 ring-1 ring-white/10 transition-colors duration-300 hover:bg-white/[0.1]">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-white/60">{k.label}</p>
-                  <p className="mt-2 text-[34px] font-semibold leading-none tracking-tight">
-                    <CountUp to={k.value} suffix={k.suffix} />
-                  </p>
-                  <p className={cn('mt-2 text-[12px] font-medium', k.tint)}>{k.sub}</p>
-                </div>
-              ))}
-            </div>
-            <p className="mt-3 text-center text-[12px] text-white/50">{fr ? 'Chiffres issus de la démo · Veloria Santé, 1 192 salariés (fictif)' : 'Demo figures · Veloria Santé, 1,192 employees (fictional)'}</p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="relative isolate overflow-hidden">
+      {/* Proposal */}
+      <section className="relative isolate overflow-hidden border-t border-border">
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
           <div className="lp-blob absolute left-10 top-6 h-56 w-56 rounded-full bg-sky opacity-60 blur-3xl" />
           <div className="lp-blob absolute bottom-0 right-20 h-56 w-56 rounded-full bg-pink opacity-60 blur-3xl" style={{ animationDelay: '-8s' }} />
         </div>
-        <Reveal className="mx-auto max-w-[900px] px-4 py-24 text-center md:px-6">
-          <h2 className="text-[36px] font-semibold leading-tight tracking-tight text-foreground sm:text-[44px]">
-            {fr ? 'Prêt à lancer votre première évaluation ?' : 'Ready to launch your first assessment?'}
+        <Reveal className="mx-auto max-w-[1000px] px-4 py-24 text-center md:px-6">
+          <p className="eyebrow">{L('Not a heavy audit. Not another form.', 'Pas un audit lourd. Pas un énième formulaire.')}</p>
+          <h2 className="mt-3 text-[36px] font-semibold leading-tight tracking-tight text-foreground sm:text-[44px]">
+            {L('Proposal: run it on the next 3 kickoffs.', 'Proposition : le tester sur les 3 prochains kickoffs.')}
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-[16px] text-slate">
-            {fr ? 'Créez un lien en 30 secondes et envoyez-le à votre client. Les résultats arrivent en temps réel.' : 'Create a link in 30 seconds and send it to your client. Results come in real time.'}
-          </p>
-          <div className="mt-8 flex flex-col justify-center gap-2 sm:flex-row">
+          <div className="mt-10 grid gap-3 text-left sm:grid-cols-3">
+            {[
+              { icon: Target, title: L('Prep time', 'Temps de préparation'), sub: L('before vs after', 'avant vs après') },
+              { icon: GraduationCap, title: L('Time to first champion', 'Délai du premier champion'), sub: L('days, not weeks', 'des jours, pas des semaines') },
+              { icon: LineChart, title: L('Score at month 3', 'Score au 3e mois'), sub: L('re-measure the cohort', 'remesurer la cohorte') },
+            ].map((m) => (
+              <div key={m.title} className="rounded-xl bg-card/90 p-5 shadow-sm ring-1 ring-border">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-soft text-brand-ink"><m.icon className="h-4 w-4" /></span>
+                <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{L('We measure', 'On mesure')}</p>
+                <p className="mt-1 text-[17px] font-semibold text-foreground">{m.title}</p>
+                <p className="text-[13px] text-muted-foreground">{m.sub}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-10 flex flex-col justify-center gap-2 sm:flex-row">
             <Button size="lg" className="h-11 px-6 text-[14px]" asChild>
               <Link to="/create-campaign">
                 <Link2 className="h-4 w-4" />
-                {fr ? 'Créer un lien' : 'Create a link'}
+                {L('Create a client link', 'Créer un lien client')}
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="h-11 bg-card/80 px-6 text-[14px]" onClick={enterDemo}>
               <PlayCircle className="h-4 w-4" />
-              {fr ? 'Voir la démo' : 'View demo'}
+              {L('View demo', 'Voir la démo')}
             </Button>
           </div>
+          <p className="mt-8 text-[15px] font-medium text-foreground">
+            {L('From artisanal deployments to data-guided ones, without losing personalization.', 'D’un déploiement artisanal à un déploiement guidé par la donnée, sans perdre la personnalisation.')}
+          </p>
         </Reveal>
       </section>
 
@@ -505,10 +760,10 @@ const Index = () => {
       <footer className="border-t border-border bg-card py-6">
         <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-3 px-4 text-[12px] text-muted-foreground sm:flex-row md:px-6">
           <DustWordmark />
-          <p>{fr ? '© 2026 Dust. Évaluation de la maturité IA de vos équipes.' : '© 2026 Dust. AI readiness assessment for your teams.'}</p>
+          <p>{L('© 2026 Dust · AI Maturity Assessment · internal tool', '© 2026 Dust · AI Maturity Assessment · outil interne')}</p>
           <div className="flex items-center gap-4">
-            <Link to="/assessment" className="transition-colors hover:text-foreground">{fr ? 'Répondre au questionnaire' : 'Take the assessment'}</Link>
-            <Link to="/admin" className="transition-colors hover:text-foreground">Administration</Link>
+            <Link to="/assessment" className="transition-colors hover:text-foreground">{L('Take the assessment', 'Répondre au questionnaire')}</Link>
+            <Link to="/admin" className="transition-colors hover:text-foreground">Admin</Link>
           </div>
         </div>
       </footer>
