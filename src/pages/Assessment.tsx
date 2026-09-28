@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { type AssessmentType } from '@/lib/assessment-data';
 import {
   CONTEXT_FIELDS,
+  GLOSSARY,
   OPEN_FIELDS,
   DIMENSION_IDS,
   V2_QUESTIONS,
@@ -23,7 +24,7 @@ import { AssessmentProgress } from '@/components/AssessmentProgress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, ArrowRight, RotateCcw, UserPlus, AlertCircle, Loader2, CheckCircle2, Timer, Save, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCcw, UserPlus, AlertCircle, Loader2, CheckCircle2, Timer, Save, Check, BookOpen, PencilLine } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -394,19 +395,17 @@ const Assessment = () => {
         }
 
         if (existingParticipant.status === 'completed') {
+          // Already submitted: reopen the answers so the person can review and update them.
           toast({
-            title: t.testCompleted,
-            description: t.testCompletedDesc,
-            variant: "destructive"
+            title: language === 'fr' ? 'Vous avez déjà répondu' : 'You have already answered',
+            description: language === 'fr' ? 'Vous pouvez relire et modifier vos réponses, puis les renvoyer.' : 'You can review and update your answers, then submit again.',
           });
-          setIsValidating(false);
-          return;
+        } else {
+          toast({
+            title: t.resumeTest,
+            description: t.resumeTestDesc
+          });
         }
-
-        toast({
-          title: t.resumeTest,
-          description: t.resumeTestDesc
-        });
       } else {
         // Create new participant
         const { data: newParticipant, error: insertError } = await supabase
@@ -658,7 +657,18 @@ const Assessment = () => {
                     ? 'Ce profil est un signal, pas un verdict : il sera confirmé avec vous avant toute proposition de rôle.'
                     : 'This profile is a signal, not a verdict: it will be confirmed with you before any role is proposed.'}
                 </p>
-                <div className="mt-6 flex justify-end border-t border-border pt-4">
+                <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-border pt-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setIsComplete(false);
+                      setPhase('context');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    <PencilLine className="h-4 w-4" />
+                    {fr ? 'Modifier mes réponses' : 'Edit my answers'}
+                  </Button>
                   <Button variant="outline" onClick={() => navigate('/')}>
                     {t.backHome}
                   </Button>
@@ -670,6 +680,24 @@ const Assessment = () => {
       </div>
     );
   }
+
+  const glossary = (
+    <details className="group rounded-lg border border-border bg-card px-4 py-3 text-[13px]">
+      <summary className="flex cursor-pointer list-none items-center gap-2 font-medium text-foreground">
+        <BookOpen className="h-4 w-4 text-brand-ink" />
+        {fr ? 'Définitions utilisées dans ce questionnaire' : 'Definitions used in this questionnaire'}
+        <span className="ml-auto text-[12px] font-normal text-muted-foreground group-open:hidden">{fr ? 'Afficher' : 'Show'}</span>
+      </summary>
+      <dl className="mt-3 space-y-2">
+        {GLOSSARY.map((g) => (
+          <div key={g.term.en}>
+            <dt className="font-semibold text-foreground">{fr ? g.term.fr : g.term.en}</dt>
+            <dd className="text-muted-foreground">{fr ? g.definition.fr : g.definition.en}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
+  );
 
   const choiceClass = (selected: boolean) =>
     cn(
@@ -690,10 +718,13 @@ const Assessment = () => {
             {fr ? 'Ces informations ne sont pas notées. Elles servent à organiser le déploiement.' : 'These answers are not scored. They help organise the rollout.'}
           </p>
 
-          <form onSubmit={handleSubmitContext} className="mt-5 space-y-3">
+          {glossary}
+
+          <form onSubmit={handleSubmitContext} className="mt-3 space-y-3">
             {CONTEXT_FIELDS.map((field) => {
               const value = context[field.id];
               const list = Array.isArray(value) ? value : value ? [value] : [];
+              const atMax = !!field.max && list.length >= field.max;
               return (
                 <fieldset key={field.id} className="card-elevated p-5">
                   <legend className="sr-only">{fr ? field.label.fr : field.label.en}</legend>
@@ -701,18 +732,24 @@ const Assessment = () => {
                     {fr ? field.label.fr : field.label.en}
                   </p>
                   {field.multiple && (
-                    <p className="mt-0.5 text-[12px] text-muted-foreground">{fr ? 'Plusieurs choix possibles' : 'Select all that apply'}</p>
+                    <p className="mt-0.5 text-[12px] text-muted-foreground">
+                      {field.max
+                        ? (fr ? `Jusqu’à ${field.max} choix (${list.length}/${field.max})` : `Pick up to ${field.max} (${list.length}/${field.max})`)
+                        : (fr ? 'Plusieurs choix possibles' : 'Select all that apply')}
+                    </p>
                   )}
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     {field.options.map((opt) => {
                       const selected = list.includes(opt.id);
+                      const blocked = field.multiple && atMax && !selected;
                       return (
                         <button
                           key={opt.id}
                           type="button"
                           role={field.multiple ? 'checkbox' : 'radio'}
                           aria-checked={selected}
-                          className={choiceClass(selected)}
+                          disabled={blocked}
+                          className={cn(choiceClass(selected), blocked && 'cursor-not-allowed opacity-50 hover:border-border')}
                           onClick={() =>
                             setContext((prev) => {
                               if (!field.multiple) return { ...prev, [field.id]: opt.id };
@@ -736,6 +773,19 @@ const Assessment = () => {
                       );
                     })}
                   </div>
+                  {field.otherText && list.includes('other') && (
+                    <Input
+                      className="mt-2"
+                      aria-label={fr ? 'Précisez' : 'Please specify'}
+                      placeholder={fr ? 'Précisez…' : 'Please specify…'}
+                      maxLength={200}
+                      value={context.other?.[field.id] ?? ''}
+                      onChange={(e) => {
+                        const text = e.target.value;
+                        setContext((prev) => ({ ...prev, other: { ...prev.other, [field.id]: text } }));
+                      }}
+                    />
+                  )}
                 </fieldset>
               );
             })}
@@ -825,6 +875,7 @@ const Assessment = () => {
 
       <main className="flex-1 py-6">
         <div className="mx-auto max-w-[780px] space-y-3 px-4">
+          {glossary}
           {questionsInCurrentThematic.map((question, index) => (
             <LikertScale
               key={question.id}

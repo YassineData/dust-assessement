@@ -205,7 +205,7 @@ export const getDemoData = () => {
           ...(wantsToTrain ? ['train'] : []),
           ...(target.gov > 65 && rnd() < 0.5 ? ['govern'] : []),
         ],
-        expectedValue: pickOne(rnd, ['time', 'workflow', 'quality', 'knowledge', 'crossteam', 'govern']),
+        expectedValue: pickSome(rnd, ['time', 'workflow', 'quality', 'knowledge', 'crossteam', 'govern'], 1 + Math.floor(rnd() * 3)),
       };
       const open = rnd() < 0.7
         ? {

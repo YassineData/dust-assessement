@@ -1,6 +1,6 @@
 import { CampaignParticipant } from '@/hooks/useCampaignParticipants';
 import { getQuestionText } from '@/lib/assessment-data';
-import { CONTEXT_FIELDS, OPEN_FIELDS, classLabel, dimensionLabel, optionLabel } from '@/lib/assessment-v2';
+import { CONTEXT_FIELDS, OPEN_FIELDS, classLabel, contextLabels, dimensionLabel } from '@/lib/assessment-v2';
 import { getActiveThematics, getActiveQuestions } from '@/lib/active-assessment-type';
 
 const RESPONSE_LABELS_FR: Record<string, string> = {
@@ -57,11 +57,7 @@ export const exportCSV = (participants: CampaignParticipant[], companyName: stri
     p.fits?.trainer ?? '',
     p.fits?.champion ?? '',
     p.fits?.sponsor ?? '',
-    ...CONTEXT_FIELDS.map(f => {
-      const v = p.context?.[f.id];
-      const list = Array.isArray(v) ? v : v ? [v] : [];
-      return list.map(id => optionLabel(f.id, id, lang)).join(' | ');
-    }),
+    ...CONTEXT_FIELDS.map(f => contextLabels(p.context, f.id, lang).join(' | ')),
     ...OPEN_FIELDS.map(f => p.open?.[f.id] ?? ''),
     ...activeQuestions.map((q) => {
       const responses = p.responses as Record<string, string> | null;

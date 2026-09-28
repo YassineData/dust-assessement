@@ -145,14 +145,14 @@ export interface V2Question {
 // Grouped by dimension, in dimension order (as presented to the respondent).
 export const V2_QUESTIONS: V2Question[] = [
   // AI fluency today
-  { id: 'u1', dimension: 'usage', text: { en: 'I use an AI assistant at least a few times a week.', fr: "J'utilise un assistant IA au moins quelques fois par semaine." } },
+  { id: 'u1', dimension: 'usage', text: { en: 'I use an AI tool (ChatGPT, Claude, Copilot, Dust…) at least a few times a week.', fr: "J'utilise un outil d'IA (ChatGPT, Claude, Copilot, Dust…) au moins quelques fois par semaine." } },
   { id: 'u2', dimension: 'usage', text: { en: 'I usually get a useful result within the first or second try.', fr: "J'obtiens généralement un résultat utile dès le premier ou le deuxième essai." } },
   { id: 'u3', dimension: 'usage', text: { en: 'I know how to give an AI enough context (documents, examples, constraints) to do a task properly.', fr: 'Je sais donner à une IA assez de contexte (documents, exemples, contraintes) pour qu’elle fasse une tâche correctement.' } },
   { id: 'u4', dimension: 'usage', text: { en: 'I have already replaced part of a recurring task in my job with an AI tool.', fr: "J'ai déjà remplacé une partie d'une tâche récurrente de mon travail par un outil d'IA." } },
   { id: 'u5', dimension: 'usage', text: { en: 'When an output is wrong, I can work out why and adjust rather than give up.', fr: "Quand un résultat est faux, je sais comprendre pourquoi et ajuster plutôt qu'abandonner." } },
   // Builder depth
-  { id: 'd1', dimension: 'depth', text: { en: 'I have already built or configured an AI assistant with custom instructions.', fr: "J'ai déjà créé ou configuré un assistant IA avec des instructions personnalisées." } },
-  { id: 'd2', dimension: 'depth', text: { en: 'I understand how connecting company data or a tool changes what an assistant can do.', fr: 'Je comprends comment le fait de connecter des données de l’entreprise ou un outil change ce qu’un assistant peut faire.' } },
+  { id: 'd1', dimension: 'depth', text: { en: 'I have already built or configured an AI agent with custom instructions.', fr: "J'ai déjà créé ou configuré un agent IA avec des instructions personnalisées." } },
+  { id: 'd2', dimension: 'depth', text: { en: 'I understand how connecting company data or a tool changes what an agent can do.', fr: 'Je comprends comment le fait de connecter des données de l’entreprise ou un outil change ce qu’un assistant peut faire.' } },
   { id: 'd3', dimension: 'depth', text: { en: 'I am comfortable iterating on instructions until something behaves reliably.', fr: "Je suis à l'aise pour retravailler des instructions jusqu'à obtenir un comportement fiable." } },
   { id: 'd4', dimension: 'depth', text: { en: 'I could explain to a colleague when a quick chat is enough and when a configured agent is worth it.', fr: "Je saurais expliquer à un collègue quand une simple conversation suffit et quand un agent configuré vaut le coup." } },
   { id: 'd5', dimension: 'depth', text: { en: 'I am comfortable trying new features on my own, without waiting for a training session.', fr: "Je suis à l'aise pour essayer de nouvelles fonctionnalités seul, sans attendre une formation." } },
@@ -193,10 +193,10 @@ export const V2_QUESTIONS: V2Question[] = [
   { id: 'p2', dimension: 'pain', text: { en: 'I regularly spend time looking for information that exists somewhere in the company.', fr: "Je passe régulièrement du temps à chercher des informations qui existent quelque part dans l'entreprise." } },
   { id: 'p3', dimension: 'pain', text: { en: 'I often rewrite or reformat the same kind of document or message.', fr: 'Je réécris ou remets souvent en forme le même type de document ou de message.' } },
   { id: 'p4', dimension: 'pain', text: { en: 'My work gets delayed waiting for someone else to produce a routine output.', fr: "Mon travail est retardé parce que j'attends qu'une autre personne produise un livrable de routine." } },
-  { id: 'p5', dimension: 'pain', text: { en: 'I could name three tasks in my week I would hand over to an assistant tomorrow.', fr: 'Je pourrais citer trois tâches de ma semaine que je confierais dès demain à un assistant.' } },
+  { id: 'p5', dimension: 'pain', text: { en: 'I could name three tasks in my week I would hand over to an AI agent tomorrow.', fr: 'Je pourrais citer trois tâches de ma semaine que je confierais dès demain à un assistant.' } },
   // Value clarity (not in readiness)
   { id: 'v1', dimension: 'value', text: { en: 'I can name a concrete outcome my team would get from AI, not just time saved.', fr: "Je peux citer un résultat concret que mon équipe obtiendrait grâce à l'IA, au-delà du temps gagné." } },
-  { id: 'v2', dimension: 'value', text: { en: "I know which of my team's processes would benefit most from an assistant.", fr: "Je sais quels processus de mon équipe profiteraient le plus d'un assistant." } },
+  { id: 'v2', dimension: 'value', text: { en: "I know which of my team's processes would benefit most from an AI agent.", fr: "Je sais quels processus de mon équipe profiteraient le plus d'un assistant." } },
 ];
 
 export const questionText = (q: V2Question, lang: Lang) => pick(q.text, lang);
@@ -406,6 +406,10 @@ export interface ChoiceField {
   id: 'team' | 'level' | 'bandwidth' | 'tools' | 'rolloutRole' | 'expectedValue';
   label: L;
   multiple: boolean;
+  /** Maximum number of choices when `multiple` (no limit when absent). */
+  max?: number;
+  /** Show a free-text field when "other" is selected. */
+  otherText?: boolean;
   options: { id: string; label: L }[];
 }
 
@@ -459,6 +463,7 @@ export const CONTEXT_FIELDS: ChoiceField[] = [
     id: 'tools',
     label: { en: 'AI tools you use today', fr: "Outils d'IA que vous utilisez aujourd'hui" },
     multiple: true,
+    otherText: true,
     options: [
       o('none', 'None today', "Aucun aujourd'hui"),
       o('chatgpt', 'ChatGPT', 'ChatGPT'),
@@ -477,7 +482,7 @@ export const CONTEXT_FIELDS: ChoiceField[] = [
     multiple: true,
     options: [
       o('use', 'Use AI in my own work', 'Utiliser l’IA dans mon propre travail'),
-      o('build', 'Build or configure assistants', 'Créer ou configurer des assistants'),
+      o('build', 'Build or configure agents', 'Créer ou configurer des agents'),
       o('adopt', 'Help my team adopt AI', 'Aider mon équipe à adopter l’IA'),
       o('train', 'Train or coach colleagues', 'Former ou accompagner des collègues'),
       o('sponsor', 'Sponsor the topic with management', 'Porter le sujet auprès de la direction'),
@@ -487,8 +492,10 @@ export const CONTEXT_FIELDS: ChoiceField[] = [
   },
   {
     id: 'expectedValue',
-    label: { en: 'What would be the most useful outcome Dust could help you reach?', fr: 'Quel serait le résultat le plus utile que Dust pourrait vous aider à atteindre ?' },
-    multiple: false,
+    label: { en: 'What would be the most useful outcomes Dust could help you reach?', fr: 'Quels seraient les résultats les plus utiles que Dust pourrait vous aider à atteindre ?' },
+    multiple: true,
+    max: 3,
+    otherText: true,
     options: [
       o('time', 'Save time on individual tasks', 'Gagner du temps sur des tâches individuelles'),
       o('workflow', 'Speed up a team workflow', "Accélérer un processus d'équipe"),
@@ -508,19 +515,46 @@ export interface OpenField {
 
 export const OPEN_FIELDS: OpenField[] = [
   { id: 'timeSink', label: { en: 'What is the single biggest time sink in your week?', fr: 'Quelle est la plus grosse perte de temps de votre semaine ?' } },
-  { id: 'useCase', label: { en: 'Which workflow or task would you most want to improve or hand over to an assistant?', fr: 'Quel processus ou quelle tâche aimeriez-vous le plus améliorer ou confier à un assistant ?' } },
+  { id: 'useCase', label: { en: 'Which workflow or task would you most want to improve or hand over to an AI agent?', fr: 'Quel processus ou quelle tâche aimeriez-vous le plus améliorer ou confier à un assistant ?' } },
   { id: 'valueOwner', label: { en: 'Which team or process would gain the most from that use case?', fr: 'Quelle équipe ou quel processus y gagnerait le plus ?' } },
   { id: 'success', label: { en: 'How would you know the Dust rollout has been a success for you or your team?', fr: 'À quoi verriez-vous que le déploiement de Dust est une réussite pour vous ou votre équipe ?' } },
   { id: 'blocker', label: { en: 'What would stop you from using it?', fr: "Qu'est-ce qui vous empêcherait de l'utiliser ?" } },
 ];
 
-export type ContextAnswers = Partial<Record<ChoiceField['id'], string | string[]>>;
+export type ContextAnswers = Partial<Record<ChoiceField['id'], string | string[]>> & {
+  /** Free text typed next to an "Other" choice, per field. */
+  other?: Partial<Record<ChoiceField['id'], string>>;
+};
+
+/** Short definitions shown to respondents so everyone reads the statements the same way. */
+export const GLOSSARY: { term: L; definition: L }[] = [
+  {
+    term: { en: 'AI tool', fr: "Outil d'IA" },
+    definition: { en: 'Any AI chat or assistant you can ask things to: ChatGPT, Claude, Copilot, Gemini, Dust…', fr: 'Tout chat ou assistant IA à qui l’on peut poser des questions : ChatGPT, Claude, Copilot, Gemini, Dust…' },
+  },
+  {
+    term: { en: 'AI agent', fr: 'Agent IA' },
+    definition: { en: 'An AI set up for a specific job: its own instructions, the company data it can read and the tools it can use (e.g. a Dust agent).', fr: 'Une IA configurée pour une mission précise : ses propres instructions, les données de l’entreprise qu’elle peut lire et les outils qu’elle peut utiliser (par ex. un agent Dust).' },
+  },
+  {
+    term: { en: 'Connecting data or a tool', fr: 'Connecter des données ou un outil' },
+    definition: { en: 'Giving an agent access to documents or apps (Drive, Notion, Slack, CRM…) so it answers from your company’s context.', fr: 'Donner à un agent l’accès à des documents ou des applications (Drive, Notion, Slack, CRM…) pour qu’il réponde avec le contexte de l’entreprise.' },
+  },
+];
 export type OpenAnswers = Partial<Record<OpenField['id'], string>>;
 
 export const optionLabel = (fieldId: ChoiceField['id'], optionId: string, lang: Lang) => {
   const f = CONTEXT_FIELDS.find((x) => x.id === fieldId);
   const opt = f?.options.find((x) => x.id === optionId);
   return opt ? pick(opt.label, lang) : optionId;
+};
+
+/** Labels of a context answer, with the "Other" free text appended when present. */
+export const contextLabels = (context: ContextAnswers | undefined, fieldId: ChoiceField['id'], lang: Lang): string[] => {
+  const v = context?.[fieldId];
+  const list = Array.isArray(v) ? v : v ? [v] : [];
+  const note = context?.other?.[fieldId]?.trim();
+  return list.map((id) => (id === 'other' && note ? `${optionLabel(fieldId, id, lang)}: ${note}` : optionLabel(fieldId, id, lang)));
 };
 
 /** A trainer must have declared a training role; otherwise the class needs human confirmation. */

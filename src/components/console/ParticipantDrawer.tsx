@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { X, BadgeCheck, Target, FileText, AlertTriangle } from 'lucide-react';
-import { CONTEXT_FIELDS, OPEN_FIELDS, optionLabel, READINESS_DIMENSION_IDS } from '@/lib/assessment-v2';
+import { CONTEXT_FIELDS, OPEN_FIELDS, contextLabels, READINESS_DIMENSION_IDS } from '@/lib/assessment-v2';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CampaignParticipant } from '@/hooks/useCampaignParticipants';
@@ -136,7 +136,7 @@ export const ParticipantDrawer = ({ participant: p, thematics, translateThematic
                   return (
                     <div key={field.id} className="grid grid-cols-[110px_minmax(0,1fr)] gap-2">
                       <dt className="text-muted-foreground">{fr ? field.label.fr : field.label.en}</dt>
-                      <dd className="text-foreground">{list.map((id) => optionLabel(field.id, id, fr ? 'fr' : 'en')).join(', ')}</dd>
+                      <dd className="text-foreground">{contextLabels(p.context, field.id, fr ? 'fr' : 'en').join(', ')}</dd>
                     </div>
                   );
                 })}
