@@ -16,6 +16,8 @@ import {
   dimensionLabel,
   getDimension,
   getReadinessBand,
+  getResultClass,
+  type RoleId,
 } from '@/lib/assessment-v2';
 import { cn } from '@/lib/utils';
 import { DEMO_FLAG, isDemoMode } from '@/demo/demo-data';
@@ -32,7 +34,7 @@ import { ThematicCards } from '@/components/ThematicCards';
 import { SettingsTab } from '@/components/SettingsTab';
 import { CompareSelector, CompareOption } from '@/components/CompareSelector';
 import { CampaignSelector, Campaign } from '@/components/CampaignSelector';
-import { Loader2, Info, Users, Send, Download, Share2, UserPlus, UserCheck, BadgeCheck, GraduationCap, HelpCircle, ArrowRight, ChevronRight, CheckCircle2, Gauge, Wrench } from 'lucide-react';
+import { Loader2, Info, Users, Send, Download, Share2, UserPlus, UserCheck, BadgeCheck, GraduationCap, HelpCircle, ArrowRight, ChevronRight, CheckCircle2, Gauge, Wrench, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCampaignParticipants } from '@/hooks/useCampaignParticipants';
 import { useClientCampaigns } from '@/hooks/useClientCampaigns';
@@ -73,6 +75,20 @@ interface StoredSession {
 
 // v2: bumped to invalidate pre-security-fix sessions that may have cached
 // the full campaign list for campaign-tagged admins.
+/** Numbered header of an overview block (1 Starting point · 2 People · 3 Rollout plan). */
+const OverviewBlockHeader = ({ n, title, question, meta }: { n: number; title: string; question: string; meta?: string }) => (
+  <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-2 pt-4 first:pt-0">
+    <div className="flex items-center gap-3">
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-[13px] font-semibold text-white">{n}</span>
+      <div>
+        <h2 className="text-[17px] font-semibold tracking-tight text-foreground">{title}</h2>
+        <p className="text-[12px] text-muted-foreground">{question}</p>
+      </div>
+    </div>
+    {meta && <p className="text-[12px] text-muted-foreground">{meta}</p>}
+  </div>
+);
+
 const SESSION_KEY = 'dashboard_session_v2';
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes en millisecondes
 const SIDEBAR_KEY = 'console_sidebar_collapsed';
@@ -577,7 +593,7 @@ const Dashboard = () => {
   const profileById = (id: string) => classAsProfile(id);
   const roleMismatchCount = completedParticipants.filter(p => p.roleMismatch).length;
   // Roles are independent: one person can count as both builder and champion.
-  const roleCount = (role: 'builder' | 'champion') => completedParticipants.filter(p => p.roles.includes(role)).length;
+  const roleCount = (role: RoleId) => completedParticipants.filter(p => p.roles.includes(role)).length;
   const teamRows = (() => {
     const byTeam = new Map<string, number[]>();
     completedParticipants.forEach(p => {
@@ -720,7 +736,13 @@ const Dashboard = () => {
               <EmptyDashboardState type="overview" />
             ) : (
               <div className="space-y-5">
-                {/* Level 1 — hero diagnostic */}
+                {/* Results read as three blocks: starting point → people → plan (the plan is derived from 1 + 2). */}
+                <OverviewBlockHeader
+                  n={1}
+                  title={fr ? 'Point de départ' : 'Starting point'}
+                  question={fr ? 'Où en est le compte avec l’IA ?' : 'Where does the account stand with AI?'}
+                  meta={fr ? `${completedParticipants.length} réponses sur ${participants.length} inscrits · ${completionRate}% de complétion` : `${completedParticipants.length} answers out of ${participants.length} registered · ${completionRate}% completion`}
+                />
                 <HeroDiagnostic
                   score={averageScore}
                   eyebrow={fr ? 'Diagnostic' : 'Diagnosis'}
@@ -745,25 +767,57 @@ const Dashboard = () => {
                   } : undefined}
                 />
 
-                {/* Level 2 — KPI cards */}
+                <div className="grid gap-5 lg:grid-cols-12">
+                  <SectionCard
+                    className="lg:col-span-7"
+                    title={t('dashboard.thematicPerformance')}
+                    description={fr ? `Score de ${campaignAccess.companyName} vs benchmark global` : `${campaignAccess.companyName} score vs global benchmark`}
+                    actions={
+                      <div className="flex items-center gap-3 text-[11px] text-outline">
+                        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[2px] bg-brand" />{fr ? 'Cohorte' : 'Cohort'}</span>
+                        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[2px] bg-lav-200" />Benchmark</span>
+                      </div>
+                    }
+                  >
+                    <DimensionBars
+                      rows={readinessAverages.map(ta => ({ name: ta.thematic, score: ta.score, benchmark: hasBenchmark ? ta.benchmark : undefined }))}
+                      vsLabel="vs"
+                    />
+                  </SectionCard>
+                  <SectionCard
+                    className="lg:col-span-5"
+                    title={fr ? 'Maturité par équipe' : 'Readiness by team'}
+                    description={fr ? "Indice moyen par équipe déclarée (nombre de répondants)" : 'Average index per declared team (respondents)'}
+                  >
+                    <DimensionBars animationKey="team-bars" rows={teamRows} vsLabel="vs" />
+                  </SectionCard>
+                </div>
+
+                <ThematicCards
+                  data={readinessAverages.map(ta => ({
+                    id: ta.originalThematic,
+                    name: ta.thematic,
+                    score: ta.score,
+                    benchmark: hasBenchmark ? ta.benchmark : undefined,
+                  }))}
+                />
+
+                <OverviewBlockHeader
+                  n={2}
+                  title={fr ? 'Personnes' : 'People'}
+                  question={fr ? 'Sur qui s’appuyer ?' : 'Who can we rely on?'}
+                  meta={fr ? 'Rôles indépendants : une personne peut en cumuler plusieurs' : 'Independent roles: one person can hold several'}
+                />
                 <KpiCards
                   items={[
                     {
-                      icon: UserCheck,
-                      label: fr ? 'Participation' : 'Participation',
-                      value: completedParticipants.length,
-                      suffix: fr ? `/ ${participants.length} inscrits` : `/ ${participants.length} registered`,
-                      note: fr ? `${completionRate}% de complétion` : `${completionRate}% completion`,
-                      tone: 'neutral',
-                    },
-                    {
                       icon: GraduationCap,
                       label: fr ? 'Formateurs potentiels' : 'Peer trainers',
-                      value: profileCount('trainer'),
+                      value: roleCount('trainer'),
                       suffix: roleMismatchCount > 0
                         ? (fr ? `dont ${roleMismatchCount} à confirmer` : `${roleMismatchCount} to confirm`)
                         : (fr ? 'prêts à transmettre' : 'ready to mentor'),
-                      chip: fr ? `${pctOfCohort(profileCount('trainer'))}% de la cohorte` : `${pctOfCohort(profileCount('trainer'))}% of cohort`,
+                      chip: fr ? `${pctOfCohort(roleCount('trainer'))}% de la cohorte` : `${pctOfCohort(roleCount('trainer'))}% of cohort`,
                       tone: 'brand',
                     },
                     {
@@ -783,6 +837,14 @@ const Dashboard = () => {
                       tone: 'green',
                     },
                     {
+                      icon: Megaphone,
+                      label: 'Sponsors',
+                      value: roleCount('sponsor'),
+                      suffix: fr ? 'portent le programme' : 'own the program',
+                      chip: fr ? `${pctOfCohort(roleCount('sponsor'))}% de la cohorte` : `${pctOfCohort(roleCount('sponsor'))}% of cohort`,
+                      tone: 'neutral',
+                    },
+                    {
                       icon: HelpCircle,
                       label: fr ? 'À convaincre' : 'Needs convincing',
                       value: profileCount('convince'),
@@ -793,27 +855,9 @@ const Dashboard = () => {
                   ]}
                 />
 
-                {/* Level 3 — detail cards */}
                 <div className="grid gap-5 lg:grid-cols-12">
                   <SectionCard
-                    className="lg:col-span-7"
-                    title={t('dashboard.thematicPerformance')}
-                    description={fr ? `Score de ${campaignAccess.companyName} vs benchmark global` : `${campaignAccess.companyName} score vs global benchmark`}
-                    actions={
-                      <div className="flex items-center gap-3 text-[11px] text-outline">
-                        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[2px] bg-brand" />{fr ? 'Cohorte' : 'Cohort'}</span>
-                        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[2px] bg-lav-200" />Benchmark</span>
-                      </div>
-                    }
-                  >
-                    <DimensionBars
-                      rows={readinessAverages.map(ta => ({ name: ta.thematic, score: ta.score, benchmark: hasBenchmark ? ta.benchmark : undefined }))}
-                      vsLabel="vs"
-                    />
-                  </SectionCard>
-
-                  <SectionCard
-                    className="flex flex-col lg:col-span-5"
+                    className="flex flex-col lg:col-span-7"
                     title={fr ? 'Profils les plus avancés' : 'Top readiness profiles'}
                     description={fr ? 'Les relais internes à mobiliser' : 'Key internal leaders to mobilize'}
                     actions={<CardLink onClick={() => setActiveTab('participants')}>{fr ? `Voir les ${completedParticipants.length}` : `View all ${completedParticipants.length}`}</CardLink>}
@@ -837,33 +881,13 @@ const Dashboard = () => {
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   </SectionCard>
-                </div>
-
-                <div className="grid gap-5 lg:grid-cols-12">
                   <SectionCard
                     className="lg:col-span-5"
-                    title={fr ? "Signaux d'opportunité" : 'Opportunity signals'}
-                    description={fr ? "Hors indice : un potentiel d'automatisation élevé est une bonne nouvelle" : 'Not in the index: a high automation opportunity is good news'}
+                    title={fr ? 'Répartition des profils' : 'Cohort distribution'}
+                    description={fr ? `Profil principal de chacun des ${completedParticipants.length} répondants` : `Main profile of each of the ${completedParticipants.length} respondents`}
+                    actions={<span className="mono text-[12px] text-outline">N={completedParticipants.length}</span>}
                   >
-                    <DimensionBars
-                      animationKey="opportunity-bars"
-                      rows={opportunityAverages.map(ta => ({ name: ta.thematic, score: ta.score, benchmark: hasBenchmark ? ta.benchmark : undefined }))}
-                      vsLabel="vs"
-                    />
-                    <ul className="mt-4 space-y-2 border-t border-border pt-3">
-                      {opportunityAverages.map(ta => (
-                        <li key={ta.originalThematic} className="text-[12px] leading-relaxed text-muted-foreground">
-                          <span className="font-medium text-foreground">{ta.thematic} :</span> {dimensionAction(ta.originalThematic)}
-                        </li>
-                      ))}
-                    </ul>
-                  </SectionCard>
-                  <SectionCard
-                    className="lg:col-span-7"
-                    title={fr ? 'Maturité par équipe' : 'Readiness by team'}
-                    description={fr ? "Indice moyen par équipe déclarée (nombre de répondants)" : 'Average index per declared team (respondents)'}
-                  >
-                    <DimensionBars animationKey="team-bars" rows={teamRows} vsLabel="vs" />
+                    <ProfileDistribution data={profileDistribution} totalParticipants={completedParticipants.length} />
                   </SectionCard>
                 </div>
 
@@ -889,16 +913,13 @@ const Dashboard = () => {
                   />
                 )}
 
+                <OverviewBlockHeader
+                  n={3}
+                  title={fr ? 'Plan de déploiement' : 'Rollout plan'}
+                  question={fr ? 'Que fait-on, et avec qui ?' : 'What do we do, and with whom?'}
+                  meta={fr ? 'Déduit des blocs 1 et 2' : 'Derived from blocks 1 and 2'}
+                />
                 <div className="grid gap-5 lg:grid-cols-12">
-                  <SectionCard
-                    className="lg:col-span-5"
-                    title={fr ? 'Répartition des profils' : 'Cohort distribution'}
-                    description={fr ? `Profils des ${completedParticipants.length} répondants` : `Profiles of ${completedParticipants.length} respondents`}
-                    actions={<span className="mono text-[12px] text-outline">N={completedParticipants.length}</span>}
-                  >
-                    <ProfileDistribution data={profileDistribution} totalParticipants={completedParticipants.length} />
-                  </SectionCard>
-
                   <SectionCard
                     className="flex flex-col lg:col-span-7"
                     title={fr ? 'Prochaines étapes recommandées' : 'Recommended next steps'}
@@ -913,16 +934,47 @@ const Dashboard = () => {
                       </Button>
                     </div>
                   </SectionCard>
+                  <SectionCard
+                    className="lg:col-span-5"
+                    title={fr ? 'Qui fait quoi' : 'Who does what'}
+                    description={fr ? 'Le rôle de chaque groupe dans le déploiement' : 'The role of each group in the rollout'}
+                  >
+                    <ul className="space-y-3">
+                      {(['trainer', 'builder', 'champion', 'sponsor'] as RoleId[]).filter((r) => roleCount(r) > 0).map((r) => {
+                        const cls = getResultClass(r);
+                        return (
+                          <li key={r} className="flex gap-3">
+                            <span className={cn(PROFILE_BADGE[r], 'shrink-0 self-start tabular-nums')}>{roleCount(r)}</span>
+                            <div className="min-w-0">
+                              <p className="text-[13px] font-semibold text-foreground">{fr ? cls.name.fr : cls.name.en}</p>
+                              <p className="text-[12px] leading-relaxed text-muted-foreground">{(fr ? cls.action.fr : cls.action.en).split('. ')[0].replace(/\.$/, '')}.</p>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </SectionCard>
                 </div>
-
-                <ThematicCards
-                  data={readinessAverages.map(ta => ({
-                    id: ta.originalThematic,
-                    name: ta.thematic,
-                    score: ta.score,
-                    benchmark: hasBenchmark ? ta.benchmark : undefined,
-                  }))}
-                />
+                <div className="grid gap-5 lg:grid-cols-12">
+                  <SectionCard
+                    className="lg:col-span-12"
+                    title={fr ? "Signaux d'opportunité" : 'Opportunity signals'}
+                    description={fr ? "Hors indice : un potentiel d'automatisation élevé est une bonne nouvelle" : 'Not in the index: a high automation opportunity is good news'}
+                  >
+                    <DimensionBars
+                      animationKey="opportunity-bars"
+                      rows={opportunityAverages.map(ta => ({ name: ta.thematic, score: ta.score, benchmark: hasBenchmark ? ta.benchmark : undefined }))}
+                      vsLabel="vs"
+                    />
+                    <ul className="mt-4 space-y-2 border-t border-border pt-3">
+                      {opportunityAverages.map(ta => (
+                        <li key={ta.originalThematic} className="text-[12px] leading-relaxed text-muted-foreground">
+                          <span className="font-medium text-foreground">{ta.thematic} :</span> {dimensionAction(ta.originalThematic)}
+                        </li>
+                      ))}
+                    </ul>
+                  </SectionCard>
+                </div>
               </div>
             )}
           </>
