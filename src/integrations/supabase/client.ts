@@ -2,8 +2,11 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Fallbacks keep the landing page and demo mode alive when the env vars are missing
+// (e.g. a deploy without them); real data calls then fail instead of crashing the app.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://missing-env.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'missing-env';
+if (!import.meta.env.VITE_SUPABASE_URL) console.error('VITE_SUPABASE_URL is not set: only demo mode will work.');
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
