@@ -148,7 +148,7 @@ export const getDemoData = () => {
     creator_last_name: 'Demo',
     created_at: c.createdAt,
     assessment_type: 'generic',
-    language: 'fr',
+    language: 'en',
   }));
 
   const participants: Row[] = [];

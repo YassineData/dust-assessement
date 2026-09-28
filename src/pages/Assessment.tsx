@@ -57,14 +57,14 @@ const Assessment = () => {
     isPreview
       ? {
           id: 'preview',
-          firstName: 'Exemple',
+          firstName: 'Preview',
           lastName: '',
-          email: 'exemple@dust.tt',
-          campaignCode: 'EXEMPLE',
+          email: 'preview@dust.tt',
+          campaignCode: 'PREVIEW',
           campaignId: 'preview',
-          companyName: 'Exemple',
+          companyName: 'Preview',
           assessmentType: 'generic',
-          campaignLanguage: 'fr',
+          campaignLanguage: 'en',
         }
       : null
   );
@@ -362,7 +362,7 @@ const Assessment = () => {
       }
 
       // Apply campaign default language for the participant journey
-      const campaignLang: 'fr' | 'en' = (campaign as any).language === 'en' ? 'en' : 'fr';
+      const campaignLang: 'fr' | 'en' = (campaign as any).language === 'fr' ? 'fr' : 'en';
       setLanguage(campaignLang);
 
       // Check if participant already exists

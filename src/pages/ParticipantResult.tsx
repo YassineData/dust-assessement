@@ -64,7 +64,7 @@ const ParticipantResult = () => {
           return;
         }
 
-        let campaignLang: 'fr' | 'en' = 'fr';
+        let campaignLang: 'fr' | 'en' = 'en';
         let assessmentType: AssessmentType = 'sales';
         let campaignName: string | null = null;
         if (p.campaign_id) {
@@ -73,7 +73,7 @@ const ParticipantResult = () => {
             .select('language, assessment_type, campaign_name')
             .eq('id', p.campaign_id)
             .maybeSingle();
-          campaignLang = (c?.language === 'en' ? 'en' : 'fr');
+          campaignLang = (c?.language === 'fr' ? 'fr' : 'en');
           assessmentType = (c?.assessment_type as AssessmentType) || 'sales';
           campaignName = c?.campaign_name ?? null;
         }

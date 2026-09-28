@@ -10,7 +10,8 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const LANGUAGE_KEY = 'preferred_language';
+// v2: English became the default; older stored 'fr' preferences are ignored.
+const LANGUAGE_KEY = 'preferred_language_v2';
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<Language>(() => {

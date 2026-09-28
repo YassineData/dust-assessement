@@ -242,8 +242,6 @@ const Dashboard = () => {
       const tType = ((data as any)?.assessment_type as AssessmentType) || 'sales';
       setAssessmentType(tType);
       setActiveAssessmentType(tType);
-      const lang = (data as any)?.language as 'fr' | 'en' | undefined;
-      if (lang && lang !== language) setLanguage(lang);
     })();
     return () => { cancelled = true; };
   }, [campaignAccess?.campaignId]);

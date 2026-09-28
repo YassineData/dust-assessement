@@ -75,7 +75,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
   const [createDialogOpen, setCreateDialogOpen] = useState(!!openCreate);
   const [newMember, setNewMember] = useState<{ firstName: string; lastName: string; email: string; role: MemberRole }>({ firstName: '', lastName: '', email: '', role: 'manager' });
   const [addingMember, setAddingMember] = useState(false);
-  const [campaignLanguage, setCampaignLanguage] = useState<'fr' | 'en'>('fr');
+  const [campaignLanguage, setCampaignLanguage] = useState<'fr' | 'en'>('en');
   const [savingLanguage, setSavingLanguage] = useState(false);
 
   const [importing, setImporting] = useState(false);
@@ -96,7 +96,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
         .select('language')
         .eq('id', campaignId)
         .maybeSingle();
-      const lang = ((data as any)?.language as 'fr' | 'en') || 'fr';
+      const lang = ((data as any)?.language as 'fr' | 'en') || 'en';
       setCampaignLanguage(lang);
     })();
   }, [campaignId]);
