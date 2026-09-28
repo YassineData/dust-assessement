@@ -111,13 +111,20 @@ export const ParticipantDrawer = ({ participant: p, thematics, translateThematic
             {p.fits && (
               <div>
                 <p className="eyebrow mb-2">{fr ? 'Adéquation aux rôles' : 'Role fit'}</p>
-                <div className="grid grid-cols-3 gap-2">
+                <p className="mb-2 text-[12px] text-muted-foreground">
+                  {fr ? 'Rôles indépendants, qui peuvent se cumuler. ' : 'Independent roles that can overlap. '}
+                  {p.roles.length
+                    ? (fr ? 'Correspond à : ' : 'Fits: ') + p.roles.map((r) => ({ trainer: fr ? 'formateur' : 'trainer', builder: 'builder', champion: 'champion', sponsor: 'sponsor' })[r]).join(', ')
+                    : (fr ? 'Aucun rôle marqué pour l’instant.' : 'No strong role signal yet.')}
+                </p>
+                <div className="grid grid-cols-4 gap-2">
                   {([
                     ['trainer', fr ? 'Formateur' : 'Trainer'],
+                    ['builder', 'Builder'],
                     ['champion', 'Champion'],
                     ['sponsor', 'Sponsor'],
                   ] as const).map(([k, label]) => (
-                    <div key={k} className="rounded-md bg-lav-50 px-2.5 py-2 text-center ring-1 ring-lav-200">
+                    <div key={k} className={cn('rounded-md px-2.5 py-2 text-center ring-1', p.roles.includes(k) ? 'bg-brand-soft ring-brand' : 'bg-lav-50 ring-lav-200')}>
                       <p className="text-[11px] text-muted-foreground">{label}</p>
                       <p className="text-[17px] font-semibold tabular-nums text-foreground">{p.fits![k]}</p>
                     </div>

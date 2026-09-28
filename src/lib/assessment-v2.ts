@@ -238,9 +238,25 @@ export interface V2Scores {
   version: 2;
   dimensions: Record<DimensionId, number>;
   readiness: number;
-  fits: { trainer: number; champion: number; sponsor: number };
+  fits: RoleFits;
+  /** Every role the person fits. Roles are independent and can overlap (a builder can also be a champion). */
+  roles: RoleId[];
+  /** Primary class, used for distributions and the rollout plan. */
   classId: ResultClassId;
 }
+
+export type RoleId = 'trainer' | 'builder' | 'champion' | 'sponsor';
+export type RoleFits = Record<RoleId, number>;
+
+/** Role rules. Builder = hands-on depth; champion = drives adoption. Neither requires the other. */
+export const roleMatches = (d: Record<DimensionId, number>, fits: RoleFits): RoleId[] => {
+  const roles: RoleId[] = [];
+  if (fits.trainer >= 65 && d.teach >= 60 && d.will >= 60) roles.push('trainer');
+  if (fits.champion >= 65 && d.reach >= 55) roles.push('champion');
+  if (fits.builder >= 65 && d.depth >= 60) roles.push('builder');
+  if (fits.sponsor >= 65 && d.gov >= 60) roles.push('sponsor');
+  return roles;
+};
 
 const round = (n: number) => Math.round(n);
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
@@ -265,27 +281,28 @@ export const computeDimensions = (answers: Record<string, AnswerValue | undefine
 export const computeScores = (answers: Record<string, AnswerValue | undefined>): V2Scores => {
   const d = computeDimensions(answers);
   const readiness = round(mean(READINESS_DIMENSION_IDS.map((id) => d[id])));
-  const fits = {
+  const fits: RoleFits = {
     trainer: round(0.4 * d.teach + 0.3 * d.will + 0.3 * d.depth),
-    champion: round(0.35 * d.reach + 0.3 * d.depth + 0.2 * d.will + 0.15 * d.usage),
+    builder: round(0.5 * d.depth + 0.25 * d.usage + 0.25 * d.will),
+    champion: round(0.45 * d.reach + 0.3 * d.team + 0.25 * d.will),
     sponsor: round(0.4 * d.gov + 0.3 * d.reach + 0.3 * d.team),
   };
-  return { version: 2, dimensions: d, readiness, fits, classId: assignClass(d, fits) };
+  return { version: 2, dimensions: d, readiness, fits, roles: roleMatches(d, fits), classId: assignClass(d, fits) };
 };
+
+/** Scores from the stored answers when available, so every participant is read with the current model. */
+export const rescore = (storedScores: V2Scores, responses: V2Responses | null): V2Scores =>
+  responses && Object.keys(responses.answers || {}).length ? computeScores(responses.answers) : { ...storedScores, roles: storedScores.roles ?? [] };
 
 /* ------------------------------------------------------------------ */
 /* Result classes (first matching rule wins)                            */
 /* ------------------------------------------------------------------ */
 
-export type ResultClassId = 'trainer' | 'champion' | 'sponsor' | 'beginner' | 'convince' | 'everyday';
+export type ResultClassId = 'trainer' | 'champion' | 'builder' | 'sponsor' | 'beginner' | 'convince' | 'everyday';
 
-export const assignClass = (
-  d: Record<DimensionId, number>,
-  fits: { trainer: number; champion: number; sponsor: number }
-): ResultClassId => {
-  if (fits.trainer >= 65 && d.teach >= 60 && d.will >= 60) return 'trainer';
-  if (fits.champion >= 65 && d.reach >= 55) return 'champion';
-  if (fits.sponsor >= 65 && d.gov >= 60) return 'sponsor';
+export const assignClass = (d: Record<DimensionId, number>, fits: RoleFits): ResultClassId => {
+  const roles = roleMatches(d, fits);
+  if (roles.length) return roles[0];
   if (d.will >= 65 && d.depth < 50) return 'beginner';
   if (d.will < 40 && d.usage < 40) return 'convince';
   return 'everyday';
@@ -297,7 +314,7 @@ export interface ResultClassInfo {
   rule: L;
   meaning: L;
   action: L;
-  tone: 'brand' | 'green' | 'pink' | 'amber' | 'red' | 'neutral';
+  tone: 'brand' | 'green' | 'lav' | 'pink' | 'amber' | 'red' | 'neutral';
 }
 
 export const RESULT_CLASSES: ResultClassInfo[] = [
@@ -311,11 +328,19 @@ export const RESULT_CLASSES: ResultClassInfo[] = [
   },
   {
     id: 'champion',
-    name: { en: 'Champion builder potential', fr: 'Potentiel champion builder' },
+    name: { en: 'Champion potential', fr: 'Potentiel champion' },
     rule: { en: 'Champion fit ≥ 65 and blast radius ≥ 55', fr: 'Fit champion ≥ 65 et rayonnement ≥ 55' },
-    meaning: { en: 'Builds things other people end up using. Blast radius, not necessarily teaching.', fr: "Construit des choses que d'autres finissent par utiliser. Du rayonnement, pas forcément de la formation." },
-    action: { en: 'Use-case workshops on demand. What they build becomes the template other teams reuse.', fr: 'Ateliers cas d’usage à la demande. Ce qu’ils construisent devient le modèle que les autres équipes réutilisent.' },
+    meaning: { en: 'Drives adoption: colleagues come to them and their team follows. May never build an agent themselves.', fr: "Porte l'adoption : les collègues viennent vers eux et leur équipe suit. Ne construira peut-être jamais d'agent." },
+    action: { en: 'Early access, a peer-story kit and a visible role in team rituals. Pair them with a builder for use cases.', fr: 'Accès anticipé, kit de retours d’expérience et rôle visible dans les rituels d’équipe. Les associer à un builder pour les cas d’usage.' },
     tone: 'green',
+  },
+  {
+    id: 'builder',
+    name: { en: 'Builder potential', fr: 'Potentiel builder' },
+    rule: { en: 'Builder fit ≥ 65 and builder depth ≥ 60', fr: 'Fit builder ≥ 65 et capacité à construire ≥ 60' },
+    meaning: { en: 'Can configure agents, connect data and iterate. Not necessarily the one who drives adoption.', fr: "Sait configurer des agents, connecter des données et itérer. Pas forcément celui qui porte l'adoption." },
+    action: { en: 'Builder session on day one and first use cases to build. Pair with a champion so what they build gets used.', fr: 'Session builder dès le premier jour et premiers cas d’usage à construire. Les associer à un champion pour que ce qu’ils construisent soit utilisé.' },
+    tone: 'lav',
   },
   {
     id: 'sponsor',
@@ -352,7 +377,7 @@ export const RESULT_CLASSES: ResultClassInfo[] = [
 ];
 
 export const CLASS_ORDER: ResultClassId[] = RESULT_CLASSES.map((c) => c.id);
-export const getResultClass = (id: string) => RESULT_CLASSES.find((c) => c.id === id) ?? RESULT_CLASSES[5];
+export const getResultClass = (id: string) => RESULT_CLASSES.find((c) => c.id === id) ?? RESULT_CLASSES[RESULT_CLASSES.length - 1];
 export const classLabel = (id: string, lang: Lang) => pick(getResultClass(id).name, lang);
 
 /** `Profile`-shaped object (legacy consumers: tables, exports). French fields; EN via getLocalizedProfile. */

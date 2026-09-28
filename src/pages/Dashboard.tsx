@@ -32,7 +32,7 @@ import { ThematicCards } from '@/components/ThematicCards';
 import { SettingsTab } from '@/components/SettingsTab';
 import { CompareSelector, CompareOption } from '@/components/CompareSelector';
 import { CampaignSelector, Campaign } from '@/components/CampaignSelector';
-import { Loader2, Info, Users, Send, Download, Share2, UserPlus, UserCheck, BadgeCheck, GraduationCap, HelpCircle, ArrowRight, ChevronRight, CheckCircle2, Gauge } from 'lucide-react';
+import { Loader2, Info, Users, Send, Download, Share2, UserPlus, UserCheck, BadgeCheck, GraduationCap, HelpCircle, ArrowRight, ChevronRight, CheckCircle2, Gauge, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCampaignParticipants } from '@/hooks/useCampaignParticipants';
 import { useClientCampaigns } from '@/hooks/useClientCampaigns';
@@ -576,6 +576,8 @@ const Dashboard = () => {
   const pctOfCohort = (n: number) => completedParticipants.length > 0 ? Math.round((n / completedParticipants.length) * 100) : 0;
   const profileById = (id: string) => classAsProfile(id);
   const roleMismatchCount = completedParticipants.filter(p => p.roleMismatch).length;
+  // Roles are independent: one person can count as both builder and champion.
+  const roleCount = (role: 'builder' | 'champion') => completedParticipants.filter(p => p.roles.includes(role)).length;
   const teamRows = (() => {
     const byTeam = new Map<string, number[]>();
     completedParticipants.forEach(p => {
@@ -765,11 +767,19 @@ const Dashboard = () => {
                       tone: 'brand',
                     },
                     {
+                      icon: Wrench,
+                      label: 'Builders',
+                      value: roleCount('builder'),
+                      suffix: fr ? 'construisent des agents' : 'can build agents',
+                      chip: fr ? `${pctOfCohort(roleCount('builder'))}% de la cohorte` : `${pctOfCohort(roleCount('builder'))}% of cohort`,
+                      tone: 'brand',
+                    },
+                    {
                       icon: BadgeCheck,
-                      label: fr ? 'Champions' : 'Champions',
-                      value: profileCount('champion'),
-                      suffix: fr ? 'builders qui rayonnent' : 'active builders',
-                      chip: fr ? `${pctOfCohort(profileCount('champion'))}% de la cohorte` : `${pctOfCohort(profileCount('champion'))}% of cohort`,
+                      label: 'Champions',
+                      value: roleCount('champion'),
+                      suffix: fr ? 'portent l’adoption' : 'drive adoption',
+                      chip: fr ? `${pctOfCohort(roleCount('champion'))}% de la cohorte` : `${pctOfCohort(roleCount('champion'))}% of cohort`,
                       tone: 'green',
                     },
                     {

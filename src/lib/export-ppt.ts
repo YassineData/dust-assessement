@@ -43,6 +43,7 @@ const FB = 'Inter'; // Body
 const PROFILE_COLORS: Record<string, string> = {
   trainer: C.primary,
   champion: C.ambassador,
+  builder: '66C2F5',
   sponsor: C.performer,
   beginner: C.novice,
   convince: C.traditional,

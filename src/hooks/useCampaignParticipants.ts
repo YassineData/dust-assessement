@@ -5,6 +5,9 @@ import {
   classAsProfile,
   isV2ItemScores,
   isV2Responses,
+  rescore,
+  type RoleFits,
+  type RoleId,
   trainerRoleMismatch,
   V2_QUESTIONS,
   V2_NUMERIC_ID,
@@ -31,7 +34,9 @@ export interface CampaignParticipant {
   campaignCode: string | null;
   companyName: string | null;
   /** v2: readiness fits and declared context. */
-  fits: { trainer: number; champion: number; sponsor: number } | null;
+  fits: RoleFits | null;
+  /** Independent, possibly overlapping roles (trainer, builder, champion, sponsor). */
+  roles: RoleId[];
   classId: ResultClassId | null;
   /** Scored trainer who did not declare a training role: needs human confirmation. */
   roleMismatch: boolean;
@@ -135,8 +140,9 @@ export const useCampaignParticipants = (campaignId: string | null, refreshKey: n
         const transformedParticipants: CampaignParticipant[] = filteredData
           .filter((p: any) => !isLegacyCompleted(p))
           .map((p: any) => {
-            const scores = isV2ItemScores(p.item_scores) ? p.item_scores : null;
             const stored = isV2Responses(p.responses) ? p.responses : null;
+            // Re-scored from the answers so every participant is read with the current model.
+            const scores = isV2ItemScores(p.item_scores) ? rescore(p.item_scores, stored) : null;
             const classId = scores?.classId ?? null;
             const profile: Profile = classAsProfile(classId ?? 'everyday');
 
@@ -167,6 +173,7 @@ export const useCampaignParticipants = (campaignId: string | null, refreshKey: n
               campaignCode: campaignInfo?.code ?? null,
               companyName: campaignInfo?.company_name ?? null,
               fits: scores?.fits ?? null,
+              roles: scores?.roles ?? [],
               classId,
               roleMismatch: classId ? trainerRoleMismatch(classId, context) : false,
               context,

@@ -2,7 +2,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { PROFILE_COLORS } from '@/lib/profile-style';
 import { RESULT_CLASSES } from '@/lib/assessment-v2';
 
-/** Legend of the six result classes: rule, meaning and what to do (spec v2, "Result classes"). */
+/** Legend of the seven result classes: rule, meaning and what to do (spec v2, "Result classes"). */
 export const ProfileCardsLegend = () => {
   const { language } = useLanguage();
   const fr = language !== 'en';

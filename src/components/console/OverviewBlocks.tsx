@@ -174,7 +174,7 @@ export interface KpiItem {
 }
 
 export const KpiCards = ({ items }: { items: KpiItem[] }) => (
-  <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+  <section className={cn('grid grid-cols-2 gap-3', items.length >= 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4')}>
     {items.map((kpi) => {
       const Icon = kpi.icon;
       const tone = kpi.tone ?? 'neutral';

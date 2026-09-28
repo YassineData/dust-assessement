@@ -12,6 +12,8 @@ import {
   dimensionLabel,
   isV2ItemScores,
   isV2Responses,
+  rescore,
+  type RoleFits,
   trainerRoleMismatch,
 } from '@/lib/assessment-v2';
 import { getLocalizedProfile } from '@/lib/profile-translations';
@@ -35,7 +37,7 @@ interface LoadedParticipant {
   thematicScores: Record<string, number>;
   language: 'fr' | 'en';
   assessmentType: AssessmentType;
-  fits: { trainer: number; champion: number; sponsor: number };
+  fits: RoleFits;
   roleMismatch: boolean;
 }
 
@@ -78,7 +80,8 @@ const ParticipantResult = () => {
           campaignName = c?.campaign_name ?? null;
         }
         // v2 scores (readiness index, dimensions, class). Answers to the previous questionnaire have none.
-        const v2 = isV2ItemScores(p.item_scores) ? p.item_scores : null;
+        const storedResponses = isV2Responses(p.responses) ? p.responses : null;
+        const v2 = isV2ItemScores(p.item_scores) ? rescore(p.item_scores, storedResponses) : null;
         if (!v2) {
           setError(campaignLang === 'en'
             ? 'This result comes from the previous questionnaire and cannot be shown with the new model.'
@@ -314,9 +317,10 @@ const ParticipantResult = () => {
             </div>
             <div className="border-l-2 border-line pl-3">
               <h3 className="card-title mb-1">{t.nextLevel}</h3>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {([
                   ['trainer', data.language === 'fr' ? 'Formateur' : 'Trainer'],
+                  ['builder', 'Builder'],
                   ['champion', 'Champion'],
                   ['sponsor', 'Sponsor'],
                 ] as const).map(([k, label]) => (
