@@ -265,7 +265,7 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
           </div>
           <Button type="button" variant="outline" onClick={enterDemo}>
             <PlayCircle className="h-4 w-4" />
-            {language === 'fr' ? 'Voir la démo' : 'View the demo'}
+            {language === 'fr' ? 'Tester la plateforme (données fictives)' : 'Try the platform (sample data)'}
           </Button>
         </div>
       </DialogContent>

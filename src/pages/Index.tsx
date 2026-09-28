@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, ClipboardList, Link2, PlayCircle, X, Zap } from 'lucide-react';
+import { ArrowRight, Check, ClipboardList, Link2, MousePointerClick, X, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -186,8 +186,8 @@ const Index = () => {
               <Link to="/dashboard">{L('Sign in', 'Se connecter')}</Link>
             </Button>
             <Button size="sm" onClick={enterDemo}>
-              <PlayCircle className="h-4 w-4" />
-              {L('Demo', 'Démo')}
+              <MousePointerClick className="h-4 w-4" />
+              {L('Try it', 'Essayer')}
             </Button>
           </div>
         </div>
@@ -215,27 +215,30 @@ const Index = () => {
           </h1>
           <p className="lp-pop mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-slate" style={{ animationDelay: '0.2s' }}>
             {L(
-              'A 10-minute assessment sent before kickoff: team maturity, champions, priority use cases, and a baseline to measure progress.',
-              'Un questionnaire de 10 minutes envoyé avant le kickoff : maturité des équipes, champions, cas d’usage prioritaires et une baseline pour mesurer la progression.'
+              'An 8-minute survey sent before kickoff: team maturity, champions, priority use cases, and a baseline to measure progress.',
+              'Un questionnaire de 8 minutes envoyé avant le kickoff : maturité des équipes, champions, cas d’usage prioritaires et une baseline pour mesurer la progression.'
             )}
           </p>
           <div className="lp-pop mt-7 flex flex-col justify-center gap-2 sm:flex-row" style={{ animationDelay: '0.3s' }}>
             <Button size="lg" className="h-11 px-6 text-[14px]" onClick={enterDemo}>
-              <PlayCircle className="h-4 w-4" />
-              {L('Explore the demo', 'Explorer la démo')}
+              <MousePointerClick className="h-4 w-4" />
+              {L('Try the platform', 'Tester la plateforme')}
             </Button>
             <Button size="lg" variant="outline" className="h-11 bg-card/80 px-6 text-[14px]" asChild>
               <Link to="/exemple">
                 <ClipboardList className="h-4 w-4" />
-                {L('Take the 10-min quiz', 'Faire le quiz (10 min)')}
+                {L('Take the 8-min survey', 'Répondre au questionnaire (8 min)')}
               </Link>
             </Button>
           </div>
+          <p className="lp-pop mt-3 text-[13px] text-muted-foreground" style={{ animationDelay: '0.35s' }}>
+            {L('Opens the live console with sample data from fictional companies. Nothing to install, no sign-in.', 'Ouvre la vraie console avec des données fictives. Rien à installer, sans connexion.')}
+          </p>
 
           <div id="film" className="lp-pop mt-12 scroll-mt-20 text-left" style={{ animationDelay: '0.45s' }}>
             <FilmPlayer title={L('AI Maturity Assessment: pitch and demo', 'AI Maturity Assessment : pitch et démo')} />
             <p className="mt-3 text-center text-[13px] text-muted-foreground">
-              {L('2 min 30 · pitch, product demo and ROI · voice-over, subtitles available', '2 min 30 · pitch, démo produit et ROI · voix off, sous-titres disponibles')}
+              {L('Watch the 2 min 30 video: pitch, product walkthrough and ROI · voice-over, subtitles available', 'Vidéo de 2 min 30 : pitch, présentation du produit et ROI · voix off, sous-titres disponibles')}
             </p>
           </div>
         </div>
@@ -342,7 +345,7 @@ const Index = () => {
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="h-11 px-6 text-[14px]" onClick={enterDemo}>
-              {L('Open the demo', 'Ouvrir la démo')}
+              {L('Try the platform', 'Tester la plateforme')}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
