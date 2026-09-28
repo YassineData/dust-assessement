@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Loader2, Users, Clock, CheckCircle2, CircleDashed, Copy, Check, Mail, Trash2, Plus, Info, Upload, Search, Link2, ExternalLink, KeyRound, Timer, Save, MessageSquare, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AUDIENCES, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
 import { SectionCard } from '@/components/console/SectionCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -64,6 +65,7 @@ interface SettingsTabProps {
 
 export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, campaignParticipants, averageScore, thematicAverages, view, allCampaigns = [], creatorEmail, onSelectCampaign, onNavigate, openCreate }: SettingsTabProps) => {
   const { language } = useLanguage();
+  const [shareAudience, setShareAudience] = useState<SurveyAudience>('general');
   const { toast } = useToast();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [members, setMembers] = useState<{ id: string; email: string; role: MemberRole }[]>([]);
@@ -345,7 +347,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
   const getEmailTemplate = () => {
     // Email language follows the current UI language so admins see the invite in the language they're viewing.
     const emailLang = language;
-    const link = `${window.location.origin}/assessment?lang=${emailLang}&code=${campaignCode || 'XXXXXXXX'}`;
+    const link = `${window.location.origin}/assessment?lang=${emailLang}&code=${campaignCode || 'XXXXXXXX'}${AUDIENCE_PARAM[shareAudience] ? `&for=${AUDIENCE_PARAM[shareAudience]}` : ''}`;
     if (emailLang === 'fr') {
       return `Bonjour,\n\nJe vous invite à participer à notre évaluation de maturité IA.\n\n🔗 Cliquez sur ce lien pour démarrer directement en français : ${link}\n📝 (Au besoin, code à saisir : ${campaignCode || 'XXXXXXXX'})\n\nCe test prend environ 10 minutes et nous permettra d'évaluer ensemble votre niveau de maîtrise des outils d'intelligence artificielle.\n\nMerci de votre participation !`;
     }
@@ -405,7 +407,8 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
   // ===== Shared building blocks =====
   const fr = language === 'fr';
   const companyShort = (companyName ?? '').split(' — ')[0];
-  const shareLink = `${window.location.origin}/assessment?lang=${language}&code=${campaignCode || 'XXXXXXXX'}`;
+  const audienceSuffix = AUDIENCE_PARAM[shareAudience] ? `&for=${AUDIENCE_PARAM[shareAudience]}` : '';
+  const shareLink = `${window.location.origin}/assessment?lang=${language}&code=${campaignCode || 'XXXXXXXX'}${audienceSuffix}`;
   const pendingParticipants = nonAdminParticipants.filter((p) => p.status !== 'completed');
   const pendingCount = pendingParticipants.length;
   const completionRate = nonAdminParticipants.length > 0 ? Math.round((completedCount / nonAdminParticipants.length) * 100) : 0;
@@ -485,6 +488,26 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
         title={fr ? 'Lien du questionnaire' : 'Assessment link'}
         description={fr ? 'Le lien à envoyer aux répondants. Le code de campagne est déjà inclus.' : 'The link to send to respondents. The campaign code is already included.'}
       >
+        <div role="radiogroup" aria-label={fr ? 'Équipe visée' : 'Target team'} className="mb-3 flex flex-wrap items-center gap-2">
+          {(['general', 'sales', 'success'] as SurveyAudience[]).map((a) => (
+            <button
+              key={a}
+              type="button"
+              role="radio"
+              aria-checked={shareAudience === a}
+              onClick={() => setShareAudience(a)}
+              className={cn(
+                'rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors duration-150',
+                shareAudience === a ? 'bg-ink text-white ring-ink' : 'bg-card text-foreground ring-border hover:bg-paper'
+              )}
+            >
+              {fr ? AUDIENCES[a].label.fr : AUDIENCES[a].label.en}
+            </button>
+          ))}
+          <span className="text-[12px] text-muted-foreground">
+            {fr ? 'Un lien par équipe, avec son propre en-tête. Toutes les réponses arrivent ici.' : 'One link per team, each with its own header. All answers land here.'}
+          </span>
+        </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input readOnly value={shareLink} onFocus={(e) => e.currentTarget.select()} className="font-mono text-[12px]" aria-label={fr ? 'Lien du questionnaire' : 'Assessment link'} />
           <div className="flex gap-2">

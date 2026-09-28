@@ -26,6 +26,8 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/assessment" element={<Assessment />} />
             <Route path="/exemple" element={<Navigate to="/assessment?preview=1" replace />} />
+            <Route path="/exemple/sales" element={<Navigate to="/assessment?preview=1&for=sales" replace />} />
+            <Route path="/exemple/cs" element={<Navigate to="/assessment?preview=1&for=cs" replace />} />
             <Route path="/create-campaign" element={<CreateCampaign />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/participant-result/:id" element={<ParticipantResult />} />

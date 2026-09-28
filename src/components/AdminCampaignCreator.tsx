@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, Copy, ExternalLink, Link2, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AUDIENCES, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,14 +33,19 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<{ code: string; company: string } | null>(null);
   const [copied, setCopied] = useState<'link' | 'message' | null>(null);
+  // One link per audience: all teams, Sales or Customer Success (own survey header, team pre-selected).
+  const [audience, setAudience] = useState<SurveyAudience>('general');
 
   const askEmail = !defaultCreatorEmail;
-  const link = created ? `${window.location.origin}/assessment?lang=${campaignLanguage}&code=${created.code}` : '';
+  const audienceParam = AUDIENCE_PARAM[audience];
+  const link = created ? `${window.location.origin}/assessment?lang=${campaignLanguage}&code=${created.code}${audienceParam ? `&for=${audienceParam}` : ''}` : '';
+  const teamFr = audience === 'general' ? '' : ` (${AUDIENCES[audience].label.fr})`;
+  const teamEn = audience === 'general' ? '' : ` (${AUDIENCES[audience].label.en})`;
 
   const message = created
     ? campaignLanguage === 'fr'
-      ? `Bonjour,\n\nDans le cadre du déploiement de Dust chez ${created.company}, nous vous invitons à répondre à un court questionnaire (environ 10 minutes) sur vos usages de l'IA.\n\nVos réponses nous aideront à adapter l'accompagnement à votre équipe.\n\nLien : ${link}\nCode (si demandé) : ${created.code}\n\nMerci !`
-      : `Hello,\n\nAs part of the Dust rollout at ${created.company}, we invite you to answer a short questionnaire (about 10 minutes) on how you use AI today.\n\nYour answers will help us tailor the rollout to your team.\n\nLink: ${link}\nCode (if asked): ${created.code}\n\nThank you!`
+      ? `Bonjour,\n\nDans le cadre du déploiement de Dust chez ${created.company}${teamFr}, nous vous invitons à répondre à un court questionnaire (environ 10 minutes) sur vos usages de l'IA.\n\nVos réponses nous aideront à adapter l'accompagnement à votre équipe.\n\nLien : ${link}\nCode (si demandé) : ${created.code}\n\nMerci !`
+      : `Hello,\n\nAs part of the Dust rollout at ${created.company}${teamEn}, we invite you to answer a short questionnaire (about 10 minutes) on how you use AI today.\n\nYour answers will help us tailor the rollout to your team.\n\nLink: ${link}\nCode (if asked): ${created.code}\n\nThank you!`
     : '';
 
   const copy = async (what: 'link' | 'message') => {
@@ -100,6 +106,32 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
         <div className="flex items-center gap-2 text-ok-ink">
           <Check className="h-4 w-4" />
           <p className="text-[13px] font-medium">{fr ? `Lien créé pour ${created.company}` : `Link created for ${created.company}`}</p>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>{fr ? 'Pour quelle équipe ?' : 'Which team is it for?'}</Label>
+          <div role="radiogroup" className="flex flex-wrap gap-2">
+            {(['general', 'sales', 'success'] as SurveyAudience[]).map((a) => (
+              <button
+                key={a}
+                type="button"
+                role="radio"
+                aria-checked={audience === a}
+                onClick={() => setAudience(a)}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors duration-150',
+                  audience === a ? 'bg-ink text-white ring-ink' : 'bg-card text-foreground ring-border hover:bg-paper'
+                )}
+              >
+                {fr ? AUDIENCES[a].label.fr : AUDIENCES[a].label.en}
+              </button>
+            ))}
+          </div>
+          <p className="text-[12px] text-muted-foreground">
+            {fr
+              ? 'Chaque lien a son propre en-tête (à quoi ça sert, pourquoi, ce qui en ressort) et pré-sélectionne l’équipe. Toutes les réponses arrivent dans la même campagne.'
+              : 'Each link has its own header (what it’s for, why it matters, what comes out) and pre-selects the team. All answers land in the same campaign.'}
+          </p>
         </div>
 
         <div className="space-y-1.5">

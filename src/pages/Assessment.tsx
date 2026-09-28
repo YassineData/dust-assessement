@@ -2,8 +2,10 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { type AssessmentType } from '@/lib/assessment-data';
 import {
+  AUDIENCES,
   CONTEXT_FIELDS,
   GLOSSARY,
+  audienceFromParam,
   OPEN_FIELDS,
   DIMENSION_IDS,
   V2_QUESTIONS,
@@ -20,6 +22,7 @@ import {
   type V2Responses,
 } from '@/lib/assessment-v2';
 import { LikertScale } from '@/components/LikertScale';
+import { SurveyIntro } from '@/components/SurveyIntro';
 import { AssessmentProgress } from '@/components/AssessmentProgress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +57,8 @@ const Assessment = () => {
   const [searchParams] = useSearchParams();
   // /exemple (or ?preview=1): straight into the questionnaire, nothing is saved.
   const isPreview = searchParams.get('preview') === '1';
+  // ?for=sales or ?for=cs: team-specific survey (own header, team pre-selected).
+  const audience = audienceFromParam(searchParams.get('for'));
   const [participantInfo, setParticipantInfo] = useState<ParticipantInfo | null>(() =>
     isPreview
       ? {
@@ -87,7 +92,7 @@ const Assessment = () => {
   const [isValidating, setIsValidating] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
-  const [context, setContext] = useState<ContextAnswers>({});
+  const [context, setContext] = useState<ContextAnswers>(() => (AUDIENCES[audience].team ? { team: AUDIENCES[audience].team } : {}));
   const [open, setOpen] = useState<OpenAnswers>({});
   const [phase, setPhase] = useState<'context' | 'questions' | 'open'>('context');
   const [isComplete, setIsComplete] = useState(false);
@@ -102,7 +107,7 @@ const Assessment = () => {
   // Translations
   const t = {
     back: language === 'fr' ? 'Retour' : 'Back',
-    title: language === 'fr' ? 'Avant de commencer le quiz' : 'Before starting the quiz',
+    title: language === 'fr' ? 'Avant de commencer' : 'Before you start',
     description: language === 'fr' 
       ? 'Renseignez vos informations et le code de campagne fourni par votre responsable'
       : 'Enter your information and the campaign code provided by your manager',
@@ -515,15 +520,12 @@ const Assessment = () => {
           </div>
         </header>
 
-        <main className="mx-auto max-w-[520px] px-4 py-10">
+        <main className="mx-auto max-w-[720px] px-4 py-10">
           <div className="mb-5">
-            <h1 className="page-title">{t.title}</h1>
-            <p className="mt-1 text-[13px] text-muted-foreground">{t.description}</p>
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5"><Timer className="h-3.5 w-3.5" />{language === 'fr' ? 'Environ 10 minutes' : 'About 10 minutes'}</span>
-              <span className="inline-flex items-center gap-1.5"><Save className="h-3.5 w-3.5" />{language === 'fr' ? 'Réponses enregistrées à chaque thématique' : 'Answers saved after each theme'}</span>
-            </div>
+            <SurveyIntro audience={audience} fr={language === 'fr'} />
           </div>
+          <h2 className="card-title mb-1">{t.title}</h2>
+          <p className="mb-3 text-[13px] text-muted-foreground">{t.description}</p>
 
           <div className="card-elevated p-5">
             <form onSubmit={handleRegistration} className="space-y-4">
@@ -712,6 +714,11 @@ const Assessment = () => {
       <div className="min-h-screen bg-background">
         {topBar()}
         <main className="mx-auto max-w-[780px] px-4 py-8">
+          {isPreview && (
+            <div className="mb-6">
+              <SurveyIntro audience={audience} fr={fr} />
+            </div>
+          )}
           <p className="eyebrow">{fr ? 'Étape 1 sur 3' : 'Step 1 of 3'}</p>
           <h1 className="page-title mt-1">{fr ? 'À propos de vous' : 'About you'}</h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
@@ -825,6 +832,7 @@ const Assessment = () => {
                   id={`open-${field.id}`}
                   className="mt-3 min-h-[76px]"
                   value={open[field.id] ?? ''}
+                  placeholder={field.id === 'useCase' ? (fr ? AUDIENCES[audience].useCaseExamples.fr : AUDIENCES[audience].useCaseExamples.en) : undefined}
                   onChange={(e) => setOpen((prev) => ({ ...prev, [field.id]: e.target.value }))}
                   maxLength={1000}
                 />

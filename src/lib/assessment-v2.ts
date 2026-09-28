@@ -132,7 +132,7 @@ export const VALUE_AXES: Record<ValueAxis, L> = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Questions (44 statements, 1–5 scale)                                 */
+/* Questions (35 statements, 1–5 scale)                                 */
 /* ------------------------------------------------------------------ */
 
 export interface V2Question {
@@ -146,7 +146,6 @@ export interface V2Question {
 export const V2_QUESTIONS: V2Question[] = [
   // AI fluency today
   { id: 'u1', dimension: 'usage', text: { en: 'I use an AI tool (ChatGPT, Claude, Copilot, Dust…) at least a few times a week.', fr: "J'utilise un outil d'IA (ChatGPT, Claude, Copilot, Dust…) au moins quelques fois par semaine." } },
-  { id: 'u2', dimension: 'usage', text: { en: 'I usually get a useful result within the first or second try.', fr: "J'obtiens généralement un résultat utile dès le premier ou le deuxième essai." } },
   { id: 'u3', dimension: 'usage', text: { en: 'I know how to give an AI enough context (documents, examples, constraints) to do a task properly.', fr: 'Je sais donner à une IA assez de contexte (documents, exemples, contraintes) pour qu’elle fasse une tâche correctement.' } },
   { id: 'u4', dimension: 'usage', text: { en: 'I have already replaced part of a recurring task in my job with an AI tool.', fr: "J'ai déjà remplacé une partie d'une tâche récurrente de mon travail par un outil d'IA." } },
   { id: 'u5', dimension: 'usage', text: { en: 'When an output is wrong, I can work out why and adjust rather than give up.', fr: "Quand un résultat est faux, je sais comprendre pourquoi et ajuster plutôt qu'abandonner." } },
@@ -154,26 +153,19 @@ export const V2_QUESTIONS: V2Question[] = [
   { id: 'd1', dimension: 'depth', text: { en: 'I have already built or configured an AI agent with custom instructions.', fr: "J'ai déjà créé ou configuré un agent IA avec des instructions personnalisées." } },
   { id: 'd2', dimension: 'depth', text: { en: 'I understand how connecting company data or a tool changes what an agent can do.', fr: 'Je comprends comment le fait de connecter des données de l’entreprise ou un outil change ce qu’un assistant peut faire.' } },
   { id: 'd3', dimension: 'depth', text: { en: 'I am comfortable iterating on instructions until something behaves reliably.', fr: "Je suis à l'aise pour retravailler des instructions jusqu'à obtenir un comportement fiable." } },
-  { id: 'd4', dimension: 'depth', text: { en: 'I could explain to a colleague when a quick chat is enough and when a configured agent is worth it.', fr: "Je saurais expliquer à un collègue quand une simple conversation suffit et quand un agent configuré vaut le coup." } },
   { id: 'd5', dimension: 'depth', text: { en: 'I am comfortable trying new features on my own, without waiting for a training session.', fr: "Je suis à l'aise pour essayer de nouvelles fonctionnalités seul, sans attendre une formation." } },
   { id: 'd6', dimension: 'depth', text: { en: 'I could debug an agent that gives a wrong answer, rather than giving up on it.', fr: 'Je saurais déboguer un agent qui donne une mauvaise réponse, plutôt que de le laisser tomber.' } },
   // Motivation
-  { id: 'w1', dimension: 'will', text: { en: 'I want to be one of the people my team turns to for AI.', fr: "J'ai envie d'être une des personnes vers qui mon équipe se tourne pour l'IA." } },
-  { id: 'w2', dimension: 'will', text: { en: 'I have already made time to learn or test AI tools without being asked to.', fr: "J'ai déjà pris du temps pour apprendre ou tester des outils d'IA sans qu'on me le demande." } },
   { id: 'w3', dimension: 'will', text: { en: 'I actively look for new ways to apply AI to my work.', fr: "Je cherche activement de nouvelles façons d'appliquer l'IA à mon travail." } },
-  { id: 'w4', dimension: 'will', reverse: true, text: { en: 'I would rather wait until these tools are mature before investing my time.', fr: "Je préfère attendre que ces outils soient matures avant d'y investir mon temps." } },
-  { id: 'w5', dimension: 'will', text: { en: 'I am genuinely interested in what AI could change in my role this year.', fr: "Je m'intéresse vraiment à ce que l'IA pourrait changer dans mon rôle cette année." } },
+  { id: 'w5', dimension: 'will', text: { en: 'I am willing to try an AI-supported approach to a real task in my work.', fr: "Je suis prêt(e) à essayer une approche appuyée par l'IA sur une vraie tâche de mon travail." } },
   // Teaching posture
-  { id: 't1', dimension: 'teach', text: { en: 'I enjoy explaining how things work to colleagues.', fr: "J'aime expliquer à mes collègues comment les choses fonctionnent." } },
+  { id: 't1', dimension: 'teach', text: { en: 'I would like to help colleagues learn through coaching, demonstrations or written guidance.', fr: 'J’aimerais aider mes collègues à apprendre, par du coaching, des démonstrations ou des guides écrits.' } },
   { id: 't2', dimension: 'teach', text: { en: 'I have already run a training, demo or onboarding session for colleagues.', fr: "J'ai déjà animé une formation, une démo ou une session d'onboarding pour des collègues." } },
-  { id: 't3', dimension: 'teach', text: { en: 'I could commit a set amount of time every week to helping colleagues use AI.', fr: "Je pourrais consacrer un temps fixe chaque semaine à aider mes collègues à utiliser l'IA." } },
   { id: 't4', dimension: 'teach', text: { en: 'My manager would support me spending part of my time training others.', fr: 'Mon manager me soutiendrait si je consacrais une partie de mon temps à former les autres.' } },
   { id: 't5', dimension: 'teach', text: { en: 'I am comfortable answering questions live, in front of a group.', fr: "Je suis à l'aise pour répondre à des questions en direct, devant un groupe." } },
   // Blast radius
   { id: 'r1', dimension: 'reach', text: { en: 'Colleagues already come to me for advice on tools or ways of working.', fr: 'Mes collègues viennent déjà me demander conseil sur des outils ou des façons de travailler.' } },
   { id: 'r2', dimension: 'reach', text: { en: 'Things I build or document tend to get reused by other people.', fr: 'Ce que je construis ou documente a tendance à être réutilisé par d’autres.' } },
-  { id: 'r3', dimension: 'reach', text: { en: 'I work with several teams, not only my own.', fr: 'Je travaille avec plusieurs équipes, pas seulement la mienne.' } },
-  { id: 'r4', dimension: 'reach', text: { en: 'I can get a process changed in my team if I make the case for it.', fr: 'Je peux faire changer un processus dans mon équipe si je défends mon point de vue.' } },
   { id: 'r5', dimension: 'reach', text: { en: "I would be comfortable representing my team's needs in the AI rollout.", fr: "Je serais à l'aise pour représenter les besoins de mon équipe dans le déploiement de l'IA." } },
   { id: 'r6', dimension: 'reach', text: { en: 'Other teams would notice if I stopped sharing what I build or document.', fr: "D'autres équipes remarqueraient si j'arrêtais de partager ce que je construis ou documente." } },
   // Governance & trust
@@ -181,7 +173,6 @@ export const V2_QUESTIONS: V2Question[] = [
   { id: 'g2', dimension: 'gov', text: { en: 'I know who decides which AI tools we are allowed to use.', fr: "Je sais qui décide des outils d'IA que nous avons le droit d'utiliser." } },
   { id: 'g3', dimension: 'gov', text: { en: 'I would know where to raise a concern about an AI output or a data issue.', fr: "Je saurais où signaler un problème lié à un résultat d'IA ou à des données." } },
   { id: 'g4', dimension: 'gov', text: { en: 'I understand what happens to the data I put into an AI tool.', fr: "Je comprends ce que deviennent les données que je mets dans un outil d'IA." } },
-  { id: 'g5', dimension: 'gov', text: { en: 'Our current rules about AI use are clear to me.', fr: "Les règles actuelles sur l'usage de l'IA sont claires pour moi." } },
   // Multiplayer habits
   { id: 'm1', dimension: 'team', text: { en: 'My team shares working methods and templates instead of each person doing their own thing.', fr: 'Mon équipe partage ses méthodes et ses modèles au lieu que chacun fasse à sa façon.' } },
   { id: 'm2', dimension: 'team', text: { en: 'I would share something I built with the rest of the company, not just keep it for myself.', fr: "Je partagerais ce que j'ai construit avec le reste de l'entreprise, au lieu de le garder pour moi." } },
@@ -193,7 +184,7 @@ export const V2_QUESTIONS: V2Question[] = [
   { id: 'p2', dimension: 'pain', text: { en: 'I regularly spend time looking for information that exists somewhere in the company.', fr: "Je passe régulièrement du temps à chercher des informations qui existent quelque part dans l'entreprise." } },
   { id: 'p3', dimension: 'pain', text: { en: 'I often rewrite or reformat the same kind of document or message.', fr: 'Je réécris ou remets souvent en forme le même type de document ou de message.' } },
   { id: 'p4', dimension: 'pain', text: { en: 'My work gets delayed waiting for someone else to produce a routine output.', fr: "Mon travail est retardé parce que j'attends qu'une autre personne produise un livrable de routine." } },
-  { id: 'p5', dimension: 'pain', text: { en: 'I could name three tasks in my week I would hand over to an AI agent tomorrow.', fr: 'Je pourrais citer trois tâches de ma semaine que je confierais dès demain à un assistant.' } },
+  { id: 'p5', dimension: 'pain', text: { en: 'I could name at least one task in my week I would hand over to an AI agent tomorrow.', fr: "Je pourrais citer au moins une tâche de ma semaine que je confierais dès demain à un agent IA." } },
   // Value clarity (not in readiness)
   { id: 'v1', dimension: 'value', text: { en: 'I can name a concrete outcome my team would get from AI, not just time saved.', fr: "Je peux citer un résultat concret que mon équipe obtiendrait grâce à l'IA, au-delà du temps gagné." } },
   { id: 'v2', dimension: 'value', text: { en: "I know which of my team's processes would benefit most from an AI agent.", fr: "Je sais quels processus de mon équipe profiteraient le plus d'un assistant." } },
@@ -603,3 +594,66 @@ export const isV2Responses = (r: unknown): r is V2Responses =>
 
 export const isV2ItemScores = (s: unknown): s is V2Scores =>
   !!s && typeof s === 'object' && (s as { version?: number }).version === 2;
+
+/* ------------------------------------------------------------------ */
+/* Survey audiences: one link per team, each with its own header        */
+/* ------------------------------------------------------------------ */
+
+export type SurveyAudience = 'general' | 'sales' | 'success';
+
+/** `?for=sales` or `?for=cs` on the survey link. */
+export const audienceFromParam = (v: string | null): SurveyAudience =>
+  v === 'sales' ? 'sales' : v === 'cs' || v === 'success' ? 'success' : 'general';
+
+export const AUDIENCE_PARAM: Record<SurveyAudience, string | null> = { general: null, sales: 'sales', success: 'cs' };
+
+/** Who Dust is, shown at the top of every survey. */
+export const DUST_ABOUT: L = {
+  en: 'Dust is the platform your company is rolling out to build AI agents that work with your own knowledge and tools. Our deployment team runs these rollouts end to end, and this survey is how we tailor yours to the way your team actually works.',
+  fr: "Dust est la plateforme que votre entreprise déploie pour créer des agents IA qui travaillent avec vos propres connaissances et outils. Notre équipe de déploiement accompagne ces déploiements de bout en bout, et ce questionnaire nous permet d'adapter le vôtre à la façon dont votre équipe travaille vraiment.",
+};
+
+export interface AudienceInfo {
+  id: SurveyAudience;
+  label: L;
+  /** Team pre-selected in "About you" (still editable). */
+  team?: string;
+  title: L;
+  whatFor: L;
+  whyItMatters: L;
+  output: L;
+  /** Placeholder examples for the use-case open question. */
+  useCaseExamples: L;
+}
+
+export const AUDIENCES: Record<SurveyAudience, AudienceInfo> = {
+  general: {
+    id: 'general',
+    label: { en: 'All teams', fr: 'Toutes les équipes' },
+    title: { en: 'Help us shape your AI rollout', fr: 'Aidez-nous à construire votre déploiement IA' },
+    whatFor: { en: 'Understand how your team uses AI today, and where it could help most.', fr: "Comprendre comment votre équipe utilise l'IA aujourd'hui, et où elle aiderait le plus." },
+    whyItMatters: { en: 'Your answers decide which teams start first, which agents we build first and who we train. There are no right or wrong answers.', fr: "Vos réponses décident des équipes qui démarrent en premier, des premiers agents à construire et des personnes à former. Il n'y a pas de bonne ou de mauvaise réponse." },
+    output: { en: 'A rollout plan tailored to your company and, at the end of the survey, your own AI profile.', fr: 'Un plan de déploiement adapté à votre entreprise et, à la fin du questionnaire, votre propre profil IA.' },
+    useCaseExamples: { en: 'e.g. a weekly report, answering recurring questions, preparing a meeting', fr: 'ex. un reporting hebdo, répondre aux questions récurrentes, préparer une réunion' },
+  },
+  sales: {
+    id: 'sales',
+    label: { en: 'Sales team', fr: 'Équipe Sales' },
+    team: 'sales',
+    title: { en: 'AI for the Sales team', fr: "L'IA pour l'équipe Sales" },
+    whatFor: { en: 'Understand how the Sales team uses AI today: account research, call prep, follow-ups, CRM updates.', fr: "Comprendre comment l'équipe Sales utilise l'IA aujourd'hui : recherche de comptes, préparation d'appels, relances, mises à jour du CRM." },
+    whyItMatters: { en: 'Your answers decide which Sales agents we build first and who in the team gets early access and training, so the rollout saves selling time from week one.', fr: "Vos réponses décident des premiers agents Sales à construire et des personnes qui auront un accès anticipé et une formation, pour que le déploiement fasse gagner du temps commercial dès la première semaine." },
+    output: { en: 'A Sales rollout plan: the first agents to build, the people to train first, and a baseline to measure progress. Plus your own AI profile at the end.', fr: 'Un plan de déploiement Sales : les premiers agents à construire, les personnes à former en premier et une baseline pour mesurer les progrès. Et votre propre profil IA à la fin.' },
+    useCaseExamples: { en: 'e.g. account research before a call, follow-up emails, CRM updates', fr: "ex. recherche de compte avant un appel, e-mails de relance, mises à jour du CRM" },
+  },
+  success: {
+    id: 'success',
+    label: { en: 'Customer Success team', fr: 'Équipe Customer Success' },
+    team: 'success',
+    title: { en: 'AI for the Customer Success team', fr: "L'IA pour l'équipe Customer Success" },
+    whatFor: { en: 'Understand how Customer Success uses AI today: account health, QBR prep, renewal risk, recurring questions.', fr: "Comprendre comment le Customer Success utilise l'IA aujourd'hui : santé des comptes, préparation des QBR, risque de renouvellement, questions récurrentes." },
+    whyItMatters: { en: 'Your answers decide which CS agents we build first and who in the team gets early access and training, so you spend less time on prep and more with customers.', fr: "Vos réponses décident des premiers agents CS à construire et des personnes qui auront un accès anticipé et une formation, pour passer moins de temps à préparer et plus de temps avec les clients." },
+    output: { en: 'A Customer Success rollout plan: the first agents to build, the people to train first, and a baseline to measure progress. Plus your own AI profile at the end.', fr: 'Un plan de déploiement Customer Success : les premiers agents à construire, les personnes à former en premier et une baseline pour mesurer les progrès. Et votre propre profil IA à la fin.' },
+    useCaseExamples: { en: 'e.g. QBR prep, account health summaries, answering recurring customer questions', fr: 'ex. préparation des QBR, synthèse de la santé des comptes, réponses aux questions récurrentes des clients' },
+  },
+};

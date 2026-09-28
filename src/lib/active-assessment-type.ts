@@ -32,7 +32,7 @@ export const setActiveAssessmentType = (type: AssessmentType) => {
 
 export const getActiveAssessmentType = (): AssessmentType => _current;
 
-// v2: every campaign now uses the Dust readiness questionnaire (9 dimensions, 44 statements),
+// v2: every campaign now uses the Dust readiness questionnaire (9 dimensions, 35 statements),
 // whatever its stored assessment_type. The legacy getters below are kept for old data only.
 export const getActiveThematics = (): readonly string[] => DIMENSION_IDS;
 
