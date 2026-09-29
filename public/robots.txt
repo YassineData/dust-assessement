@@ -6,3 +6,4 @@ Disallow: /results
 Disallow: /create-campaign
 Disallow: /kit
 Disallow: /participant-result/
+Disallow: /login

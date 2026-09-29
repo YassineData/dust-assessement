@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { DustWordmark } from '@/components/DustMark';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { TopBar, PageHeader } from '@/components/CampaignHeader';
 import { DashboardSidebar, TabId, TAB_LABELS, CLIENT_HIDDEN_TABS } from '@/components/DashboardSidebar';
 import { SectionCard } from '@/components/console/SectionCard';
@@ -501,6 +503,11 @@ const Dashboard = () => {
     if (isClientView && CLIENT_HIDDEN_TABS.includes(activeTab)) setActiveTab('overview');
   }, [isClientView, activeTab]);
 
+  // /login is only the way in: once signed in, land on the console's own URL.
+  useEffect(() => {
+    if (isAccessGranted && !showAccessModal && window.location.pathname === '/login') navigate('/dashboard', { replace: true });
+  }, [isAccessGranted, showAccessModal, navigate]);
+
   if (!isInitialized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -512,13 +519,23 @@ const Dashboard = () => {
   // Show access modal if not authenticated
   if (!isAccessGranted || showAccessModal) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <DashboardAccessModal 
-          isOpen={true} 
-          onClose={handleCloseModal}
-          onAccessGranted={handleAccessGranted}
-          onAdminAccessGranted={handleAdminAccessGranted}
-        />
+      <div className="flex min-h-screen flex-col bg-background">
+        <header className="border-b border-border/70">
+          <div className="mx-auto flex h-14 max-w-[1080px] items-center justify-between px-4">
+            <Link to="/" className="rounded-md" aria-label="Dust">
+              <DustWordmark subtitle={language === 'fr' ? 'Évaluation de maturité IA' : 'AI Readiness Assessment'} />
+            </Link>
+            <LanguageSwitcher />
+          </div>
+        </header>
+        <main className="flex flex-1 items-center justify-center px-4 py-12">
+          <DashboardAccessModal
+            isOpen={true}
+            onClose={handleCloseModal}
+            onAccessGranted={handleAccessGranted}
+            onAdminAccessGranted={handleAdminAccessGranted}
+          />
+        </main>
       </div>
     );
   }

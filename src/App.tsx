@@ -27,6 +27,7 @@ const App = () => (
             {/* Internal pitch for the Dust team: shared by link, not indexed. */}
             <Route path="/internal" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/login" element={<Dashboard />} />
             {/* Client manager's private results link: /results?key=… (same console, client view) */}
             <Route path="/results" element={<Dashboard />} />
             <Route path="/assessment" element={<Assessment />} />

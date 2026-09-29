@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,7 +38,7 @@ const EMAIL_LOGIN_ENABLED = import.meta.env.VITE_EMAIL_LOGIN === 'true';
  *  - Dust team fallback: the admin key (stored hashed server-side) → every campaign;
  *  - client: the private results link Dust sends (/dashboard?key=…) → that campaign only.
  */
-export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdminAccessGranted }: DashboardAccessModalProps) => {
+export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGranted }: DashboardAccessModalProps) => {
   const { language } = useLanguage();
   const fr = language === 'fr';
   const [adminKey, setAdminKeyInput] = useState('');
@@ -49,8 +48,9 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
   const [email, setEmail] = useState('');
   const [linkSentTo, setLinkSentTo] = useState<string | null>(null);
   const [useKey, setUseKey] = useState(!EMAIL_LOGIN_ENABLED);
-  // The Dust team sign-in stays folded: clients only see how to open their results.
-  const [dustOpen, setDustOpen] = useState(false);
+  // On /login the Dust sign-in is open; elsewhere it stays folded so clients only see how to open their results.
+  const onLogin = typeof window !== 'undefined' && window.location.pathname === '/login';
+  const [dustOpen, setDustOpen] = useState(onLogin);
   const handledLink = useRef(false);
   const handledSession = useRef(false);
 
@@ -164,20 +164,24 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose?.()}>
-      <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => !onClose && e.preventDefault()}>
-        <DialogHeader>
-          <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-md bg-brand-soft">
+    <section className="flex w-full max-w-[440px] flex-col gap-3 rounded-2xl bg-card p-6 shadow-[0_24px_60px_-28px_rgba(28,34,45,0.35)] ring-1 ring-border sm:p-8">
+        <div className="mb-1">
+          <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-brand-soft">
             <Lock className="h-4 w-4 text-brand-ink" />
           </div>
-          <DialogTitle className="text-[17px] font-semibold">{fr ? 'Accès à la console' : 'Console access'}</DialogTitle>
-          <DialogDescription>
-            {fr ? 'Réservé à l’équipe Dust et aux clients disposant d’un lien de résultats.' : 'For the Dust team, and for clients with a results link.'}
-          </DialogDescription>
-        </DialogHeader>
+          <h1 className="text-[20px] font-semibold tracking-[-0.01em] text-foreground">
+            {dustOpen ? (fr ? 'Connexion équipe Dust' : 'Dust team sign-in') : (fr ? 'Accès aux résultats' : 'Access your results')}
+          </h1>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            {dustOpen
+              ? (fr ? 'Pour créer des campagnes et voir tous les résultats.' : 'To create campaigns and see every result.')
+              : (fr ? 'Réservé à l’équipe Dust et aux clients disposant d’un lien de résultats.' : 'For the Dust team, and for clients with a results link.')}
+          </p>
+        </div>
 
-        {/* Client: private link */}
-        <div className="mt-2 flex gap-3 rounded-md bg-paper p-3 ring-1 ring-border">
+        {/* Client: private link (the Dust sign-in page skips it) */}
+        {!dustOpen && (
+        <div className="flex gap-3 rounded-md bg-paper p-3 ring-1 ring-border">
           <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" />
           <div>
             <p className="text-[13px] font-medium text-foreground">{fr ? 'Vous êtes client ?' : 'Are you a client?'}</p>
@@ -188,6 +192,7 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
             </p>
           </div>
         </div>
+        )}
 
         {/* Errors from a client results link, shown while the Dust sign-in is folded */}
         {!dustOpen && error && (
@@ -280,7 +285,7 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
             )}
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isLoading ? (fr ? 'Vérification…' : 'Checking…') : (fr ? 'Accéder à toutes les campagnes' : 'Open all campaigns')}
+              {isLoading ? (fr ? 'Vérification…' : 'Checking…') : (fr ? 'Se connecter' : 'Sign in')}
             </Button>
           </form>
         )}
@@ -312,7 +317,6 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
             {fr ? 'Tester la plateforme' : 'Try the platform'}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+    </section>
   );
 };
