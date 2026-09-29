@@ -63,6 +63,9 @@ const COMPANIES: DemoCompany[] = [
   },
 ];
 
+// Dust account owners shown as campaign creators in the demo.
+const DEMO_OWNERS: [string, string][] = [['Camille', 'Roux'], ['Hugo', 'Lambert'], ['Léa', 'Girard'], ['Nathan', 'Mercier'], ['Nathan', 'Mercier']];
+
 const TEAM_LABEL_EN: Record<string, string> = {
   sales: 'Sales / Revenue', marketing: 'Marketing', support: 'Customer Support', success: 'Customer Success',
   product: 'Product', engineering: 'Engineering', data: 'Data', finance: 'Finance', legal: 'Legal',
@@ -138,7 +141,7 @@ export const DEMO_CODES = COMPANIES.map((c) => c.code);
 
 export const getDemoData = () => {
   if (cache) return cache;
-  const campaigns: Row[] = COMPANIES.map((c) => ({
+  const campaigns: Row[] = COMPANIES.map((c, ci) => ({
     id: c.id,
     code: c.code,
     // Private results link of the demo client view: /results?key=demo-<code>
@@ -146,8 +149,8 @@ export const getDemoData = () => {
     company_name: c.name,
     campaign_name: c.label ?? `Dust rollout · ${c.employees.toLocaleString('en-US')} employees`,
     creator_email: 'demo@dust.tt',
-    creator_first_name: 'Dust',
-    creator_last_name: 'Demo',
+    creator_first_name: DEMO_OWNERS[ci % DEMO_OWNERS.length][0],
+    creator_last_name: DEMO_OWNERS[ci % DEMO_OWNERS.length][1],
     created_at: c.createdAt,
     assessment_type: 'generic',
     language: 'en',
@@ -273,6 +276,8 @@ export const getDemoCampaignList = () =>
     company_name: c.company_name as string,
     campaign_name: c.campaign_name as string,
     creator_email: c.creator_email as string,
+    creator_first_name: c.creator_first_name as string,
+    creator_last_name: c.creator_last_name as string,
     created_at: c.created_at as string,
   }));
 

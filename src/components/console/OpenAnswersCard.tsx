@@ -1,30 +1,55 @@
 import { useMemo, useState } from 'react';
-import { OPEN_FIELDS, type OpenField } from '@/lib/assessment-v2';
+import { CONTEXT_FIELDS, OPEN_FIELDS } from '@/lib/assessment-v2';
 import type { CampaignParticipant } from '@/hooks/useCampaignParticipants';
 import { SectionCard } from '@/components/console/SectionCard';
 import { cn } from '@/lib/utils';
 
 const PREVIEW = 6;
+const OTHER_TAB = 'other';
 
 /** Every open answer of the campaign, grouped by question: raw material for the first use cases. */
-export const OpenAnswersCard = ({ participants, fr }: { participants: CampaignParticipant[]; fr: boolean }) => {
+export const OpenAnswersCard = ({ participants, fr, showEmpty = false }: { participants: CampaignParticipant[]; fr: boolean; showEmpty?: boolean }) => {
+  // The open questions, plus one tab for the "Other: ..." notes typed in the first step.
+  const tabs = useMemo(
+    () => [...OPEN_FIELDS.map((f) => ({ id: f.id as string, label: f.label })), { id: OTHER_TAB, label: { en: '"Other" notes', fr: 'Précisions « Autre »' } }],
+    []
+  );
   const byField = useMemo(() => {
-    const map = {} as Record<OpenField['id'], { text: string; who: string; team: string | null }[]>;
+    const map: Record<string, { text: string; who: string; team: string | null }[]> = {};
+    const who = (p: CampaignParticipant) => `${p.firstName} ${p.lastName}`.trim();
     OPEN_FIELDS.forEach((f) => {
       map[f.id] = participants
         .filter((p) => (p.open?.[f.id] ?? '').trim())
-        .map((p) => ({ text: (p.open[f.id] as string).trim(), who: `${p.firstName} ${p.lastName}`.trim(), team: p.team }));
+        .map((p) => ({ text: (p.open[f.id] as string).trim(), who: who(p), team: p.team }));
     });
+    map[OTHER_TAB] = participants.flatMap((p) =>
+      CONTEXT_FIELDS.filter((f) => p.context?.other?.[f.id]?.trim()).map((f) => ({
+        text: `${fr ? f.label.fr : f.label.en}: ${p.context.other![f.id]!.trim()}`,
+        who: who(p),
+        team: p.team,
+      }))
+    );
     return map;
-  }, [participants]);
+  }, [participants, fr]);
 
-  const firstWithAnswers = OPEN_FIELDS.find((f) => byField[f.id].length > 0)?.id ?? OPEN_FIELDS[0].id;
-  const [active, setActive] = useState<OpenField['id']>(firstWithAnswers);
+  const firstWithAnswers = tabs.find((f) => byField[f.id].length > 0)?.id ?? tabs[0].id;
+  const [active, setActive] = useState<string>(firstWithAnswers);
   const [expanded, setExpanded] = useState(false);
-  const total = OPEN_FIELDS.reduce((n, f) => n + byField[f.id].length, 0);
-  if (total === 0) return null;
+  const total = tabs.reduce((n, f) => n + byField[f.id].length, 0);
+  if (total === 0) {
+    if (!showEmpty) return null;
+    return (
+      <SectionCard title={fr ? 'Ce que les équipes nous disent' : 'What people told us'}>
+        <p className="text-[13px] text-muted-foreground">
+          {fr
+            ? 'Aucune réponse ouverte pour l’instant. Elles apparaissent ici dès qu’un répondant remplit l’étape « En quelques mots » (facultative).'
+            : 'No open answers yet. They show up here as soon as a respondent fills in the "In a few words" step (optional).'}
+        </p>
+      </SectionCard>
+    );
+  }
 
-  const field = OPEN_FIELDS.find((f) => f.id === active) ?? OPEN_FIELDS[0];
+  const field = tabs.find((f) => f.id === active) ?? tabs[0];
   const answers = byField[field.id];
   const shown = expanded ? answers : answers.slice(0, PREVIEW);
 
@@ -35,7 +60,7 @@ export const OpenAnswersCard = ({ participants, fr }: { participants: CampaignPa
       actions={<span className="mono text-[12px] text-outline">{total} {fr ? 'réponses' : 'answers'}</span>}
     >
       <div role="tablist" className="flex flex-wrap gap-1.5">
-        {OPEN_FIELDS.map((f) => (
+        {tabs.filter((f) => f.id !== OTHER_TAB || byField[OTHER_TAB].length > 0).map((f) => (
           <button
             key={f.id}
             type="button"

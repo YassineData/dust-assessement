@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import {
   LayoutGrid,
   Users,
+  MessageSquareQuote,
   BarChart3,
   ListChecks,
   GitCompare,
@@ -26,6 +27,7 @@ import { DustMark } from '@/components/DustMark';
 export type TabId =
   | 'overview'
   | 'participants'
+  | 'openAnswers'
   | 'itemScores'
   | 'detailed'
   | 'compare'
@@ -56,6 +58,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'overview', fr: "Vue d'ensemble", en: 'Overview', icon: LayoutGrid },
       { id: 'participants', fr: 'Participants', en: 'Participants', icon: Users },
+      { id: 'openAnswers', fr: 'Réponses ouvertes', en: 'Open answers', icon: MessageSquareQuote },
       { id: 'itemScores', fr: 'Résultats détaillés', en: 'Detailed results', icon: BarChart3 },
       { id: 'detailed', fr: 'Question par question', en: 'Question by question', icon: ListChecks },
     ],

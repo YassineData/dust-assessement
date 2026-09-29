@@ -17,8 +17,16 @@ export interface Campaign {
   company_name: string;
   campaign_name?: string | null;
   creator_email: string;
+  creator_first_name?: string | null;
+  creator_last_name?: string | null;
   created_at: string;
 }
+
+/** "First Last" of whoever created the campaign; empty for old rows without a real name. */
+export const creatorName = (c: Pick<Campaign, 'creator_first_name' | 'creator_last_name'>) => {
+  const name = `${c.creator_first_name ?? ''} ${c.creator_last_name ?? ''}`.replace(/(^|\s)-(\s|$)/g, ' ').trim();
+  return name === 'Dust' ? '' : name;
+};
 
 interface CampaignSelectorProps {
   campaigns: Campaign[];
@@ -46,7 +54,8 @@ export const CampaignSelector = ({
         c.company_name.toLowerCase().includes(query) ||
         (c.campaign_name ?? '').toLowerCase().includes(query) ||
         c.code.toLowerCase().includes(query) ||
-        c.creator_email.toLowerCase().includes(query)
+        c.creator_email.toLowerCase().includes(query) ||
+        creatorName(c).toLowerCase().includes(query)
     );
   }, [campaigns, searchQuery]);
 

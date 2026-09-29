@@ -20,6 +20,8 @@ interface AdminCampaignCreatorProps {
   onCreated?: () => void;
 }
 
+const CREATOR_KEY = 'dust_campaign_creator';
+
 /**
  * Creates a deployment and hands back a link (+ code) to send to the client.
  * No recipient list: respondents register themselves when they open the link.
@@ -32,6 +34,16 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
   const [company, setCompany] = useState(defaultCompany ?? '');
   const [campaignName, setCampaignName] = useState('');
   const [email, setEmail] = useState(defaultCreatorEmail ?? '');
+  // Who is creating it: remembered on this browser so the Dust owner doesn't retype it every time.
+  const saved = (() => {
+    try {
+      return JSON.parse(localStorage.getItem(CREATOR_KEY) || '{}') as { first?: string; last?: string };
+    } catch {
+      return {};
+    }
+  })();
+  const [firstName, setFirstName] = useState(saved.first ?? '');
+  const [lastName, setLastName] = useState(saved.last ?? '');
   const [campaignLanguage, setCampaignLanguage] = useState<'fr' | 'en'>('en');
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<{ code: string; company: string; accessKey: string } | null>(null);
@@ -67,8 +79,14 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
     e.preventDefault();
     const companyClean = company.trim();
     const owner = email.trim().toLowerCase();
-    if (!companyClean || !owner) {
-      toast({ title: fr ? 'Erreur' : 'Error', description: fr ? 'Indiquez le client' + (askEmail ? ' et votre email' : '') : 'Enter the client' + (askEmail ? ' and your email' : ''), variant: 'destructive' });
+    const first = firstName.trim();
+    const last = lastName.trim();
+    if (!companyClean || !owner || !first || !last) {
+      toast({
+        title: fr ? 'Erreur' : 'Error',
+        description: fr ? 'Indiquez le client, votre prénom et votre nom' + (askEmail ? ' et votre email' : '') : 'Enter the client, your first and last name' + (askEmail ? ' and your email' : ''),
+        variant: 'destructive',
+      });
       return;
     }
     if (askEmail) {
@@ -89,12 +107,17 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
         code,
         company_name: companyClean,
         campaign_name: campaignName.trim() || (fr ? 'Déploiement Dust' : 'Dust rollout'),
-        creator_first_name: 'Dust',
-        creator_last_name: '-',
+        creator_first_name: first,
+        creator_last_name: last,
         creator_email: owner,
         language: campaignLanguage,
       } as any).select('access_key').maybeSingle();
       if (error) throw error;
+      try {
+        localStorage.setItem(CREATOR_KEY, JSON.stringify({ first, last }));
+      } catch {
+        /* per-browser convenience only */
+      }
 
       setCreated({ code, company: companyClean, accessKey: (inserted as { access_key?: string } | null)?.access_key || 'DEMO' });
     } catch (err) {
@@ -240,6 +263,20 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
           <Input id="cc-name" value={campaignName} onChange={(e) => setCampaignName(e.target.value)} placeholder={fr ? 'Ex : Équipe Sales, Q4' : 'E.g. Sales team, Q4'} />
         </div>
       </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="cc-first">{fr ? 'Votre prénom' : 'Your first name'}</Label>
+          <Input id="cc-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" placeholder={fr ? 'Ex : Camille' : 'E.g. Camille'} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="cc-last">{fr ? 'Votre nom' : 'Your last name'}</Label>
+          <Input id="cc-last" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" placeholder={fr ? 'Ex : Martin' : 'E.g. Martin'} />
+        </div>
+      </div>
+      <p className="-mt-2 text-[12px] text-muted-foreground">
+        {fr ? 'Affiché dans la liste des campagnes, pour savoir qui a lancé quoi.' : 'Shown in the campaign list, so the team knows who launched what.'}
+      </p>
 
       {askEmail && (
         <div className="space-y-1.5">

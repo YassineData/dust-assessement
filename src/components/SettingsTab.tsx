@@ -38,7 +38,7 @@ import { AdminDownloadBar } from '@/components/AdminDownloadBar';
 import { DeleteParticipantDialog } from '@/components/DeleteParticipantDialog';
 import { CampaignParticipant } from '@/hooks/useCampaignParticipants';
 import { AdminCampaignCreator } from '@/components/AdminCampaignCreator';
-import type { Campaign } from '@/components/CampaignSelector';
+import { creatorName, type Campaign } from '@/components/CampaignSelector';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { validateProfessionalEmail } from '@/lib/email-validation';
@@ -814,7 +814,16 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
                   return (
                     <TableRow key={c.id} className={isCurrent ? 'bg-brand-soft hover:bg-brand-soft' : ''}>
                       <TableCell className="pl-5 font-medium">{(c as any).campaign_name || c.company_name}</TableCell>
-                      <TableCell className="hidden text-[12px] text-muted-foreground sm:table-cell">{c.creator_email}</TableCell>
+                      <TableCell className="hidden text-[12px] sm:table-cell">
+                        {creatorName(c) ? (
+                          <>
+                            <span className="block font-medium text-foreground">{creatorName(c)}</span>
+                            <span className="block text-muted-foreground">{c.creator_email}</span>
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">{c.creator_email}</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {counts.completed}<span className="text-muted-foreground"> / {counts.total}</span>
                       </TableCell>

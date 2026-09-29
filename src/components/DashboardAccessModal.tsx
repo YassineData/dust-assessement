@@ -25,7 +25,7 @@ interface DashboardAccessModalProps {
   onAdminAccessGranted?: (campaigns: AdminCampaign[], isSuperAdmin?: boolean) => void;
 }
 
-const CAMPAIGN_COLUMNS = 'id, code, company_name, campaign_name, creator_email, created_at';
+const CAMPAIGN_COLUMNS = 'id, code, company_name, campaign_name, creator_email, creator_first_name, creator_last_name, created_at';
 
 /**
  * Email login (@dust.tt magic link) is built but off until the email service is set up

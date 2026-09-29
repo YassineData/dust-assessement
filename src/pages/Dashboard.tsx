@@ -280,7 +280,7 @@ const Dashboard = () => {
     (async () => {
       const { data, error } = await supabase
         .from('campaigns')
-        .select('id, code, company_name, campaign_name, creator_email, created_at')
+        .select('id, code, company_name, campaign_name, creator_email, creator_first_name, creator_last_name, created_at')
         .order('created_at', { ascending: false });
 
       if (cancelled || error || !data) return;
@@ -564,7 +564,7 @@ const Dashboard = () => {
       if (isSuperAdmin) {
         const { data } = await supabase
           .from('campaigns')
-          .select('id, code, company_name, campaign_name, creator_email, created_at')
+          .select('id, code, company_name, campaign_name, creator_email, creator_first_name, creator_last_name, created_at')
           .order('created_at', { ascending: false });
         if (data) {
           setAllCampaigns(data as Campaign[]);
@@ -1179,6 +1179,10 @@ const Dashboard = () => {
               />
             )}
           </div>
+        )}
+
+        {activeTab === 'openAnswers' && (
+          <OpenAnswersCard participants={participants} fr={fr} showEmpty />
         )}
 
         {activeTab === 'detailed' && (
