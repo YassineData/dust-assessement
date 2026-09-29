@@ -14,13 +14,13 @@ const CreateCampaign = () => {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b border-border bg-card">
         <div className="mx-auto flex h-14 max-w-[780px] items-center justify-between px-4">
-          <Link to="/" className="rounded-md" aria-label="Dust">
+          <Link to="/dashboard" className="rounded-md" aria-label="Dust">
             <DustWordmark subtitle="Assessment" />
           </Link>
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/">
+              <Link to="/dashboard">
                 <ArrowLeft className="h-4 w-4" />
                 {fr ? 'Retour' : 'Back'}
               </Link>

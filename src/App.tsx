@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import Index from "./pages/Index";
+import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Assessment from "./pages/Assessment";
 import CreateCampaign from "./pages/CreateCampaign";
@@ -22,7 +23,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<Home />} />
+            {/* Internal pitch for the Dust team: shared by link, not indexed. */}
+            <Route path="/internal" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
             {/* Client manager's private results link: /results?key=… (same console, client view) */}
             <Route path="/results" element={<Dashboard />} />

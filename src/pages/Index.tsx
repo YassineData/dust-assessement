@@ -7,39 +7,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { DustWordmark } from '@/components/DustMark';
 import { enterDemo } from '@/demo/demo-data';
 import { cn } from '@/lib/utils';
+import { Reveal } from '@/components/Reveal';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
 /* ------------------------------------------------------------------ */
-
-const Reveal = ({ children, delay = 0, className }: { children: ReactNode; delay?: number; className?: string }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (typeof IntersectionObserver === 'undefined') {
-      setInView(true);
-      return;
-    }
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.15 }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  return (
-    <div ref={ref} className={cn('lp-reveal', inView && 'is-visible', className)} style={{ transitionDelay: `${delay}ms` }}>
-      {children}
-    </div>
-  );
-};
 
 /** The pitch film (public/film), embedded as a player. It reports its height so the frame never scrolls. */
 const FilmPlayer = ({ title }: { title: string }) => {
@@ -133,6 +105,15 @@ const Index = () => {
   const fr = language === 'fr';
   const L = (en: string, frText: string) => (fr ? frText : en);
 
+  // Internal pitch: keep it out of search engines.
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
+    document.head.appendChild(meta);
+    return () => meta.remove();
+  }, []);
+
   const today = [
     L('We guess where teams stand with AI', 'On devine où en sont les équipes avec l’IA'),
     L('Use cases are discovered call after call', 'Les cas d’usage se découvrent call après call'),
@@ -171,7 +152,7 @@ const Index = () => {
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b border-border/70 bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1100px] items-center justify-between gap-3 px-4 md:px-6">
-          <Link to="/" className="rounded-md" aria-label="Dust">
+          <Link to="/internal" className="rounded-md" aria-label="Dust">
             <DustWordmark subtitle="Assessment" />
           </Link>
           <nav className="hidden items-center gap-6 text-[13px] text-muted-foreground md:flex">

@@ -379,10 +379,19 @@
 .lp-grow { transform-origin: left; animation: lp-grow 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .lp-ping { animation: lp-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; }
 
+/* Public home: brand shapes pop in, a few turn now and then. */
+.home-shape { aspect-ratio: 1; opacity: 0; transform: scale(0.4); animation: home-pop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) var(--d, 0ms) forwards; }
+.home-shape-spin { animation: home-pop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) var(--d, 0ms) forwards, home-turn 9s cubic-bezier(0.7, 0, 0.3, 1) calc(1.2s + var(--s, 0s)) infinite; }
+.home-rise { animation: home-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes home-pop { to { opacity: 1; transform: scale(1); } }
+@keyframes home-turn { 0%, 80% { transform: rotate(0deg); } 90%, 100% { transform: rotate(90deg); } }
+@keyframes home-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
 .lp-reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .lp-reveal.is-visible { opacity: 1; transform: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .lp-reveal { opacity: 1; transform: none; }
+  .home-shape, .home-shape-spin, .home-rise { animation: none; opacity: 1; transform: none; }
   .lp-pop { opacity: 1; }
 }

@@ -19,7 +19,8 @@ Results read in three blocks: **starting point** (where the account stands) → 
 
 | Route | What |
 |---|---|
-| `/` | Landing page (pitch, video, ROI calculator) |
+| `/` | Public home for clients: what the survey is, data note, enter a code |
+| `/internal` | Internal pitch for the Dust team (video, ROI calculator, demo). Not indexed |
 | `/assessment?code=XXXX` | The survey. Add `&for=sales` or `&for=cs` for the Sales / Customer Success versions |
 | `/exemple`, `/exemple/sales`, `/exemple/cs` | Preview of the survey, nothing is saved |
 | `/dashboard` | Console for the Dust team (admin key). "Try the platform" opens it with sample data |
@@ -33,7 +34,8 @@ Results read in three blocks: **starting point** (where the account stands) → 
 - `src/lib/assessment-v2.ts`: the questionnaire (statements, dimensions, context and open questions), scoring, roles and result classes, survey headers per team
 - `src/pages/Assessment.tsx`: the survey flow
 - `src/pages/Dashboard.tsx` and `src/components/console/`: the console
-- `src/pages/Index.tsx`: the landing page
+- `src/pages/Home.tsx`: the public home page
+- `src/pages/Index.tsx`: the internal pitch (`/internal`)
 - `src/pages/ChampionKit.tsx`: the one-pagers
 - `src/demo/demo-data.ts`: sample data for the demo mode (fictional companies)
 - `public/film/`: the pitch video (HTML canvas, voice-over in `vo/`)
@@ -56,7 +58,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=
 VITE_SUPABASE_PROJECT_ID=
 ```
 
-Without them, the landing page and the demo mode still work.
+Without them, the home page, the internal pitch and the demo mode still work.
 
 ## Stack and hosting
 
