@@ -491,6 +491,24 @@ const Dashboard = () => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   };
 
+  // A campaign was deleted: drop it, then open another one (or create the first).
+  const handleCampaignDeleted = (id: string) => {
+    const remaining = allCampaigns.filter((c) => c.id !== id);
+    setAllCampaigns(remaining);
+    if (remaining.length === 0) {
+      localStorage.removeItem(SESSION_KEY);
+      navigate('/create-campaign');
+      return;
+    }
+    const next = campaignAccess?.campaignId === id ? remaining[0] : null;
+    const access: CampaignAccess = next
+      ? { campaignId: next.id, companyName: next.company_name, creatorEmail: next.creator_email, campaignCode: next.code }
+      : campaignAccess!;
+    if (next) setCampaignAccess(access);
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ access, lastActivity: Date.now(), isAdmin: true, isSuperAdmin, allCampaigns: remaining } as StoredSession));
+    setRefreshKey((k) => k + 1);
+  };
+
   const handleCloseModal = () => {
     setShowAccessModal(false);
     navigate('/');
@@ -1239,6 +1257,7 @@ const Dashboard = () => {
             onSelectCampaign={handleCampaignSelect}
             onNavigate={setActiveTab}
             openCreate={createRequested > 0}
+            onCampaignDeleted={isAdmin ? handleCampaignDeleted : undefined}
             key={activeTab === 'campaignSettings' ? `settings-${createRequested}` : activeTab}
           />
         )}

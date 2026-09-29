@@ -36,6 +36,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AdminDownloadBar } from '@/components/AdminDownloadBar';
 import { DeleteParticipantDialog } from '@/components/DeleteParticipantDialog';
+import { DeleteCampaignDialog } from '@/components/DeleteCampaignDialog';
 import { CampaignParticipant } from '@/hooks/useCampaignParticipants';
 import { AdminCampaignCreator } from '@/components/AdminCampaignCreator';
 import { creatorName, type Campaign } from '@/components/CampaignSelector';
@@ -63,9 +64,12 @@ interface SettingsTabProps {
   onNavigate?: (tab: 'dataHealth') => void;
   /** Open the “create a link” dialog on mount (sidebar “New campaign”). */
   openCreate?: boolean;
+  /** A campaign was deleted (Dust team only): the console drops it and moves on. */
+  onCampaignDeleted?: (campaignId: string) => void;
 }
 
-export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, campaignParticipants, averageScore, thematicAverages, view, allCampaigns = [], creatorEmail, onSelectCampaign, onNavigate, openCreate }: SettingsTabProps) => {
+export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, campaignParticipants, averageScore, thematicAverages, view, allCampaigns = [], creatorEmail, onSelectCampaign, onNavigate, openCreate, onCampaignDeleted }: SettingsTabProps) => {
+  const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
   const { language } = useLanguage();
   const [shareAudience, setShareAudience] = useState<SurveyAudience>('general');
   // Secret of the client's private results link: readable by the Dust team (admin key) only.
@@ -804,7 +808,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
                   <TableHead className="pl-5">{fr ? 'Campagne' : 'Campaign'}</TableHead>
                   <TableHead className="hidden sm:table-cell">{fr ? 'Créateur' : 'Creator'}</TableHead>
                   <TableHead className="text-right">{fr ? 'Participants' : 'Participants'}</TableHead>
-                  <TableHead className="w-28 pr-5 text-right"></TableHead>
+                  <TableHead className="w-36 pr-5 text-right"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -831,6 +835,17 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
                           </Button>
                         )}
                         {isCurrent && <span className="pill pill-brand">{fr ? 'Active' : 'Active'}</span>}
+                        {onCampaignDeleted && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="ml-1 h-7 w-7 text-muted-foreground hover:bg-risk-soft hover:text-risk-ink"
+                            onClick={() => setCampaignToDelete(c)}
+                            aria-label={fr ? 'Supprimer la campagne' : 'Delete campaign'}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -840,6 +855,40 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
           )}
         </SectionCard>
       )}
+
+      {isAdmin && onCampaignDeleted && current && (
+        <SectionCard
+          title={fr ? 'Supprimer cette campagne' : 'Delete this campaign'}
+          description={fr ? 'Supprime la campagne, ses réponses et ses liens. Définitif.' : 'Removes the campaign, its answers and its links. Permanent.'}
+          actions={
+            <Button variant="outline" className="border-risk/40 text-risk-ink hover:bg-risk-soft hover:text-risk-ink" onClick={() => setCampaignToDelete(current)}>
+              <Trash2 className="h-4 w-4" />
+              {fr ? 'Supprimer' : 'Delete'}
+            </Button>
+          }
+        />
+      )}
+
+      <DeleteCampaignDialog
+        campaign={campaignToDelete ? {
+          name: (campaignToDelete as any).campaign_name ? `${campaignToDelete.company_name} · ${(campaignToDelete as any).campaign_name}` : campaignToDelete.company_name,
+          code: campaignToDelete.code,
+          answers: (campaignCounts[campaignToDelete.id] || { total: 0 }).total,
+        } : null}
+        onClose={() => setCampaignToDelete(null)}
+        onConfirm={async () => {
+          if (!campaignToDelete) return;
+          const { data, error } = await supabase.from('campaigns').delete().eq('id', campaignToDelete.id).select('id');
+          if (error || !data || data.length === 0) {
+            toast({ title: fr ? 'Suppression impossible' : 'Could not delete', description: fr ? 'Réservé à l’équipe Dust. Réessayez.' : 'Dust team only. Please try again.', variant: 'destructive' });
+            return;
+          }
+          toast({ title: fr ? 'Campagne supprimée' : 'Campaign deleted', description: campaignToDelete.company_name });
+          const id = campaignToDelete.id;
+          setCampaignToDelete(null);
+          onCampaignDeleted?.(id);
+        }}
+      />
     </div>
   );
 
@@ -1239,6 +1288,7 @@ Best regards,`;
 
   // Compute the admin's company prefix and filter campaigns
   const companyPrefix = (companyName ?? '').split(' — ')[0].trim().toLowerCase();
+  const current = isGlobalCampaignId(campaignId) ? null : (allCampaigns ?? []).find((c) => c.id === campaignId) ?? null;
   const companyCampaigns = (allCampaigns ?? []).filter((c) => {
     const prefix = (c.company_name ?? '').split(' — ')[0].trim().toLowerCase();
     return prefix === companyPrefix;

@@ -337,6 +337,18 @@ export const installDemoInterceptor = () => {
     const accept = new Headers(init?.headers).get('Accept') || '';
     const single = accept.includes('vnd.pgrst.object');
 
+    // Deletes only drop rows from this page's in-memory copy (a reload brings them back).
+    if (method === 'DELETE') {
+      const ids = new Set(rows.map((r) => r.id));
+      if (path === 'campaigns') {
+        data.campaigns = data.campaigns.filter((r) => !ids.has(r.id));
+        data.participants = data.participants.filter((r) => !ids.has(r.campaign_id));
+      } else if (path === 'participants') {
+        data.participants = data.participants.filter((r) => !ids.has(r.id));
+      }
+      return json(rows);
+    }
+
     // Writes are accepted and ignored: demo mode never touches the database.
     if (method === 'POST') return json(single ? { id: 'demo-new' } : [{ id: 'demo-new' }], 201);
     if (method !== 'GET' && method !== 'HEAD') return new Response(null, { status: 204 });
