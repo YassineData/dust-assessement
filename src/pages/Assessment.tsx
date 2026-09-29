@@ -636,8 +636,14 @@ const Assessment = () => {
                     {fr ? 'Questionnaire terminé, réponses enregistrées' : 'Assessment complete, answers saved'}
                   </p>
                 </div>
-                <p className="eyebrow mt-5">{fr ? 'Votre profil' : 'Your profile'}</p>
-                <h1 className="page-title mt-1">{fr ? cls.name.fr : cls.name.en}</h1>
+                <h1 className="page-title mt-4">{fr ? 'Merci pour votre participation !' : 'Thank you for taking part!'}</h1>
+                <p className="mt-2 text-[14px] leading-relaxed text-foreground">
+                  {fr
+                    ? 'Vos réponses vont nous aider à construire un déploiement de Dust adapté à votre équipe. L’équipe Dust reviendra vers vous très vite avec la suite.'
+                    : 'Your answers will help us build a Dust rollout that fits your team. The Dust team will get back to you soon with the next steps.'}
+                </p>
+                <p className="eyebrow mt-6">{fr ? 'Votre profil' : 'Your profile'}</p>
+                <h2 className="card-title mt-1 text-[20px]">{fr ? cls.name.fr : cls.name.en}</h2>
                 <p className="mt-2 text-[14px] leading-relaxed text-foreground">{fr ? cls.meaning.fr : cls.meaning.en}</p>
                 <div className="mt-5 flex items-baseline gap-2 border-l-2 border-brand pl-4">
                   <span className="text-[13px] text-muted-foreground">{fr ? 'Indice de maturité IA' : 'AI readiness index'}</span>
@@ -650,9 +656,12 @@ const Assessment = () => {
                     : 'This profile is a signal, not a verdict: it will be confirmed with you before any role is proposed.'}
                 </p>
                 <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
-                  <p className="text-[13px] text-muted-foreground">
-                    {fr ? 'Merci ! Vous pouvez fermer cette page.' : 'Thank you! You can close this page.'}
-                  </p>
+                  <Button asChild>
+                    <a href="https://dust.tt" target="_blank" rel="noopener noreferrer">
+                      {fr ? 'Découvrir Dust' : 'Discover Dust'}
+                      <ArrowRight className="h-4 w-4" />
+                    </a>
+                  </Button>
                   <Button
                     variant="ghost"
                     onClick={() => {
