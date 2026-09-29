@@ -632,7 +632,7 @@ export const AUDIENCES: Record<SurveyAudience, AudienceInfo> = {
     title: { en: 'Help us shape your AI rollout', fr: 'Aidez-nous à construire votre déploiement IA' },
     whatFor: { en: 'Understand how your team uses AI today, and where it could help most.', fr: "Comprendre comment votre équipe utilise l'IA aujourd'hui, et où elle aiderait le plus." },
     whyItMatters: { en: 'Your answers decide which teams start first, which agents we build first and who we train. There are no right or wrong answers.', fr: "Vos réponses décident des équipes qui démarrent en premier, des premiers agents à construire et des personnes à former. Il n'y a pas de bonne ou de mauvaise réponse." },
-    output: { en: 'A rollout plan tailored to your company and, at the end of the survey, your own AI profile.', fr: 'Un plan de déploiement adapté à votre entreprise et, à la fin du questionnaire, votre propre profil IA.' },
+    output: { en: 'A rollout plan tailored to your company: which teams start first, what to build, who to train.', fr: 'Un plan de déploiement adapté à votre entreprise : les équipes qui démarrent, ce qu’on construit, qui on forme.' },
     useCaseExamples: { en: 'e.g. a weekly report, answering recurring questions, preparing a meeting', fr: 'ex. un reporting hebdo, répondre aux questions récurrentes, préparer une réunion' },
   },
   sales: {
@@ -642,7 +642,7 @@ export const AUDIENCES: Record<SurveyAudience, AudienceInfo> = {
     title: { en: 'AI for the Sales team', fr: "L'IA pour l'équipe Sales" },
     whatFor: { en: 'Understand how the Sales team uses AI today: account research, call prep, follow-ups, CRM updates.', fr: "Comprendre comment l'équipe Sales utilise l'IA aujourd'hui : recherche de comptes, préparation d'appels, relances, mises à jour du CRM." },
     whyItMatters: { en: 'Your answers decide which Sales agents we build first and who in the team gets early access and training, so the rollout saves selling time from week one.', fr: "Vos réponses décident des premiers agents Sales à construire et des personnes qui auront un accès anticipé et une formation, pour que le déploiement fasse gagner du temps commercial dès la première semaine." },
-    output: { en: 'A Sales rollout plan: the first agents to build, the people to train first, and a baseline to measure progress. Plus your own AI profile at the end.', fr: 'Un plan de déploiement Sales : les premiers agents à construire, les personnes à former en premier et une baseline pour mesurer les progrès. Et votre propre profil IA à la fin.' },
+    output: { en: 'A Sales rollout plan: the first agents to build, the people to train first, and a baseline to measure progress.', fr: 'Un plan de déploiement Sales : les premiers agents à construire, les personnes à former en premier et une baseline pour mesurer les progrès.' },
     useCaseExamples: { en: 'e.g. account research before a call, follow-up emails, CRM updates', fr: "ex. recherche de compte avant un appel, e-mails de relance, mises à jour du CRM" },
   },
   success: {
@@ -652,7 +652,7 @@ export const AUDIENCES: Record<SurveyAudience, AudienceInfo> = {
     title: { en: 'AI for the Customer Success team', fr: "L'IA pour l'équipe Customer Success" },
     whatFor: { en: 'Understand how Customer Success uses AI today: account health, QBR prep, renewal risk, recurring questions.', fr: "Comprendre comment le Customer Success utilise l'IA aujourd'hui : santé des comptes, préparation des QBR, risque de renouvellement, questions récurrentes." },
     whyItMatters: { en: 'Your answers decide which CS agents we build first and who in the team gets early access and training, so you spend less time on prep and more with customers.', fr: "Vos réponses décident des premiers agents CS à construire et des personnes qui auront un accès anticipé et une formation, pour passer moins de temps à préparer et plus de temps avec les clients." },
-    output: { en: 'A Customer Success rollout plan: the first agents to build, the people to train first, and a baseline to measure progress. Plus your own AI profile at the end.', fr: 'Un plan de déploiement Customer Success : les premiers agents à construire, les personnes à former en premier et une baseline pour mesurer les progrès. Et votre propre profil IA à la fin.' },
+    output: { en: 'A Customer Success rollout plan: the first agents to build, the people to train first, and a baseline to measure progress.', fr: 'Un plan de déploiement Customer Success : les premiers agents à construire, les personnes à former en premier et une baseline pour mesurer les progrès.' },
     useCaseExamples: { en: 'e.g. QBR prep, account health summaries, answering recurring customer questions', fr: 'ex. préparation des QBR, synthèse de la santé des comptes, réponses aux questions récurrentes des clients' },
   },
 };

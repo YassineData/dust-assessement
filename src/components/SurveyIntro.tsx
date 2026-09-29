@@ -39,8 +39,13 @@ export const SurveyIntro = ({ audience, fr }: { audience: SurveyAudience; fr: bo
       <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-border px-5 py-3 text-[12px] text-muted-foreground">
         <span className="inline-flex items-center gap-1.5"><Timer className="h-3.5 w-3.5" />{fr ? 'Moins de 5 minutes' : 'Less than 5 minutes'}</span>
         <span className="inline-flex items-center gap-1.5"><Save className="h-3.5 w-3.5" />{fr ? 'Réponses enregistrées au fil de l’eau' : 'Answers saved as you go'}</span>
-        <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" />{fr ? 'Utilisé uniquement pour préparer le déploiement' : 'Only used to plan the rollout'}</span>
+        <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" />{fr ? 'Ce n’est pas une évaluation' : 'Not an evaluation of you'}</span>
       </div>
+      <p className="border-t border-border px-5 py-3 text-[12px] leading-relaxed text-muted-foreground">
+        {fr
+          ? 'Vos réponses servent uniquement à préparer le déploiement de Dust. Seules l’équipe Dust et la personne qui pilote le projet chez vous les voient. Pour les faire supprimer, il suffit de le demander à la personne qui vous a envoyé le lien.'
+          : 'Your answers are only used to plan the Dust rollout. Only the Dust team and the person running the project at your company can see them. To have them deleted, just ask the person who sent you the link.'}
+      </p>
     </section>
   );
 };

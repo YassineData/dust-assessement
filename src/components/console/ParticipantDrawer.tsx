@@ -1,5 +1,6 @@
-import { Fragment } from 'react';
-import { X, BadgeCheck, Target, FileText, AlertTriangle } from 'lucide-react';
+import { Fragment, useState } from 'react';
+import { X, BadgeCheck, Target, FileText, AlertTriangle, Trash2 } from 'lucide-react';
+import { DeleteParticipantDialog } from '@/components/DeleteParticipantDialog';
 import { CONTEXT_FIELDS, OPEN_FIELDS, contextLabels, READINESS_DIMENSION_IDS } from '@/lib/assessment-v2';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -14,12 +15,15 @@ interface ParticipantDrawerProps {
   thematics: readonly string[];
   translateThematic: (t: string) => string;
   onClose: () => void;
+  /** Dust team only: removes this person's answers (e.g. on request). */
+  onDelete?: () => Promise<void>;
 }
 
 const BAR_BY_TIER = { top: 'bg-ok', emerging: 'bg-warn', critical: 'bg-risk' } as const;
 
 /** Side panel with one respondent's profile, dimension scores and recommended action. */
-export const ParticipantDrawer = ({ participant: p, thematics, translateThematic, onClose }: ParticipantDrawerProps) => {
+export const ParticipantDrawer = ({ participant: p, thematics, translateThematic, onClose, onDelete }: ParticipantDrawerProps) => {
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const { t, language } = useLanguage();
   const fr = language === 'fr';
   const completed = p.status === 'completed';
@@ -194,13 +198,32 @@ export const ParticipantDrawer = ({ participant: p, thematics, translateThematic
         </dl>
       </div>
 
-      {completed && (
-        <div className="border-t border-border p-3">
-          <Button variant="outline" className="w-full" onClick={() => window.open(`/participant-result/${p.id}`, '_blank')}>
-            <FileText className="h-4 w-4" />
-            {fr ? 'Voir le résultat complet' : 'View full result'}
-          </Button>
+      {(completed || onDelete) && (
+        <div className="space-y-1 border-t border-border p-3">
+          {completed && (
+            <Button variant="outline" className="w-full" onClick={() => window.open(`/participant-result/${p.id}`, '_blank')}>
+              <FileText className="h-4 w-4" />
+              {fr ? 'Voir le résultat complet' : 'View full result'}
+            </Button>
+          )}
+          {onDelete && (
+            <Button variant="ghost" className="w-full text-risk-ink hover:bg-risk-soft hover:text-risk-ink" onClick={() => setConfirmDelete(true)}>
+              <Trash2 className="h-4 w-4" />
+              {fr ? 'Supprimer ses réponses' : 'Delete their answers'}
+            </Button>
+          )}
         </div>
+      )}
+      {onDelete && (
+        <DeleteParticipantDialog
+          isOpen={confirmDelete}
+          onClose={() => setConfirmDelete(false)}
+          onConfirm={async () => {
+            await onDelete();
+            setConfirmDelete(false);
+          }}
+          participantName={`${p.firstName} ${p.lastName}`.trim()}
+        />
       )}
     </aside>
   );

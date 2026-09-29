@@ -1092,6 +1092,16 @@ const Dashboard = () => {
                       thematics={activeThematics}
                       translateThematic={translateThematic}
                       onClose={() => setDrawerId(null)}
+                      onDelete={isClientView ? undefined : async () => {
+                        const { error } = await supabase.from('participants').delete().eq('id', drawerParticipant.id);
+                        if (error) {
+                          toast.error(fr ? 'Suppression impossible' : 'Could not delete');
+                          return;
+                        }
+                        toast.success(fr ? 'Réponses supprimées' : 'Answers deleted');
+                        setDrawerId(null);
+                        setRefreshKey((k) => k + 1);
+                      }}
                     />
                   )}
                 </div>
