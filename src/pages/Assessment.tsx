@@ -48,7 +48,26 @@ interface ParticipantInfo {
   companyName: string;
   assessmentType: AssessmentType;
   campaignLanguage: 'fr' | 'en';
+  /** Secret held by this browser: the only way to update this participant's answers. */
+  token?: string;
 }
+
+/** Respondent token, kept per campaign + email so the person can resume on this browser. */
+const tokenKey = (code: string, email: string) => `dust_resp_${code.toUpperCase()}_${email.toLowerCase().trim()}`;
+const readToken = (code: string, email: string) => {
+  try {
+    return localStorage.getItem(tokenKey(code, email)) || null;
+  } catch {
+    return null;
+  }
+};
+const storeToken = (code: string, email: string, token: string) => {
+  try {
+    localStorage.setItem(tokenKey(code, email), token);
+  } catch {
+    /* storage unavailable: resuming will need the same browser session */
+  }
+};
 
 const Assessment = () => {
   const navigate = useNavigate();
@@ -213,10 +232,17 @@ const Assessment = () => {
         updateData.profile = null;
       }
 
-      const { error } = await supabase
-        .from('participants')
-        .update(updateData)
-        .eq('id', participantInfo.id);
+      // Saved through save_participant(): only this browser's token can update the row.
+      const { data: saved, error } = await supabase.rpc('save_participant' as never, {
+        p_id: participantInfo.id,
+        p_token: participantInfo.token,
+        p_responses: updateData.responses,
+        p_item_scores: updateData.item_scores,
+        p_team: updateData.team,
+        p_completed: isCompleted,
+        p_global_score: isCompleted ? updateData.global_score : null,
+      } as never);
+      if (!error && saved === false) console.error('Progress not saved: invalid respondent token');
 
       if (error) {
         console.error('Error saving progress:', error);
@@ -348,14 +374,11 @@ const Assessment = () => {
     setIsValidating(true);
 
     try {
-      // Validate campaign code
-      const { data: campaign, error: campaignError } = await supabase
-        .from('campaigns')
-        .select('id, company_name, assessment_type, language')
-        .eq('code', registrationForm.campaignCode.toUpperCase())
-        .maybeSingle();
-
+      // Campaign lookup through get_campaign_by_code(): the campaigns table is not publicly readable.
+      const code = registrationForm.campaignCode.toUpperCase().trim();
+      const { data: campaignRows, error: campaignError } = await supabase.rpc('get_campaign_by_code' as never, { p_code: code } as never);
       if (campaignError) throw campaignError;
+      const campaign = (campaignRows as unknown as { id: string; company_name: string; assessment_type: string; language: string }[] | null)?.[0];
 
       if (!campaign) {
         toast({
@@ -368,26 +391,46 @@ const Assessment = () => {
       }
 
       // Apply campaign default language for the participant journey
-      const campaignLang: 'fr' | 'en' = (campaign as any).language === 'fr' ? 'fr' : 'en';
+      const campaignLang: 'fr' | 'en' = campaign.language === 'fr' ? 'fr' : 'en';
       setLanguage(campaignLang);
 
-      // Check if participant already exists
-      const { data: existingParticipant } = await supabase
-        .from('participants')
-        .select('id, status, responses')
-        .eq('email', registrationForm.email.toLowerCase())
-        .eq('campaign_id', campaign.id)
-        .maybeSingle();
+      // Register, or resume with the token this browser already holds.
+      const email = registrationForm.email.toLowerCase().trim();
+      const { data: started, error: startError } = await supabase.rpc('start_participant' as never, {
+        p_code: code,
+        p_first_name: registrationForm.firstName.trim(),
+        p_last_name: registrationForm.lastName.trim(),
+        p_email: email,
+        p_token: readToken(code, email),
+      } as never);
+      if (startError) throw startError;
+      const result = started as unknown as { id?: string; token?: string; status?: string; responses?: unknown; resumed?: boolean; error?: string };
 
-      let participantId: string;
+      if (result?.error === 'already_registered') {
+        toast({
+          title: language === 'fr' ? 'Déjà inscrit avec cet e-mail' : 'Already registered with this email',
+          description: language === 'fr'
+            ? 'Vos réponses ont été commencées depuis un autre navigateur ou appareil. Reprenez-les depuis celui-ci, ou contactez la personne qui vous a envoyé le lien.'
+            : 'Your answers were started from another browser or device. Continue from there, or contact the person who sent you the link.',
+          variant: 'destructive',
+          duration: 10000,
+        });
+        setIsValidating(false);
+        return;
+      }
+      if (!result?.id || !result.token) {
+        toast({ title: t.error, description: t.errorCreateParticipant, variant: 'destructive' });
+        setIsValidating(false);
+        return;
+      }
 
-      if (existingParticipant) {
-        // Resume existing participant
-        participantId = existingParticipant.id;
-        
+      storeToken(code, email, result.token);
+      const participantId = result.id;
+
+      if (result.resumed) {
         // Restore previous v2 answers if any (answers to the previous questionnaire are not reusable)
-        if (isV2Responses(existingParticipant.responses)) {
-          const saved = existingParticipant.responses;
+        if (isV2Responses(result.responses)) {
+          const saved = result.responses;
           setAnswers(saved.answers || {});
           setContext(saved.context || {});
           setOpen(saved.open || {});
@@ -399,7 +442,7 @@ const Assessment = () => {
           setPhase(!ctxDone ? 'context' : allAnswered ? 'open' : 'questions');
         }
 
-        if (existingParticipant.status === 'completed') {
+        if (result.status === 'completed') {
           // Already submitted: reopen the answers so the person can review and update them.
           toast({
             title: language === 'fr' ? 'Vous avez déjà répondu' : 'You have already answered',
@@ -412,48 +455,6 @@ const Assessment = () => {
           });
         }
       } else {
-        // Create new participant
-        const { data: newParticipant, error: insertError } = await supabase
-          .from('participants')
-          .insert({
-            first_name: registrationForm.firstName.trim(),
-            last_name: registrationForm.lastName.trim(),
-            email: registrationForm.email.toLowerCase().trim(),
-            company_name: campaign.company_name,
-            campaign_id: campaign.id,
-            status: 'in_progress',
-            started_at: new Date().toISOString()
-          })
-          .select('id')
-          .single();
-
-        if (insertError) {
-          console.error('Error creating participant:', insertError);
-          const errorDetails = insertError.message || JSON.stringify(insertError);
-          const mailSubject = encodeURIComponent(
-            language === 'fr' ? 'Erreur création participation' : 'Participation creation error'
-          );
-          const mailBody = encodeURIComponent(
-            `${language === 'fr' ? 'Erreur rencontrée' : 'Error encountered'}: ${errorDetails}\n\n` +
-            `Email: ${registrationForm.email}\nCampagne: ${registrationForm.campaignCode}\nDate: ${new Date().toISOString()}`
-          );
-          toast({
-            title: t.error,
-            description: (
-              <div className="space-y-2">
-                <p>{t.errorCreateParticipant}</p>
-                <p className="text-xs opacity-90 font-mono break-all">{errorDetails}</p>
-              </div>
-            ),
-            variant: "destructive",
-            duration: 15000,
-          });
-          setIsValidating(false);
-          return;
-        }
-
-        participantId = newParticipant.id;
-
         toast({
           title: t.welcome,
           description: `${t.welcomeDesc} ${campaign.company_name}`
@@ -471,6 +472,7 @@ const Assessment = () => {
         companyName: campaign.company_name,
         assessmentType: campaignType,
         campaignLanguage: campaignLang,
+        token: result.token,
       });
 
     } catch (error: any) {
@@ -594,16 +596,11 @@ const Assessment = () => {
             </form>
           </div>
 
-          {/* Redirect for people without code */}
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-border px-4 py-3">
-            <p className="text-[13px] text-muted-foreground">{t.noCode}</p>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/create-campaign">
-                <UserPlus className="h-4 w-4" />
-                {t.createAssessment}
-              </Link>
-            </Button>
-          </div>
+          {/* People without a code: campaigns are created by the Dust team only */}
+          <p className="mt-5 rounded-lg border border-dashed border-border px-4 py-3 text-[13px] text-muted-foreground">
+            {t.noCode}{' '}
+            {language === 'fr' ? 'Demandez le lien à la personne qui vous a envoyé le questionnaire.' : 'Ask the person who sent you the survey for the link.'}
+          </p>
         </main>
       </div>
     );

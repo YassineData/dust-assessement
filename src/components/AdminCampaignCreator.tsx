@@ -9,6 +9,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { validateProfessionalEmail } from '@/lib/email-validation';
 import { cn } from '@/lib/utils';
+import { getAdminKey, resultsLink } from '@/lib/access';
+import { isDemoMode } from '@/demo/demo-data';
+import { Link } from 'react-router-dom';
 
 interface AdminCampaignCreatorProps {
   defaultCompany?: string;
@@ -31,8 +34,10 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
   const [email, setEmail] = useState(defaultCreatorEmail ?? '');
   const [campaignLanguage, setCampaignLanguage] = useState<'fr' | 'en'>('en');
   const [creating, setCreating] = useState(false);
-  const [created, setCreated] = useState<{ code: string; company: string } | null>(null);
-  const [copied, setCopied] = useState<'link' | 'message' | null>(null);
+  const [created, setCreated] = useState<{ code: string; company: string; accessKey: string } | null>(null);
+  const [copied, setCopied] = useState<'link' | 'message' | 'results' | null>(null);
+  // Only the Dust team (admin key) can create campaigns; the database enforces it too.
+  const canCreate = !!getAdminKey() || isDemoMode();
   // One link per audience: all teams, Sales or Customer Success (own survey header, team pre-selected).
   const [audience, setAudience] = useState<SurveyAudience>('general');
 
@@ -48,9 +53,9 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
       : `Hello,\n\nAs part of the Dust rollout at ${created.company}${teamEn}, we invite you to answer a short questionnaire (about 8 minutes) on how you use AI today.\n\nYour answers will help us tailor the rollout to your team.\n\nLink: ${link}\nCode (if asked): ${created.code}\n\nThank you!`
     : '';
 
-  const copy = async (what: 'link' | 'message') => {
+  const copy = async (what: 'link' | 'message' | 'results') => {
     try {
-      await navigator.clipboard.writeText(what === 'link' ? link : message);
+      await navigator.clipboard.writeText(what === 'link' ? link : what === 'results' ? resultsLink(created?.accessKey || '') : message);
       setCopied(what);
       setTimeout(() => setCopied(null), 1500);
     } catch {
@@ -80,7 +85,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
       if (codeError) throw codeError;
       const code = codeData as string;
 
-      const { error } = await supabase.from('campaigns').insert({
+      const { data: inserted, error } = await supabase.from('campaigns').insert({
         code,
         company_name: companyClean,
         campaign_name: campaignName.trim() || (fr ? 'Déploiement Dust' : 'Dust rollout'),
@@ -88,10 +93,10 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
         creator_last_name: '-',
         creator_email: owner,
         language: campaignLanguage,
-      } as any);
+      } as any).select('access_key').maybeSingle();
       if (error) throw error;
 
-      setCreated({ code, company: companyClean });
+      setCreated({ code, company: companyClean, accessKey: (inserted as { access_key?: string } | null)?.access_key || 'DEMO' });
     } catch (err) {
       console.error(err);
       toast({ title: fr ? 'Erreur' : 'Error', description: fr ? 'Impossible de créer le lien' : 'Unable to create the link', variant: 'destructive' });
@@ -157,6 +162,22 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
           </p>
         </div>
 
+        <div className="space-y-1.5 rounded-md bg-paper p-3 ring-1 ring-border">
+          <Label>{fr ? 'Lien privé des résultats (pour votre contact client)' : 'Private results link (for your client contact)'}</Label>
+          <p className="text-[12px] text-muted-foreground">
+            {fr
+              ? 'Il donne accès aux résultats de cette campagne uniquement. À envoyer seulement à la personne qui pilote le projet chez le client, jamais aux répondants.'
+              : 'It opens the results of this campaign only. Send it only to the person running the project at the client, never to respondents.'}
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input readOnly value={resultsLink(created.accessKey)} onFocus={(e) => e.currentTarget.select()} className="font-mono text-[12px]" />
+            <Button type="button" variant="outline" onClick={() => copy('results')} className="sm:flex-none">
+              {copied === 'results' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied === 'results' ? (fr ? 'Copié' : 'Copied') : (fr ? 'Copier' : 'Copy')}
+            </Button>
+          </div>
+        </div>
+
         <div className="space-y-1.5">
           <Label>{fr ? 'Message prêt à envoyer' : 'Ready-to-send message'}</Label>
           <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-paper p-3 font-sans text-[13px] leading-relaxed text-foreground">{message}</pre>
@@ -185,6 +206,22 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
             </Button>
           )}
         </div>
+      </div>
+    );
+  }
+
+  if (!canCreate) {
+    return (
+      <div className="space-y-3 rounded-md bg-paper p-4 ring-1 ring-border">
+        <p className="text-[14px] font-medium text-foreground">{fr ? 'Réservé à l’équipe Dust' : 'For the Dust team only'}</p>
+        <p className="text-[13px] text-muted-foreground">
+          {fr
+            ? 'Connectez-vous avec la clé admin Dust pour créer un lien de campagne.'
+            : 'Sign in with the Dust admin key to create a campaign link.'}
+        </p>
+        <Button asChild>
+          <Link to="/dashboard">{fr ? 'Se connecter' : 'Sign in'}</Link>
+        </Button>
       </div>
     );
   }

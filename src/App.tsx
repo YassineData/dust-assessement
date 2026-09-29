@@ -9,7 +9,6 @@ import Dashboard from "./pages/Dashboard";
 import Assessment from "./pages/Assessment";
 import CreateCampaign from "./pages/CreateCampaign";
 import NotFound from "./pages/NotFound";
-import Admin from "./pages/Admin";
 import ParticipantResult from "./pages/ParticipantResult";
 import ChampionKit from "./pages/ChampionKit";
 
@@ -31,7 +30,8 @@ const App = () => (
             <Route path="/exemple/cs" element={<Navigate to="/assessment?preview=1&for=cs" replace />} />
             <Route path="/create-campaign" element={<CreateCampaign />} />
             <Route path="/kit" element={<ChampionKit />} />
-            <Route path="/admin" element={<Admin />} />
+            {/* The legacy admin panel belonged to the previous app: the console is the only admin now. */}
+            <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
             <Route path="/participant-result/:id" element={<ParticipantResult />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

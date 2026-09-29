@@ -359,7 +359,7 @@ const Index = () => {
           <p>{L('© 2026 Dust · AI Maturity Assessment · internal tool', '© 2026 Dust · AI Maturity Assessment · outil interne')}</p>
           <div className="flex items-center gap-4">
             <Link to="/assessment" className="transition-colors hover:text-foreground">{L('Take the assessment', 'Répondre au questionnaire')}</Link>
-            <Link to="/admin" className="transition-colors hover:text-foreground">Admin</Link>
+            <Link to="/dashboard" className="transition-colors hover:text-foreground">{L('Sign in', 'Connexion')}</Link>
           </div>
         </div>
       </footer>

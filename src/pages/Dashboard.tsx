@@ -21,6 +21,7 @@ import {
 } from '@/lib/assessment-v2';
 import { cn } from '@/lib/utils';
 import { DEMO_FLAG, isDemoMode } from '@/demo/demo-data';
+import { clearAccessKeys } from '@/lib/access';
 import { DashboardAccessModal, AdminCampaign } from '@/components/DashboardAccessModal';
 import { EmptyDashboardState } from '@/components/EmptyDashboardState';
 import { DownloadOptionsModal } from '@/components/DownloadOptionsModal';
@@ -134,6 +135,12 @@ const Dashboard = () => {
   useEffect(() => {
     // Purge legacy session keys from before the access-scope security fix
     try { localStorage.removeItem('dashboard_session'); } catch {}
+    // A private results link (?key=…) always starts a fresh client session, handled by the access modal.
+    if (new URLSearchParams(window.location.search).get('key')) {
+      localStorage.removeItem(SESSION_KEY);
+      setIsInitialized(true);
+      return;
+    }
     const storedSession = localStorage.getItem(SESSION_KEY);
     if (storedSession) {
       try {
@@ -153,8 +160,9 @@ const Dashboard = () => {
             lastActivity: now
           }));
         } else {
-          // Session expirée, la supprimer
+          // Session expirée : la supprimer, avec les clés d'accès
           localStorage.removeItem(SESSION_KEY);
+          clearAccessKeys();
         }
       } catch (e) {
         localStorage.removeItem(SESSION_KEY);
@@ -523,6 +531,7 @@ const Dashboard = () => {
       window.location.reload();
       return;
     }
+    clearAccessKeys();
     setCampaignAccess(null);
     setIsAdmin(false);
     setIsSuperAdmin(false);

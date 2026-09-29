@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Loader2, Users, Clock, CheckCircle2, CircleDashed, Copy, Check, Mail, Trash2, Plus, Info, Upload, Search, Link2, ExternalLink, KeyRound, Timer, Save, MessageSquare, ArrowRight, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AUDIENCES, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
+import { getAdminKey, resultsLink } from '@/lib/access';
 import { SectionCard } from '@/components/console/SectionCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -66,6 +67,19 @@ interface SettingsTabProps {
 export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, campaignParticipants, averageScore, thematicAverages, view, allCampaigns = [], creatorEmail, onSelectCampaign, onNavigate, openCreate }: SettingsTabProps) => {
   const { language } = useLanguage();
   const [shareAudience, setShareAudience] = useState<SurveyAudience>('general');
+  // Secret of the client's private results link: readable by the Dust team (admin key) only.
+  const [clientAccessKey, setClientAccessKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (!campaignId || !getAdminKey()) {
+      setClientAccessKey(null);
+      return;
+    }
+    let cancelled = false;
+    supabase.from('campaigns').select('access_key' as never).eq('id', campaignId).maybeSingle().then(({ data }) => {
+      if (!cancelled) setClientAccessKey((data as { access_key?: string } | null)?.access_key ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [campaignId]);
   const { toast } = useToast();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [members, setMembers] = useState<{ id: string; email: string; role: MemberRole }[]>([]);
@@ -563,6 +577,23 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
           ))}
         </dl>
       </SectionCard>
+
+      {clientAccessKey && (
+        <SectionCard
+          title={fr ? 'Lien privé des résultats (client)' : 'Private results link (client)'}
+          description={fr
+            ? 'Donne accès aux résultats de cette campagne uniquement, sans mot de passe. À envoyer seulement au contact qui pilote le projet chez le client, jamais aux répondants.'
+            : 'Opens the results of this campaign only, no password. Send it only to the contact running the project at the client, never to respondents.'}
+        >
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input readOnly value={resultsLink(clientAccessKey)} onFocus={(e) => e.currentTarget.select()} className="font-mono text-[12px]" aria-label={fr ? 'Lien privé des résultats' : 'Private results link'} />
+            <Button variant="outline" className="gap-1.5 sm:flex-none" onClick={() => copyText(resultsLink(clientAccessKey), fr ? 'Lien copié' : 'Link copied')}>
+              <Copy className="h-4 w-4" />
+              {fr ? 'Copier' : 'Copy'}
+            </Button>
+          </div>
+        </SectionCard>
+      )}
 
       {/* Kit for the client champion: one-pager to send before the links */}
       <SectionCard

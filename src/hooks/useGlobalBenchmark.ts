@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DIMENSION_IDS, isV2ItemScores } from '@/lib/assessment-v2';
+import { isDemoMode } from '@/demo/demo-data';
 
 export interface GlobalBenchmark {
   /** Average score per v2 dimension id. */
@@ -30,7 +31,12 @@ export const useGlobalBenchmark = () => {
         const pageSize = 1000;
         let from = 0;
         const all: { item_scores: unknown }[] = [];
-        for (let i = 0; i < 20; i++) {
+        if (!isDemoMode()) {
+          // Real data: scores only (no names), through global_benchmark(): participants are not publicly readable.
+          const { data } = await supabase.rpc('global_benchmark' as never);
+          ((data as unknown as unknown[]) ?? []).forEach((item_scores) => all.push({ item_scores }));
+        }
+        for (let i = 0; isDemoMode() && i < 20; i++) {
           const { data, error } = await supabase
             .from('participants')
             .select('item_scores')
