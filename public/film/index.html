@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Maturity Assessment Pitch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@500&display=swap">
 <style>
   :root {
     color-scheme: dark;
@@ -17,7 +17,7 @@
     --lime: #E2F78C;
   }
   html, body { background: var(--bg); color: var(--text); margin: 0; }
-  body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; padding: 24px 16px 40px; }
+  body { font-family: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif; padding: 24px 16px 40px; }
   .wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 14px; }
   header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
   h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
@@ -30,20 +30,20 @@
   .bigplay[hidden] { display: none; }
   .bigplay span { width: 84px; height: 84px; border-radius: 50%; background: var(--blue); display: grid; place-items: center; box-shadow: 0 10px 30px rgba(28,145,255,0.45); }
   .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
-  button.ctl { height: 34px; min-width: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: #2A3241; color: var(--text); font: 500 13px 'Inter', system-ui, sans-serif; cursor: pointer; transition: background 0.15s ease; }
+  button.ctl { height: 34px; min-width: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: #2A3241; color: var(--text); font: 500 13px 'Geist', system-ui, sans-serif; cursor: pointer; transition: background 0.15s ease; }
   button.ctl:hover { background: #364153; }
   button.primary { background: var(--blue); border-color: var(--blue); color: #111418; font-weight: 600; }
   button.primary:hover { background: #4BABFF; }
   button:focus-visible, input:focus-visible, .bigplay:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; }
   input[type=range] { flex: 1 1 200px; accent-color: var(--blue); min-width: 0; }
-  .time { font: 500 12px 'JetBrains Mono', ui-monospace, monospace; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .time { font: 500 12px 'Geist Mono', ui-monospace, monospace; color: var(--muted); font-variant-numeric: tabular-nums; }
   .chapters { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chapters button { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 5px 11px; font: 500 12px 'Inter', system-ui, sans-serif; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
+  .chapters button { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 5px 11px; font: 500 12px 'Geist', system-ui, sans-serif; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
   .chapters button.on { background: #E9F7FF; color: #111418; border-color: #E9F7FF; }
   .roi { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 16px; margin-top: 10px; }
   .roi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
   .field { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
-  .field input { height: 36px; border-radius: 8px; border: 1px solid var(--line); background: #111418; color: var(--text); padding: 0 10px; font: 500 14px 'Inter', system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+  .field input { height: 36px; border-radius: 8px; border: 1px solid var(--line); background: #111418; color: var(--text); padding: 0 10px; font: 500 14px 'Geist', system-ui, sans-serif; font-variant-numeric: tabular-nums; }
   .totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
   .tot { background: #111418; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
   .tot b { display: block; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
@@ -121,8 +121,8 @@
     white: '#FFFFFF', blue: '#1C91FF', sky: '#9FDBFF', skySoft: '#E9F7FF',
     pink: '#FFC3DF', lime: '#E2F78C', orange: '#FE9C1A', green: '#418B5C', red: '#E14322',
   };
-  const FONT = "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif";
-  const MONO = "'JetBrains Mono', ui-monospace, monospace";
+  const FONT = "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif";
+  const MONO = "'Geist Mono', ui-monospace, monospace";
 
   /* ---------- ROI model (fed by the form) ---------- */
   const R = { deploys: 15, disc: 8, champ: 4, qbr: 3, rate: 90 };
@@ -732,6 +732,6 @@
   });
 
   draw();
-  (document.fonts && document.fonts.load ? Promise.all([document.fonts.load('700 40px Inter'), document.fonts.load('800 40px Inter'), document.fonts.load("500 20px 'JetBrains Mono'")]) : Promise.resolve()).catch(() => {}).then(draw);
+  (document.fonts && document.fonts.load ? Promise.all([document.fonts.load('700 40px Geist'), document.fonts.load('800 40px Geist'), document.fonts.load("500 20px 'Geist Mono'")]) : Promise.resolve()).catch(() => {}).then(draw);
 })();
 </script>

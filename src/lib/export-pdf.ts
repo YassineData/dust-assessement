@@ -26,6 +26,26 @@ const BENCH: [number, number, number] = [211, 213, 217];
 const RED: [number, number, number] = [225, 67, 34];
 const LIME: [number, number, number] = [226, 247, 140];
 
+// Brand shapes (Dust brand guide): circle, arch, square, two quarter circles.
+const drawBrandShapes = (pdf: jsPDF, x: number, y: number, s: number, gap: number) => {
+  const k = 0.5523 * s;
+  pdf.setFillColor(65, 139, 92);
+  pdf.circle(x + s / 2, y + s / 2, s / 2, 'F');
+  x += s + gap;
+  pdf.setFillColor(159, 219, 255);
+  pdf.circle(x + s / 2, y + s / 2, s / 2, 'F');
+  pdf.rect(x, y + s / 2, s, s / 2, 'F');
+  x += s + gap;
+  pdf.setFillColor(255, 195, 223);
+  pdf.rect(x, y, s, s, 'F');
+  x += s + gap;
+  pdf.setFillColor(28, 145, 255);
+  pdf.lines([[0, -s], [k, 0, s, s - k, s, s]], x, y + s, [1, 1], 'F', true);
+  x += s + gap;
+  pdf.setFillColor(254, 156, 26);
+  pdf.lines([[0, -s], [-k, 0, -s, s - k, -s, s]], x + s, y + s, [1, 1], 'F', true);
+};
+
 // Built-in PDF fonts only cover Latin-1: normalise the few characters outside it.
 const clean = (s: string) =>
   s.replace(/[’‘]/g, "'").replace(/[“”«»]/g, '"').replace(/[–—]/g, '-').replace(/→/g, '->').replace(/≥/g, '>=').replace(/…/g, '...').replace(/ | /g, ' ');
@@ -64,10 +84,10 @@ export const exportSummaryPDF = (d: SummaryPdfData) => {
   text('Dust', M, 10, { size: 13, bold: true, color: [255, 255, 255] });
   text('AI Maturity Assessment', M + 13, 10, { size: 10, color: [200, 204, 210] });
   const date = new Date().toLocaleDateString(fr ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  text(date, W - M, 10, { size: 9, color: [200, 204, 210], align: 'right' });
+  drawBrandShapes(pdf, W - M - 29, 5.5, 5, 1);
   text(d.company, M, 18, { size: 11, bold: true, color: [255, 255, 255] });
   text(
-    `${d.campaignName ? `${d.campaignName} · ` : ''}${d.completed} ${L('answers out of', 'réponses sur')} ${d.registered} ${L('registered', 'inscrits')}`,
+    `${d.campaignName ? `${d.campaignName} · ` : ''}${d.completed} ${L('answers out of', 'réponses sur')} ${d.registered} ${L('registered', 'inscrits')} · ${date}`,
     W - M, 18, { size: 9, color: [200, 204, 210], align: 'right' }
   );
   y = 32;

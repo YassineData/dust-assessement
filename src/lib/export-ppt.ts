@@ -37,8 +37,8 @@ const C = {
   traditional: 'E14322',
 };
 
-const FT = 'Inter';   // Titles
-const FB = 'Inter'; // Body
+const FT = 'Geist';   // Titles (Dust brand typeface)
+const FB = 'Geist'; // Body
 
 // v2 result classes
 const PROFILE_COLORS: Record<string, string> = {

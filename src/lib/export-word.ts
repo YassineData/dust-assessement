@@ -21,8 +21,8 @@ const BRAND = {
   danger: 'E14322',
 };
 
-const FONT_TITLE = 'Inter';
-const FONT_BODY = 'Inter';
+const FONT_TITLE = 'Geist';
+const FONT_BODY = 'Geist';
 
 const RESPONSE_LABELS_FR: Record<string, string> = {
   disagree: 'Pas du tout d\'accord',
