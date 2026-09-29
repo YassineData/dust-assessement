@@ -132,7 +132,7 @@ export const VALUE_AXES: Record<ValueAxis, L> = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Questions (35 statements, 1–5 scale)                                 */
+/* Questions (26 statements, 1–5 scale)                                 */
 /* ------------------------------------------------------------------ */
 
 export interface V2Question {
@@ -148,13 +148,10 @@ export const V2_QUESTIONS: V2Question[] = [
   { id: 'u1', dimension: 'usage', text: { en: 'I use an AI tool (ChatGPT, Claude, Copilot, Dust…) at least a few times a week.', fr: "J'utilise un outil d'IA (ChatGPT, Claude, Copilot, Dust…) au moins quelques fois par semaine." } },
   { id: 'u3', dimension: 'usage', text: { en: 'I know how to give an AI enough context (documents, examples, constraints) to do a task properly.', fr: 'Je sais donner à une IA assez de contexte (documents, exemples, contraintes) pour qu’elle fasse une tâche correctement.' } },
   { id: 'u4', dimension: 'usage', text: { en: 'I have already replaced part of a recurring task in my job with an AI tool.', fr: "J'ai déjà remplacé une partie d'une tâche récurrente de mon travail par un outil d'IA." } },
-  { id: 'u5', dimension: 'usage', text: { en: 'When an output is wrong, I can work out why and adjust rather than give up.', fr: "Quand un résultat est faux, je sais comprendre pourquoi et ajuster plutôt qu'abandonner." } },
   // Builder depth
   { id: 'd1', dimension: 'depth', text: { en: 'I have already built or configured an AI agent with custom instructions.', fr: "J'ai déjà créé ou configuré un agent IA avec des instructions personnalisées." } },
   { id: 'd2', dimension: 'depth', text: { en: 'I understand how connecting company data or a tool changes what an agent can do.', fr: 'Je comprends comment le fait de connecter des données de l’entreprise ou un outil change ce qu’un assistant peut faire.' } },
   { id: 'd3', dimension: 'depth', text: { en: 'I am comfortable iterating on instructions until something behaves reliably.', fr: "Je suis à l'aise pour retravailler des instructions jusqu'à obtenir un comportement fiable." } },
-  { id: 'd5', dimension: 'depth', text: { en: 'I am comfortable trying new features on my own, without waiting for a training session.', fr: "Je suis à l'aise pour essayer de nouvelles fonctionnalités seul, sans attendre une formation." } },
-  { id: 'd6', dimension: 'depth', text: { en: 'I could debug an agent that gives a wrong answer, rather than giving up on it.', fr: 'Je saurais déboguer un agent qui donne une mauvaise réponse, plutôt que de le laisser tomber.' } },
   // Motivation
   { id: 'w3', dimension: 'will', text: { en: 'I actively look for new ways to apply AI to my work.', fr: "Je cherche activement de nouvelles façons d'appliquer l'IA à mon travail." } },
   { id: 'w5', dimension: 'will', text: { en: 'I am willing to try an AI-supported approach to a real task in my work.', fr: "Je suis prêt(e) à essayer une approche appuyée par l'IA sur une vraie tâche de mon travail." } },
@@ -162,28 +159,22 @@ export const V2_QUESTIONS: V2Question[] = [
   { id: 't1', dimension: 'teach', text: { en: 'I would like to help colleagues learn through coaching, demonstrations or written guidance.', fr: 'J’aimerais aider mes collègues à apprendre, par du coaching, des démonstrations ou des guides écrits.' } },
   { id: 't2', dimension: 'teach', text: { en: 'I have already run a training, demo or onboarding session for colleagues.', fr: "J'ai déjà animé une formation, une démo ou une session d'onboarding pour des collègues." } },
   { id: 't4', dimension: 'teach', text: { en: 'My manager would support me spending part of my time training others.', fr: 'Mon manager me soutiendrait si je consacrais une partie de mon temps à former les autres.' } },
-  { id: 't5', dimension: 'teach', text: { en: 'I am comfortable answering questions live, in front of a group.', fr: "Je suis à l'aise pour répondre à des questions en direct, devant un groupe." } },
   // Blast radius
   { id: 'r1', dimension: 'reach', text: { en: 'Colleagues already come to me for advice on tools or ways of working.', fr: 'Mes collègues viennent déjà me demander conseil sur des outils ou des façons de travailler.' } },
   { id: 'r2', dimension: 'reach', text: { en: 'Things I build or document tend to get reused by other people.', fr: 'Ce que je construis ou documente a tendance à être réutilisé par d’autres.' } },
   { id: 'r5', dimension: 'reach', text: { en: "I would be comfortable representing my team's needs in the AI rollout.", fr: "Je serais à l'aise pour représenter les besoins de mon équipe dans le déploiement de l'IA." } },
-  { id: 'r6', dimension: 'reach', text: { en: 'Other teams would notice if I stopped sharing what I build or document.', fr: "D'autres équipes remarqueraient si j'arrêtais de partager ce que je construis ou documente." } },
   // Governance & trust
   { id: 'g1', dimension: 'gov', text: { en: 'I know what company data I am and am not allowed to put into an AI tool.', fr: "Je sais quelles données de l'entreprise j'ai le droit ou non de mettre dans un outil d'IA." } },
   { id: 'g2', dimension: 'gov', text: { en: 'I know who decides which AI tools we are allowed to use.', fr: "Je sais qui décide des outils d'IA que nous avons le droit d'utiliser." } },
   { id: 'g3', dimension: 'gov', text: { en: 'I would know where to raise a concern about an AI output or a data issue.', fr: "Je saurais où signaler un problème lié à un résultat d'IA ou à des données." } },
-  { id: 'g4', dimension: 'gov', text: { en: 'I understand what happens to the data I put into an AI tool.', fr: "Je comprends ce que deviennent les données que je mets dans un outil d'IA." } },
   // Multiplayer habits
   { id: 'm1', dimension: 'team', text: { en: 'My team shares working methods and templates instead of each person doing their own thing.', fr: 'Mon équipe partage ses méthodes et ses modèles au lieu que chacun fasse à sa façon.' } },
   { id: 'm2', dimension: 'team', text: { en: 'I would share something I built with the rest of the company, not just keep it for myself.', fr: "Je partagerais ce que j'ai construit avec le reste de l'entreprise, au lieu de le garder pour moi." } },
-  { id: 'm3', dimension: 'team', text: { en: 'My team has a shared place where knowledge actually lives and stays up to date.', fr: 'Mon équipe a un espace partagé où la connaissance vit vraiment et reste à jour.' } },
   { id: 'm4', dimension: 'team', text: { en: 'We tend to adopt a new tool together rather than in scattered pockets.', fr: 'Nous adoptons généralement un nouvel outil ensemble plutôt que chacun dans son coin.' } },
-  { id: 'm5', dimension: 'team', text: { en: 'I would tell the people running the rollout when something is not working.', fr: "Je signalerais aux responsables du déploiement quand quelque chose ne fonctionne pas." } },
   // Automation opportunity (not in readiness)
   { id: 'p1', dimension: 'pain', text: { en: 'A significant part of my week goes into repetitive, low-judgment work.', fr: 'Une part importante de ma semaine passe dans des tâches répétitives, à faible valeur de jugement.' } },
   { id: 'p2', dimension: 'pain', text: { en: 'I regularly spend time looking for information that exists somewhere in the company.', fr: "Je passe régulièrement du temps à chercher des informations qui existent quelque part dans l'entreprise." } },
   { id: 'p3', dimension: 'pain', text: { en: 'I often rewrite or reformat the same kind of document or message.', fr: 'Je réécris ou remets souvent en forme le même type de document ou de message.' } },
-  { id: 'p4', dimension: 'pain', text: { en: 'My work gets delayed waiting for someone else to produce a routine output.', fr: "Mon travail est retardé parce que j'attends qu'une autre personne produise un livrable de routine." } },
   { id: 'p5', dimension: 'pain', text: { en: 'I could name at least one task in my week I would hand over to an AI agent tomorrow.', fr: "Je pourrais citer au moins une tâche de ma semaine que je confierais dès demain à un agent IA." } },
   // Value clarity (not in readiness)
   { id: 'v1', dimension: 'value', text: { en: 'I can name a concrete outcome my team would get from AI, not just time saved.', fr: "Je peux citer un résultat concret que mon équipe obtiendrait grâce à l'IA, au-delà du temps gagné." } },

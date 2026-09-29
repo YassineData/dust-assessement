@@ -57,7 +57,7 @@ const COMPANIES: DemoCompany[] = [
   {
     // Earlier pilot at the same client: lets the demo compare two rollouts of one account.
     id: 'demo-veloria-pilot', code: 'VELOPIL1', name: 'Veloria Santé', domain: 'veloria-sante.fr',
-    employees: 1192, registered: 96, completedShare: 0.9, level: 55, label: 'Dust pilot · spring 2026',
+    employees: 1192, registered: 96, completedShare: 0.9, level: 59, label: 'Dust pilot · spring 2026',
     offsets: { depth: -6, reach: -4, gov: -12, pain: 10, value: 2 },
     teams: ['engineering', 'data', 'product'], createdAt: '2026-04-14T08:00:00Z',
   },

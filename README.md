@@ -9,7 +9,7 @@ Live: **https://dust-assessment.com**
 
 | For | What they get |
 |---|---|
-| **Respondents** (client employees) | A short survey (EN / FR): about them, a few open questions, then 35 statements across 9 dimensions. No account. They get their own AI profile at the end. |
+| **Respondents** (client employees) | A short survey (EN / FR): about them, a few open questions, then 26 statements across 9 dimensions. No account. They get their own AI profile at the end. |
 | **Dust team** (Deployment, CS, Sales) | A console per campaign: readiness index vs benchmark, results by team, builders / champions / trainers / sponsors, a rollout plan per profile, comparisons with past rollouts and sectors, exports. |
 | **Client manager** | A private results link (`/results?key=…`): all results of their campaign only, live, without the Dust team's settings. Plus a one-pager to forward the survey to their teams. |
 
