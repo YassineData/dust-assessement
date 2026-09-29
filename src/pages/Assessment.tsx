@@ -252,7 +252,7 @@ const Assessment = () => {
     }
   }, [participantInfo, answers, context, open]);
 
-  // Advance when a section is complete; after the last one, move on to the open questions.
+  // Advance when a section is complete; the last one shows the submit button (the open questions come before the statements).
   useEffect(() => {
     if (manualNavRef.current || phase !== 'questions') return;
     if (isCurrentThematicComplete && participantInfo && currentThematicIndex < thematicOrder.length - 1) {
@@ -263,10 +263,7 @@ const Assessment = () => {
       }, 500);
     } else if (isCurrentThematicComplete && currentThematicIndex === thematicOrder.length - 1 && participantInfo) {
       saveProgress(false);
-      setTimeout(() => {
-        setPhase('open');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 400);
+      setTimeout(() => submitRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
     }
   }, [isCurrentThematicComplete, currentThematicIndex, thematicOrder.length, participantInfo, saveProgress, phase]);
 
@@ -295,7 +292,7 @@ const Assessment = () => {
       setCurrentThematicIndex(prev => prev - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      setPhase('context');
+      setPhase('open');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -329,16 +326,27 @@ const Assessment = () => {
       return;
     }
     saveProgress(false);
+    setPhase('open');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Step 2 (open questions, optional) → step 3 (statements)
+  const handleSubmitOpen = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveProgress(false);
     setPhase('questions');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSubmitOpen = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const allStatementsAnswered = V2_QUESTIONS.every((q) => answers[q.id] !== undefined);
+  const submitRef = useRef<HTMLDivElement>(null);
+  const handleFinalSubmit = async () => {
+    if (!allStatementsAnswered) return;
     setIsSaving(true);
     await saveProgress(true);
     setIsSaving(false);
     setIsComplete(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const finalScores = useMemo(() => computeScores(answers), [answers]);
@@ -438,8 +446,8 @@ const Assessment = () => {
             const v = saved.context?.[f.id];
             return Array.isArray(v) ? v.length > 0 : !!v;
           });
-          const allAnswered = V2_QUESTIONS.every(q => saved.answers?.[q.id]);
-          setPhase(!ctxDone ? 'context' : allAnswered ? 'open' : 'questions');
+          const anyAnswered = V2_QUESTIONS.some(q => saved.answers?.[q.id]);
+          setPhase(!ctxDone ? 'context' : anyAnswered ? 'questions' : 'open');
         }
 
         if (result.status === 'completed') {
@@ -810,14 +818,14 @@ const Assessment = () => {
     );
   }
 
-  // Step 3 — Open questions (not scored)
+  // Step 2 — Open questions (not scored, optional)
   if (phase === 'open') {
     return (
       <div className="min-h-screen bg-background">
         {topBar()}
         <main className="mx-auto max-w-[780px] px-4 py-8">
-          <p className="eyebrow">{fr ? 'Étape 3 sur 3' : 'Step 3 of 3'}</p>
-          <h1 className="page-title mt-1">{fr ? 'Pour finir, en quelques mots' : 'To finish, in a few words'}</h1>
+          <p className="eyebrow">{fr ? 'Étape 2 sur 3' : 'Step 2 of 3'}</p>
+          <h1 className="page-title mt-1">{fr ? 'En quelques mots' : 'In a few words'}</h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
             {fr ? 'Facultatif, mais très utile pour choisir les premiers cas d’usage.' : 'Optional, but very useful to pick the first use cases.'}
           </p>
@@ -842,17 +850,16 @@ const Assessment = () => {
                 type="button"
                 variant="ghost"
                 onClick={() => {
-                  manualNavRef.current = true;
-                  setCurrentThematicIndex(thematicOrder.length - 1);
-                  setPhase('questions');
+                  setPhase('context');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
               >
                 <ArrowLeft className="h-4 w-4" />
-                {fr ? 'Revenir aux questions' : 'Back to the questions'}
+                {fr ? 'À propos de vous' : 'About you'}
               </Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-                {fr ? 'Envoyer mes réponses' : 'Submit my answers'}
+              <Button type="submit">
+                {fr ? 'Continuer' : 'Continue'}
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           </form>
@@ -861,7 +868,7 @@ const Assessment = () => {
     );
   }
 
-  // Step 2 — Scored statements, one dimension at a time
+  // Step 3 — Scored statements, one dimension at a time
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {topBar(
@@ -875,7 +882,7 @@ const Assessment = () => {
             maxReachableIndex={maxReachableIndex}
             onSelectThematic={handleSelectThematic}
             labelFor={(id) => dimensionLabel(id, lang)}
-            stepLabel={fr ? 'Étape 2 sur 3' : 'Step 2 of 3'}
+            stepLabel={fr ? 'Étape 3 sur 3' : 'Step 3 of 3'}
           />
         </div>
       )}
@@ -896,6 +903,19 @@ const Assessment = () => {
               questionNumber={index + 1}
             />
           ))}
+          {currentThematicIndex === thematicOrder.length - 1 && (
+            <div ref={submitRef} className="card-elevated flex flex-wrap items-center justify-between gap-3 p-5">
+              <p className="text-[14px] text-foreground">
+                {allStatementsAnswered
+                  ? (fr ? 'C’est terminé, il ne reste qu’à envoyer vos réponses.' : 'All done, you just need to submit your answers.')
+                  : (fr ? 'Répondez à toutes les affirmations pour envoyer.' : 'Answer every statement to submit.')}
+              </p>
+              <Button onClick={handleFinalSubmit} disabled={!allStatementsAnswered || isSaving}>
+                {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {fr ? 'Envoyer mes réponses' : 'Submit my answers'}
+              </Button>
+            </div>
+          )}
         </div>
       </main>
 
@@ -903,7 +923,7 @@ const Assessment = () => {
         <div className="mx-auto flex h-14 max-w-[780px] items-center justify-between gap-2 px-4">
           <Button variant="ghost" size="sm" onClick={handlePreviousThematic}>
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">{currentThematicIndex === 0 ? (fr ? 'À propos de vous' : 'About you') : t.previousSection}</span>
+            <span className="hidden sm:inline">{currentThematicIndex === 0 ? (fr ? 'En quelques mots' : 'In a few words') : t.previousSection}</span>
           </Button>
 
           <span className="text-[12px] tabular-nums text-muted-foreground">

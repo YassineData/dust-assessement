@@ -184,7 +184,7 @@ export const useCampaignParticipants = (campaignId: string | null, refreshKey: n
         setParticipants(transformedParticipants);
       } catch (err) {
         console.error('Error:', err);
-        setError('Une erreur est survenue');
+        setError('An error occurred / Une erreur est survenue');
       } finally {
         setIsLoading(false);
       }

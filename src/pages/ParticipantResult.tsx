@@ -62,7 +62,7 @@ const ParticipantResult = () => {
           .maybeSingle();
         if (err) throw err;
         if (!p) {
-          setError('Participant introuvable');
+          setError('Participant not found / Participant introuvable');
           return;
         }
 
@@ -112,7 +112,7 @@ const ParticipantResult = () => {
         });
       } catch (e: any) {
         console.error(e);
-        setError(e?.message || 'Erreur de chargement');
+        setError(e?.message || 'Loading error / Erreur de chargement');
       } finally {
         setLoading(false);
       }

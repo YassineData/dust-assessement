@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { TopBar, PageHeader } from '@/components/CampaignHeader';
 import { DashboardSidebar, TabId, TAB_LABELS, CLIENT_HIDDEN_TABS } from '@/components/DashboardSidebar';
 import { SectionCard } from '@/components/console/SectionCard';
+import { OpenAnswersCard } from '@/components/console/OpenAnswersCard';
 import { HeroDiagnostic, KpiCards, DimensionBars, RankedList, PendingBanner, NextSteps, CardLink } from '@/components/console/OverviewBlocks';
 import { ParticipantDrawer } from '@/components/console/ParticipantDrawer';
 import { CompareView } from '@/components/console/CompareView';
@@ -983,6 +984,7 @@ const Dashboard = () => {
                     </ul>
                   </SectionCard>
                 </div>
+                <OpenAnswersCard participants={participants} fr={fr} />
                 <div className="grid gap-5 lg:grid-cols-12">
                   <SectionCard
                     className="lg:col-span-12"
