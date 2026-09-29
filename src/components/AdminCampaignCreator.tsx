@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { resultsLink } from '@/lib/access';
 import { useIsDustTeam } from '@/hooks/useIsDustTeam';
 import { Link } from 'react-router-dom';
+import { DUST_TEAM, splitName } from '@/lib/dust-team';
 
 interface AdminCampaignCreatorProps {
   defaultCompany?: string;
@@ -21,6 +22,7 @@ interface AdminCampaignCreatorProps {
 }
 
 const CREATOR_KEY = 'dust_campaign_creator';
+const OTHER = '__other';
 
 /**
  * Creates a deployment and hands back a link (+ code) to send to the client.
@@ -37,13 +39,15 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
   // Who is creating it: remembered on this browser so the Dust owner doesn't retype it every time.
   const saved = (() => {
     try {
-      return JSON.parse(localStorage.getItem(CREATOR_KEY) || '{}') as { first?: string; last?: string };
+      return JSON.parse(localStorage.getItem(CREATOR_KEY) || '{}') as { first?: string; last?: string; picked?: string };
     } catch {
       return {};
     }
   })();
-  const [firstName, setFirstName] = useState(saved.first ?? '');
-  const [lastName, setLastName] = useState(saved.last ?? '');
+  // Picked from the Dust team list; OTHER falls back to two free fields.
+  const [picked, setPicked] = useState(saved.picked ?? '');
+  const [firstName, setFirstName] = useState(saved.picked === OTHER ? saved.first ?? '' : '');
+  const [lastName, setLastName] = useState(saved.picked === OTHER ? saved.last ?? '' : '');
   const [campaignLanguage, setCampaignLanguage] = useState<'fr' | 'en'>('en');
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<{ code: string; company: string; accessKey: string } | null>(null);
@@ -79,12 +83,11 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
     e.preventDefault();
     const companyClean = company.trim();
     const owner = email.trim().toLowerCase();
-    const first = firstName.trim();
-    const last = lastName.trim();
+    const { first, last } = picked && picked !== OTHER ? splitName(picked) : { first: firstName.trim(), last: lastName.trim() };
     if (!companyClean || !owner || !first || !last) {
       toast({
         title: fr ? 'Erreur' : 'Error',
-        description: fr ? 'Indiquez le client, votre prénom et votre nom' + (askEmail ? ' et votre email' : '') : 'Enter the client, your first and last name' + (askEmail ? ' and your email' : ''),
+        description: fr ? 'Indiquez le client et qui crée la campagne' + (askEmail ? ', et votre email' : '') : 'Enter the client and who is creating the campaign' + (askEmail ? ', and your email' : ''),
         variant: 'destructive',
       });
       return;
@@ -114,7 +117,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
       } as any).select('access_key').maybeSingle();
       if (error) throw error;
       try {
-        localStorage.setItem(CREATOR_KEY, JSON.stringify({ first, last }));
+        localStorage.setItem(CREATOR_KEY, JSON.stringify({ first, last, picked }));
       } catch {
         /* per-browser convenience only */
       }
@@ -264,19 +267,44 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="cc-first">{fr ? 'Votre prénom' : 'Your first name'}</Label>
-          <Input id="cc-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" placeholder={fr ? 'Ex : Camille' : 'E.g. Camille'} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="cc-last">{fr ? 'Votre nom' : 'Your last name'}</Label>
-          <Input id="cc-last" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" placeholder={fr ? 'Ex : Martin' : 'E.g. Martin'} />
-        </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="cc-owner">{fr ? 'Créée par' : 'Created by'}</Label>
+        <select
+          id="cc-owner"
+          value={picked}
+          onChange={(e) => setPicked(e.target.value)}
+          className={cn(
+            'flex h-10 w-full rounded-md border border-input bg-card px-3 text-[14px] ring-offset-background',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            !picked && 'text-muted-foreground'
+          )}
+        >
+          <option value="" disabled>{fr ? 'Choisissez votre nom' : 'Pick your name'}</option>
+          {DUST_TEAM.map((g) => (
+            <optgroup key={g.group} label={g.group}>
+              {g.names.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </optgroup>
+          ))}
+          <option value={OTHER}>{fr ? 'Autre (pas dans la liste)' : 'Someone else (not listed)'}</option>
+        </select>
+        <p className="text-[12px] text-muted-foreground">
+          {fr ? 'Affiché dans la liste des campagnes, pour savoir qui a lancé quoi. Mémorisé sur ce navigateur.' : 'Shown in the campaign list, so the team knows who launched what. Remembered on this browser.'}
+        </p>
       </div>
-      <p className="-mt-2 text-[12px] text-muted-foreground">
-        {fr ? 'Affiché dans la liste des campagnes, pour savoir qui a lancé quoi.' : 'Shown in the campaign list, so the team knows who launched what.'}
-      </p>
+      {picked === OTHER && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="cc-first">{fr ? 'Prénom' : 'First name'}</Label>
+            <Input id="cc-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cc-last">{fr ? 'Nom' : 'Last name'}</Label>
+            <Input id="cc-last" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
+          </div>
+        </div>
+      )}
 
       {askEmail && (
         <div className="space-y-1.5">
