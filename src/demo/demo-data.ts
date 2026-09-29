@@ -50,14 +50,14 @@ const COMPANIES: DemoCompany[] = [
   },
   {
     id: 'demo-veloria', code: 'VELOR119', name: 'Veloria Santé', domain: 'veloria-sante.fr',
-    employees: 1192, registered: 286, completedShare: 0.85, level: 84,
+    employees: 1192, registered: 286, completedShare: 0.85, level: 83,
     offsets: { depth: 6, reach: 4, gov: 10, pain: 4, value: 14 },
     teams: ['engineering', 'data', 'product', 'legal', 'marketing', 'hr', 'success'], createdAt: '2026-09-12T08:00:00Z',
   },
   {
     // Earlier pilot at the same client: lets the demo compare two rollouts of one account.
     id: 'demo-veloria-pilot', code: 'VELOPIL1', name: 'Veloria Santé', domain: 'veloria-sante.fr',
-    employees: 1192, registered: 96, completedShare: 0.9, level: 60, label: 'Dust pilot · spring 2026',
+    employees: 1192, registered: 96, completedShare: 0.9, level: 55, label: 'Dust pilot · spring 2026',
     offsets: { depth: -6, reach: -4, gov: -12, pain: 10, value: 2 },
     teams: ['engineering', 'data', 'product'], createdAt: '2026-04-14T08:00:00Z',
   },
@@ -198,14 +198,15 @@ export const getDemoData = () => {
       const wantsToTrain = target.teach > 55 ? rnd() < 0.8 : rnd() < 0.15;
       const context = {
         team,
-        level: pickOne(rnd, ['ic', 'ic', 'ic', 'lead', 'manager', 'manager', 'director', 'exec']),
+        // Realistic pyramid: mostly individual contributors, few managers and above.
+        level: pickOne(rnd, ['ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'lead', 'lead', 'lead', 'lead', 'manager', 'manager', 'manager', 'director']),
         bandwidth: target.teach > 60 ? pickOne(rnd, ['1to3h', 'halfday', 'lt1h']) : pickOne(rnd, ['none', 'lt1h', 'lt1h', '1to3h']),
         tools: pickSome(rnd, ['chatgpt', 'claude', 'copilot', 'gemini', 'dust', 'inhouse', 'personal'], 1 + Math.floor(rnd() * 3)),
         rolloutRole: [
           'use',
           ...(target.depth > 60 ? ['build'] : []),
           ...(wantsToTrain ? ['train'] : []),
-          ...(target.gov > 65 && rnd() < 0.5 ? ['govern'] : []),
+          ...((target.gov > 65 ? rnd() : 1) < 0.15 && target.gov > 75 ? ['govern'] : []),
         ],
         expectedValue: pickSome(rnd, ['time', 'workflow', 'quality', 'knowledge', 'crossteam', 'govern'], 1 + Math.floor(rnd() * 3)),
       };
@@ -220,7 +221,7 @@ export const getDemoData = () => {
         : {};
 
       const completedAt = new Date(new Date(c.createdAt).getTime() + (1 + rnd() * 18) * 86400000).toISOString();
-      const scores = computeScores(answers);
+      const scores = computeScores(answers, context);
       participants.push({
         id: `${c.id}-p${i}`,
         campaign_id: c.id,

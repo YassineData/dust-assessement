@@ -240,12 +240,20 @@ export type RoleId = 'trainer' | 'builder' | 'champion' | 'sponsor';
 export type RoleFits = Record<RoleId, number>;
 
 /** Role rules. Builder = hands-on depth; champion = drives adoption. Neither requires the other. */
-export const roleMatches = (d: Record<DimensionId, number>, fits: RoleFits): RoleId[] => {
+/** A program sponsor needs standing: manager level or above, or a declared sponsor / governance role. */
+const canSponsor = (context?: ContextAnswers) => {
+  if (!context) return true;
+  const level = typeof context.level === 'string' ? context.level : '';
+  const roles = Array.isArray(context.rolloutRole) ? context.rolloutRole : context.rolloutRole ? [context.rolloutRole] : [];
+  return ['manager', 'director', 'exec'].includes(level) || roles.includes('sponsor') || roles.includes('govern');
+};
+
+export const roleMatches = (d: Record<DimensionId, number>, fits: RoleFits, context?: ContextAnswers): RoleId[] => {
   const roles: RoleId[] = [];
   if (fits.trainer >= 65 && d.teach >= 60 && d.will >= 60) roles.push('trainer');
-  if (fits.champion >= 65 && d.reach >= 55) roles.push('champion');
-  if (fits.builder >= 65 && d.depth >= 60) roles.push('builder');
-  if (fits.sponsor >= 65 && d.gov >= 60) roles.push('sponsor');
+  if (fits.champion >= 70 && d.reach >= 65) roles.push('champion');
+  if (fits.builder >= 70 && d.depth >= 70) roles.push('builder');
+  if (fits.sponsor >= 65 && d.gov >= 60 && canSponsor(context)) roles.push('sponsor');
   return roles;
 };
 
@@ -269,7 +277,7 @@ export const computeDimensions = (answers: Record<string, AnswerValue | undefine
   return out;
 };
 
-export const computeScores = (answers: Record<string, AnswerValue | undefined>): V2Scores => {
+export const computeScores = (answers: Record<string, AnswerValue | undefined>, context?: ContextAnswers): V2Scores => {
   const d = computeDimensions(answers);
   const readiness = round(mean(READINESS_DIMENSION_IDS.map((id) => d[id])));
   const fits: RoleFits = {
@@ -278,12 +286,12 @@ export const computeScores = (answers: Record<string, AnswerValue | undefined>):
     champion: round(0.45 * d.reach + 0.3 * d.team + 0.25 * d.will),
     sponsor: round(0.4 * d.gov + 0.3 * d.reach + 0.3 * d.team),
   };
-  return { version: 2, dimensions: d, readiness, fits, roles: roleMatches(d, fits), classId: assignClass(d, fits) };
+  return { version: 2, dimensions: d, readiness, fits, roles: roleMatches(d, fits, context), classId: assignClass(d, fits, context) };
 };
 
 /** Scores from the stored answers when available, so every participant is read with the current model. */
 export const rescore = (storedScores: V2Scores, responses: V2Responses | null): V2Scores =>
-  responses && Object.keys(responses.answers || {}).length ? computeScores(responses.answers) : { ...storedScores, roles: storedScores.roles ?? [] };
+  responses && Object.keys(responses.answers || {}).length ? computeScores(responses.answers, responses.context) : { ...storedScores, roles: storedScores.roles ?? [] };
 
 /* ------------------------------------------------------------------ */
 /* Result classes (first matching rule wins)                            */
@@ -291,8 +299,8 @@ export const rescore = (storedScores: V2Scores, responses: V2Responses | null): 
 
 export type ResultClassId = 'trainer' | 'champion' | 'builder' | 'sponsor' | 'beginner' | 'convince' | 'everyday';
 
-export const assignClass = (d: Record<DimensionId, number>, fits: RoleFits): ResultClassId => {
-  const roles = roleMatches(d, fits);
+export const assignClass = (d: Record<DimensionId, number>, fits: RoleFits, context?: ContextAnswers): ResultClassId => {
+  const roles = roleMatches(d, fits, context);
   if (roles.length) return roles[0];
   if (d.will >= 65 && d.depth < 50) return 'beginner';
   if (d.will < 40 && d.usage < 40) return 'convince';
@@ -320,7 +328,7 @@ export const RESULT_CLASSES: ResultClassInfo[] = [
   {
     id: 'champion',
     name: { en: 'Champion potential', fr: 'Potentiel champion' },
-    rule: { en: 'Champion fit ≥ 65 and blast radius ≥ 55', fr: 'Fit champion ≥ 65 et rayonnement ≥ 55' },
+    rule: { en: 'Champion fit ≥ 70 and blast radius ≥ 65', fr: 'Fit champion ≥ 70 et rayonnement ≥ 65' },
     meaning: { en: 'Drives adoption: colleagues come to them and their team follows. May never build an agent themselves.', fr: "Porte l'adoption : les collègues viennent vers eux et leur équipe suit. Ne construira peut-être jamais d'agent." },
     action: { en: 'Early access, a peer-story kit and a visible role in team rituals. Pair them with a builder for use cases.', fr: 'Accès anticipé, kit de retours d’expérience et rôle visible dans les rituels d’équipe. Les associer à un builder pour les cas d’usage.' },
     tone: 'green',
@@ -328,7 +336,7 @@ export const RESULT_CLASSES: ResultClassInfo[] = [
   {
     id: 'builder',
     name: { en: 'Builder potential', fr: 'Potentiel builder' },
-    rule: { en: 'Builder fit ≥ 65 and builder depth ≥ 60', fr: 'Fit builder ≥ 65 et capacité à construire ≥ 60' },
+    rule: { en: 'Builder fit ≥ 70 and builder depth ≥ 70', fr: 'Fit builder ≥ 70 et capacité à construire ≥ 70' },
     meaning: { en: 'Can configure agents, connect data and iterate. Not necessarily the one who drives adoption.', fr: "Sait configurer des agents, connecter des données et itérer. Pas forcément celui qui porte l'adoption." },
     action: { en: 'Builder session on day one and first use cases to build. Pair with a champion so what they build gets used.', fr: 'Session builder dès le premier jour et premiers cas d’usage à construire. Les associer à un champion pour que ce qu’ils construisent soit utilisé.' },
     tone: 'lav',
@@ -336,7 +344,7 @@ export const RESULT_CLASSES: ResultClassInfo[] = [
   {
     id: 'sponsor',
     name: { en: 'Program sponsor potential', fr: 'Potentiel sponsor du programme' },
-    rule: { en: 'Sponsor fit ≥ 65 and governance clarity ≥ 60', fr: 'Fit sponsor ≥ 65 et gouvernance ≥ 60' },
+    rule: { en: 'Sponsor fit ≥ 65, governance ≥ 60, and manager level or a declared sponsor/governance role', fr: 'Fit sponsor ≥ 65, gouvernance ≥ 60, et niveau manager ou rôle de sponsor/gouvernance déclaré' },
     meaning: { en: 'Owns governance, KPIs and internal communication rather than hands-on building.', fr: 'Porte la gouvernance, les indicateurs et la communication interne plutôt que la construction.' },
     action: { en: 'Admin setup, value reporting, budget defence and internal comms. Not expected to deliver training sessions.', fr: 'Configuration admin, suivi de la valeur, défense du budget et communication interne. Pas attendu sur l’animation de formations.' },
     tone: 'pink',

@@ -1,89 +1,120 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { FileText, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { FileText, FileSpreadsheet, Presentation, FileDown, Loader2, Download } from 'lucide-react';
+import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { CampaignParticipant } from '@/hooks/useCampaignParticipants';
+import { exportCSV } from '@/lib/export-csv';
+import { exportWord } from '@/lib/export-word';
+import { exportPPT } from '@/lib/export-ppt';
+import { cn } from '@/lib/utils';
+
+type ExportKind = 'pdf' | 'ppt' | 'word' | 'csv';
 
 interface DownloadOptionsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDownloadBilan: () => void;
+  /** One-page summary (starting point → people → plan). */
+  onDownloadPdf: () => void;
+  participants: CampaignParticipant[];
+  companyName: string;
+  averageScore: number;
+  thematicAverages: { thematic: string; originalThematic: string; score: number }[];
 }
 
-export const DownloadOptionsModal = ({ 
-  isOpen, 
-  onClose, 
-  onDownloadBilan 
+/** Every export in one place: summary PDF, kickoff deck, full report, raw data. */
+export const DownloadOptionsModal = ({
+  isOpen,
+  onClose,
+  onDownloadPdf,
+  participants,
+  companyName,
+  averageScore,
+  thematicAverages,
 }: DownloadOptionsModalProps) => {
-  const { t } = useLanguage();
-  const [isSelected, setIsSelected] = useState(false);
+  const { language } = useLanguage();
+  const fr = language === 'fr';
+  const [loading, setLoading] = useState<ExportKind | null>(null);
 
-  const handleConfirm = () => {
-    if (isSelected) {
-      onDownloadBilan();
-      onClose();
-      setIsSelected(false);
+  const options: { kind: ExportKind; icon: typeof FileText; title: string; body: string; tag?: string }[] = [
+    {
+      kind: 'pdf',
+      icon: FileDown,
+      title: fr ? 'Synthèse d’une page (PDF)' : 'One-page summary (PDF)',
+      body: fr ? 'Point de départ, personnes, plan : à envoyer au client ou à partager en interne.' : 'Starting point, people, plan: to send to the client or share internally.',
+      tag: fr ? 'Recommandé' : 'Recommended',
+    },
+    {
+      kind: 'ppt',
+      icon: Presentation,
+      title: fr ? 'Deck de kickoff (PowerPoint)' : 'Kickoff deck (PowerPoint)',
+      body: fr ? 'Les slides à présenter au client : résultats, profils et plan.' : 'Slides to present to the client: results, profiles and plan.',
+    },
+    {
+      kind: 'word',
+      icon: FileText,
+      title: fr ? 'Rapport complet (Word)' : 'Full report (Word)',
+      body: fr ? 'Le détail par dimension et par question, modifiable.' : 'Detail by dimension and question, editable.',
+    },
+    {
+      kind: 'csv',
+      icon: FileSpreadsheet,
+      title: fr ? 'Données brutes (CSV)' : 'Raw data (CSV)',
+      body: fr ? 'Une ligne par répondant : scores, rôles, contexte et réponses ouvertes.' : 'One row per respondent: scores, roles, context and open answers.',
+    },
+  ];
+
+  const run = async (kind: ExportKind) => {
+    setLoading(kind);
+    try {
+      if (kind === 'pdf') onDownloadPdf();
+      if (kind === 'ppt') await exportPPT(participants, companyName, language, averageScore, thematicAverages);
+      if (kind === 'word') await exportWord(participants, companyName, language, averageScore, thematicAverages);
+      if (kind === 'csv') exportCSV(participants, companyName, language);
+      toast.success(fr ? 'Export téléchargé' : 'Export downloaded');
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error(fr ? 'L’export a échoué, réessayez.' : 'The export failed, please try again.');
+    } finally {
+      setLoading(null);
     }
   };
 
-  const handleClose = () => {
-    onClose();
-    setIsSelected(false);
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">{t('downloadModal.title')}</DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            {t('downloadModal.description')}
-          </p>
+          <DialogTitle className="text-[17px] font-semibold">{fr ? 'Exporter les résultats' : 'Export results'}</DialogTitle>
+          <DialogDescription>
+            {fr ? `Campagne ${companyName} · ${participants.filter((p) => p.status === 'completed').length} réponses` : `${companyName} campaign · ${participants.filter((p) => p.status === 'completed').length} answers`}
+          </DialogDescription>
         </DialogHeader>
-
-        <div className="py-4">
-          <p className="text-sm font-semibold text-foreground mb-3">{t('downloadModal.reportLabel')}</p>
-          <button
-            onClick={() => setIsSelected(!isSelected)}
-            className={cn(
-              "relative w-full p-4 rounded-lg border-2 text-left transition-all",
-              "hover:border-primary/50 hover:bg-muted/50",
-              isSelected 
-                ? "border-primary bg-primary/5" 
-                : "border-border bg-card"
-            )}
-          >
-            {isSelected && (
-              <div className="absolute top-3 right-3 w-5 h-5 rounded bg-primary flex items-center justify-center">
-                <Check className="w-3 h-3 text-primary-foreground" />
-              </div>
-            )}
-            <FileText className={cn(
-              "w-8 h-8 mb-3",
-              isSelected ? "text-primary" : "text-muted-foreground"
-            )} />
-            <h3 className="font-semibold text-foreground mb-1">
-              {t('downloadModal.campaignSummary')}
-            </h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {t('downloadModal.campaignSummaryDesc')}
-            </p>
-          </button>
+        <div className="mt-2 grid gap-2">
+          {options.map(({ kind, icon: Icon, title, body, tag }) => (
+            <button
+              key={kind}
+              type="button"
+              onClick={() => run(kind)}
+              disabled={loading !== null}
+              className={cn(
+                'flex items-center gap-3 rounded-lg p-3 text-left ring-1 ring-border transition-colors duration-150',
+                'hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60'
+              )}
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-brand-soft text-brand-ink">
+                <Icon className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
+                  {title}
+                  {tag && <span className="pill pill-green">{tag}</span>}
+                </span>
+                <span className="mt-0.5 block text-[12px] text-muted-foreground">{body}</span>
+              </span>
+              {loading === kind ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : <Download className="h-4 w-4 text-muted-foreground" />}
+            </button>
+          ))}
         </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={handleClose}>
-            {t('common.cancel')}
-          </Button>
-          <Button 
-            onClick={handleConfirm}
-            disabled={!isSelected}
-            className=""
-          >
-            {t('common.download')}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

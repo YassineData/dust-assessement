@@ -212,7 +212,7 @@ const Assessment = () => {
     if (!participantInfo || isPreview) return;
 
     try {
-      const scores = computeScores(answers);
+      const scores = computeScores(answers, context);
       const responses: V2Responses = { version: 2, answers, context, open };
       const teamLabel = typeof context.team === 'string' ? optionLabel('team', context.team, 'en') : null;
 
@@ -349,7 +349,7 @@ const Assessment = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const finalScores = useMemo(() => computeScores(answers), [answers]);
+  const finalScores = useMemo(() => computeScores(answers, context), [answers, context]);
 
   // Current question number within thematic for progress
   const answeredInThematic = questionsInCurrentThematic.filter(q => answers[q.id] !== undefined).length;

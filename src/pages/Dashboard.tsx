@@ -45,7 +45,7 @@ import { useGlobalBenchmark } from '@/hooks/useGlobalBenchmark';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
-import jsPDF from 'jspdf';
+import { exportSummaryPDF } from '@/lib/export-pdf';
 import { 
   PROFILES, 
   THEMATICS,
@@ -1190,70 +1190,36 @@ const Dashboard = () => {
         <DownloadOptionsModal
           isOpen={isDownloadModalOpen}
           onClose={() => setIsDownloadModalOpen(false)}
-          onDownloadBilan={() => {
-            const toastMsg = language === 'fr' ? 'Génération du bilan en cours...' : 'Generating report...';
-            toast.success(toastMsg, { duration: 2000 });
-            // Simplified PDF generation for campaign summary
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            
-            // Title
-            pdf.setFontSize(24);
-            pdf.setFont('helvetica', 'bold');
-            const pdfTitle = language === 'fr' ? 'Bilan de Campagne IA' : 'AI Campaign Summary';
-            pdf.text(pdfTitle, pageWidth / 2, 30, { align: 'center' });
-            
-            // Company name
-            pdf.setFontSize(16);
-            pdf.setFont('helvetica', 'normal');
-            pdf.text(campaignAccess.companyName, pageWidth / 2, 45, { align: 'center' });
-            
-            // Date
-            pdf.setFontSize(10);
-            pdf.setTextColor(100);
-            const formattedDate = new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-GB');
-            const dateLabel = language === 'fr' ? `Généré le ${formattedDate}` : `Generated on ${formattedDate}`;
-            pdf.text(dateLabel, pageWidth / 2, 55, { align: 'center' });
-            
-            // Key metrics
-            pdf.setTextColor(0);
-            pdf.setFontSize(14);
-            pdf.setFont('helvetica', 'bold');
-            const metricsTitle = language === 'fr' ? 'Métriques clés' : 'Key Metrics';
-            pdf.text(metricsTitle, 20, 75);
-            
-            pdf.setFontSize(12);
-            pdf.setFont('helvetica', 'normal');
-            const participantsLabel = language === 'fr' ? 'Participants' : 'Participants';
-            const avgScoreLabel = language === 'fr' ? 'Score moyen' : 'Average Score';
-            const thematicsLabel = language === 'fr' ? 'Thématiques évaluées' : 'Themes Evaluated';
-            pdf.text(`${participantsLabel}: ${participants.length}`, 25, 90);
-            pdf.text(`${avgScoreLabel}: ${averageScore}/100`, 25, 100);
-            pdf.text(`${thematicsLabel}: ${activeThematics.length}`, 25, 110);
-            
-            // Thematic scores
-            pdf.setFontSize(14);
-            pdf.setFont('helvetica', 'bold');
-            const scoresTitle = language === 'fr' ? 'Scores par thématique' : 'Scores by Theme';
-            pdf.text(scoresTitle, 20, 130);
-            
-            pdf.setFontSize(10);
-            pdf.setFont('helvetica', 'normal');
-            let yPos = 145;
-            thematicAverages.forEach((thematic, i) => {
-              const thematicName = language === 'en' ? t(`thematics.${thematic.thematic}`) : thematic.thematic;
-              pdf.text(`${thematicName}: ${thematic.score}%`, 25, yPos);
-              yPos += 10;
-              if (yPos > 270 && i < thematicAverages.length - 1) {
-                pdf.addPage();
-                yPos = 30;
-              }
-            });
-            
-            pdf.save(`${language === 'fr' ? 'bilan-campagne' : 'campaign-summary'}-${campaignAccess.companyName.replace(/\s+/g, '-').toLowerCase()}.pdf`);
-            const successMsg = language === 'fr' ? 'Bilan téléchargé !' : 'Report downloaded!';
-            toast.success(successMsg);
-          }}
+          participants={participants}
+          companyName={campaignAccess.companyName}
+          averageScore={averageScore}
+          thematicAverages={thematicAverages}
+          onDownloadPdf={() =>
+            exportSummaryPDF({
+              lang: fr ? 'fr' : 'en',
+              company: campaignAccess.companyName,
+              campaignName,
+              completed: completedParticipants.length,
+              registered: participants.length,
+              readiness: averageScore,
+              benchmarkDelta: hasBenchmark ? averageScore - globalBenchmark.averageScore : undefined,
+              bandTitle: scoreMessage.title,
+              synthesis: scoreMessage.description,
+              dimensions: readinessAverages.map((ta) => ({ name: ta.thematic, score: ta.score, benchmark: hasBenchmark ? ta.benchmark : undefined })),
+              people: [
+                { label: fr ? 'Formateurs' : 'Peer trainers', count: roleCount('trainer'), pct: pctOfCohort(roleCount('trainer')) },
+                { label: 'Builders', count: roleCount('builder'), pct: pctOfCohort(roleCount('builder')) },
+                { label: 'Champions', count: roleCount('champion'), pct: pctOfCohort(roleCount('champion')) },
+                { label: 'Sponsors', count: roleCount('sponsor'), pct: pctOfCohort(roleCount('sponsor')) },
+                { label: fr ? 'À convaincre' : 'Needs convincing', count: profileCount('convince'), pct: pctOfCohort(profileCount('convince')) },
+              ],
+              nextSteps: nextSteps.map((st) => ({ title: st.title, tag: st.tag, body: st.body })),
+              roles: (['trainer', 'builder', 'champion', 'sponsor'] as RoleId[]).map((r) => {
+                const cls = getResultClass(r);
+                return { name: fr ? cls.name.fr : cls.name.en, count: roleCount(r), action: `${(fr ? cls.action.fr : cls.action.en).split('. ')[0].replace(/\.$/, '')}.` };
+              }),
+            })
+          }
         />
         </main>
       </div>

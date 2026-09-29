@@ -497,7 +497,7 @@ export const exportPPT = (
         completed.forEach(p => {
           const responses = p.responses as Record<string, string> | null;
           if (responses) {
-            const val = responses[qNumber.toString()];
+            const val = responses[question.id.toString()];
             if (val) {
               const num = responseToValue(val);
               if (num >= 1 && num <= 5) responseCounts[num]++;
