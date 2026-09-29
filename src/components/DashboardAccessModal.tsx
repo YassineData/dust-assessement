@@ -153,7 +153,7 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
     const key = adminKey.trim();
     const mail = adminEmail.trim().toLowerCase();
     if (!isDustEmail(mail)) {
-      setError(fr ? 'Utilisez votre adresse @dust.tt.' : 'Use your @dust.tt address.');
+      setError(fr ? 'Utilisez votre adresse email Dust.' : 'Use your Dust email address.');
       return;
     }
     if (!key) {
@@ -177,7 +177,7 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
       if (result !== 'ok') {
         setAdminKey(null);
         setError(
-          result === 'not_dust' ? (fr ? 'Réservé aux adresses @dust.tt.' : 'Only @dust.tt addresses can sign in.')
+          result === 'not_dust' ? (fr ? 'Réservé aux adresses email Dust.' : 'Only Dust email addresses can sign in.')
           : result === 'too_many' ? (fr ? 'Trop de tentatives. Réessayez dans quelques minutes.' : 'Too many attempts. Try again in a few minutes.')
           : result === 'bad_key' ? (fr ? 'Clé admin incorrecte.' : 'Wrong admin key.')
           : (fr ? 'Impossible de vérifier la clé. Réessayez.' : 'Could not check the key. Please try again.')
@@ -284,7 +284,7 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
             <div className="space-y-2">
               <Label htmlFor="admin-email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                {fr ? 'Votre adresse @dust.tt' : 'Your @dust.tt address'}
+                {fr ? 'Votre adresse email Dust' : 'Your Dust email address'}
               </Label>
               <Input
                 id="admin-email"
