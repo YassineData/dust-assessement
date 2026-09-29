@@ -19,6 +19,14 @@ try {
     if (key.startsWith("demo-")) localStorage.setItem(DEMO_FLAG, "1");
     else localStorage.removeItem(DEMO_FLAG);
   }
+  // /login is the real Dust sign-in: leave any sample-data session behind (a real session is kept).
+  if (window.location.pathname === "/login") {
+    localStorage.removeItem(DEMO_FLAG);
+    const session = localStorage.getItem("dashboard_session_v2") || "";
+    if (session.includes('"campaignId":"demo-')) localStorage.removeItem("dashboard_session_v2");
+    if ((localStorage.getItem("dust_access_key") || "").startsWith("demo-")) localStorage.removeItem("dust_access_key");
+    demoAllowed = false;
+  }
   // The survey itself never runs on sample data unless opened with a demo code.
   if (onSurvey && !(code && DEMO_CODES.includes(code))) demoAllowed = false;
 } catch {

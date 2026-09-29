@@ -48,7 +48,7 @@ const drawBrandShapes = (pdf: jsPDF, x: number, y: number, s: number, gap: numbe
 
 // Built-in PDF fonts only cover Latin-1: normalise the few characters outside it.
 const clean = (s: string) =>
-  s.replace(/[’‘]/g, "'").replace(/[“”«»]/g, '"').replace(/[–—]/g, '-').replace(/→/g, '->').replace(/≥/g, '>=').replace(/…/g, '...').replace(/ | /g, ' ');
+  s.replace(/[’‘]/g, "'").replace(/[“”«»]/g, '"').replace(/[–—]/g, '-').replace(/→/g, '->').replace(/≥/g, '>=').replace(/…/g, '...').replace(/\u00A0|\u202F/g, ' ');
 
 export const exportSummaryPDF = (d: SummaryPdfData) => {
   const fr = d.lang === 'fr';

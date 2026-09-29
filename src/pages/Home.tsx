@@ -1,5 +1,4 @@
 import { useState, type CSSProperties } from 'react';
-import { Link } from 'react-router-dom';
 import { ArrowRight, BarChart3, ChevronDown, Eye, GraduationCap, LogIn, Rocket, Smartphone, Timer, Users, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -115,10 +114,10 @@ const Home = () => {
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
-              <Link to="/login">
+              <a href="/login">
                 <LogIn className="h-3.5 w-3.5" />
                 {L('Sign in', 'Connexion')}
-              </Link>
+              </a>
             </Button>
           </div>
         </div>

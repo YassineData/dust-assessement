@@ -164,7 +164,7 @@ const Index = () => {
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
             <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
-              <Link to="/login">{L('Sign in', 'Se connecter')}</Link>
+              <a href="/login">{L('Sign in', 'Se connecter')}</a>
             </Button>
             <Button size="sm" onClick={enterDemo}>
               <MousePointerClick className="h-4 w-4" />
@@ -340,7 +340,7 @@ const Index = () => {
           <p>{L('© 2026 Dust · AI Maturity Assessment · internal tool', '© 2026 Dust · AI Maturity Assessment · outil interne')}</p>
           <div className="flex items-center gap-4">
             <Link to="/assessment" className="transition-colors hover:text-foreground">{L('Take the assessment', 'Répondre au questionnaire')}</Link>
-            <Link to="/login" className="transition-colors hover:text-foreground">{L('Sign in', 'Connexion')}</Link>
+            <a href="/login" className="transition-colors hover:text-foreground">{L('Sign in', 'Connexion')}</a>
           </div>
         </div>
       </footer>

@@ -10,7 +10,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { resultsLink } from '@/lib/access';
 import { useIsDustTeam } from '@/hooks/useIsDustTeam';
-import { Link } from 'react-router-dom';
 import { DUST_TEAM, splitName } from '@/lib/dust-team';
 
 const TEAM_NAMES = DUST_TEAM.flatMap((g) => g.names);
@@ -233,7 +232,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
             : 'Sign in as the Dust team (Console → "Dust team sign-in") to create a campaign link.'}
         </p>
         <Button asChild>
-          <Link to="/login">{fr ? 'Se connecter' : 'Sign in'}</Link>
+          <a href="/login">{fr ? 'Se connecter' : 'Sign in'}</a>
         </Button>
       </div>
     );
