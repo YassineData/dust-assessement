@@ -7,6 +7,7 @@ import type { CampaignParticipant } from '@/hooks/useCampaignParticipants';
 import { exportCSV } from '@/lib/export-csv';
 import { exportWord } from '@/lib/export-word';
 import { exportPPT } from '@/lib/export-ppt';
+import { exportSummaryPDF, type SummaryPdfData } from '@/lib/export-pdf';
 import { cn } from '@/lib/utils';
 
 type ExportKind = 'pdf' | 'ppt' | 'word' | 'csv';
@@ -14,8 +15,8 @@ type ExportKind = 'pdf' | 'ppt' | 'word' | 'csv';
 interface DownloadOptionsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** One-page summary (starting point → people → plan). */
-  onDownloadPdf: () => void;
+  /** Starting point → people → plan: feeds the one-page PDF and the first slides of the deck. */
+  summary: SummaryPdfData | null;
   participants: CampaignParticipant[];
   companyName: string;
   averageScore: number;
@@ -26,7 +27,7 @@ interface DownloadOptionsModalProps {
 export const DownloadOptionsModal = ({
   isOpen,
   onClose,
-  onDownloadPdf,
+  summary,
   participants,
   companyName,
   averageScore,
@@ -67,8 +68,8 @@ export const DownloadOptionsModal = ({
   const run = async (kind: ExportKind) => {
     setLoading(kind);
     try {
-      if (kind === 'pdf') onDownloadPdf();
-      if (kind === 'ppt') await exportPPT(participants, companyName, language, averageScore, thematicAverages);
+      if (kind === 'pdf' && summary) exportSummaryPDF(summary);
+      if (kind === 'ppt') await exportPPT(participants, companyName, language, averageScore, thematicAverages, summary);
       if (kind === 'word') await exportWord(participants, companyName, language, averageScore, thematicAverages);
       if (kind === 'csv') exportCSV(participants, companyName, language);
       toast.success(fr ? 'Export téléchargé' : 'Export downloaded');

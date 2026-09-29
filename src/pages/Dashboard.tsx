@@ -45,7 +45,7 @@ import { useGlobalBenchmark } from '@/hooks/useGlobalBenchmark';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
-import { exportSummaryPDF } from '@/lib/export-pdf';
+import type { SummaryPdfData } from '@/lib/export-pdf';
 import { 
   PROFILES, 
   THEMATICS,
@@ -689,6 +689,32 @@ const Dashboard = () => {
     </Button>
   ) : null;
 
+  const summary: SummaryPdfData | null = campaignAccess ? {
+    lang: fr ? 'fr' : 'en',
+    company: campaignAccess.companyName,
+    campaignName,
+    completed: completedParticipants.length,
+    registered: participants.length,
+    readiness: averageScore,
+    benchmarkDelta: hasBenchmark ? averageScore - globalBenchmark.averageScore : undefined,
+    bandTitle: scoreMessage.title,
+    synthesis: scoreMessage.description,
+    dimensions: readinessAverages.map((ta) => ({ name: ta.thematic, score: ta.score, benchmark: hasBenchmark ? ta.benchmark : undefined })),
+    people: [
+      { label: fr ? 'Formateurs' : 'Peer trainers', count: roleCount('trainer'), pct: pctOfCohort(roleCount('trainer')) },
+      { label: 'Builders', count: roleCount('builder'), pct: pctOfCohort(roleCount('builder')) },
+      { label: 'Champions', count: roleCount('champion'), pct: pctOfCohort(roleCount('champion')) },
+      { label: 'Sponsors', count: roleCount('sponsor'), pct: pctOfCohort(roleCount('sponsor')) },
+      { label: fr ? 'À convaincre' : 'Needs convincing', count: profileCount('convince'), pct: pctOfCohort(profileCount('convince')) },
+    ],
+    nextSteps: nextSteps.map((st) => ({ title: st.title, tag: st.tag, body: st.body })),
+    roles: (['trainer', 'builder', 'champion', 'sponsor'] as RoleId[]).map((r) => {
+      const cls = getResultClass(r);
+      const people = completedParticipants.filter((p) => p.roles.includes(r)).sort((a, b) => b.score - a.score).map((p) => `${p.firstName} ${p.lastName}`.trim());
+      return { name: fr ? cls.name.fr : cls.name.en, count: roleCount(r), people, action: `${(fr ? cls.action.fr : cls.action.en).split('. ')[0].replace(/\.$/, '')}.` };
+    }),
+  } : null;
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardSidebar
@@ -1194,32 +1220,7 @@ const Dashboard = () => {
           companyName={campaignAccess.companyName}
           averageScore={averageScore}
           thematicAverages={thematicAverages}
-          onDownloadPdf={() =>
-            exportSummaryPDF({
-              lang: fr ? 'fr' : 'en',
-              company: campaignAccess.companyName,
-              campaignName,
-              completed: completedParticipants.length,
-              registered: participants.length,
-              readiness: averageScore,
-              benchmarkDelta: hasBenchmark ? averageScore - globalBenchmark.averageScore : undefined,
-              bandTitle: scoreMessage.title,
-              synthesis: scoreMessage.description,
-              dimensions: readinessAverages.map((ta) => ({ name: ta.thematic, score: ta.score, benchmark: hasBenchmark ? ta.benchmark : undefined })),
-              people: [
-                { label: fr ? 'Formateurs' : 'Peer trainers', count: roleCount('trainer'), pct: pctOfCohort(roleCount('trainer')) },
-                { label: 'Builders', count: roleCount('builder'), pct: pctOfCohort(roleCount('builder')) },
-                { label: 'Champions', count: roleCount('champion'), pct: pctOfCohort(roleCount('champion')) },
-                { label: 'Sponsors', count: roleCount('sponsor'), pct: pctOfCohort(roleCount('sponsor')) },
-                { label: fr ? 'À convaincre' : 'Needs convincing', count: profileCount('convince'), pct: pctOfCohort(profileCount('convince')) },
-              ],
-              nextSteps: nextSteps.map((st) => ({ title: st.title, tag: st.tag, body: st.body })),
-              roles: (['trainer', 'builder', 'champion', 'sponsor'] as RoleId[]).map((r) => {
-                const cls = getResultClass(r);
-                return { name: fr ? cls.name.fr : cls.name.en, count: roleCount(r), action: `${(fr ? cls.action.fr : cls.action.en).split('. ')[0].replace(/\.$/, '')}.` };
-              }),
-            })
-          }
+          summary={summary}
         />
         </main>
       </div>

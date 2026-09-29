@@ -14,7 +14,7 @@ export interface SummaryPdfData {
   dimensions: { name: string; score: number; benchmark?: number }[];
   people: { label: string; count: number; pct: number }[];
   nextSteps: { title: string; tag: string; body: string }[];
-  roles: { name: string; count: number; action: string }[];
+  roles: { name: string; count: number; action: string; people?: string[] }[];
 }
 
 const INK: [number, number, number] = [28, 34, 45];

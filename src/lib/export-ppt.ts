@@ -4,6 +4,7 @@ import { getQuestionText } from '@/lib/assessment-data';
 import { CLASS_PROFILES, classLabel, dimensionLabel, getDimension } from '@/lib/assessment-v2';
 import { getActiveThematics, getActiveQuestions, getActiveAssessmentType } from '@/lib/active-assessment-type';
 import { QUESTION_TRANSLATIONS_EN } from '@/lib/question-translations';
+import type { SummaryPdfData } from '@/lib/export-pdf';
 
 // Export palette
 // Dust brand palette (brand guidelines PDF)
@@ -58,15 +59,15 @@ const addGradientBar = (slide: any, pptx: PptxGenJS, y: number, h: number) => {
   slide.addShape(pptx.ShapeType.rect, { x: 8.88, y, w: 4.45, h, fill: { color: C.primaryLight } });
 };
 
-const addSlideHeader = (slide: any, pptx: PptxGenJS, title: string, subtitle?: string) => {
+const addSlideHeader = (slide: any, pptx: PptxGenJS, title: string, subtitle?: string, indent = 0) => {
   addGradientBar(slide, pptx, 0, 0.08);
   slide.addText(title.toUpperCase(), {
-    x: 0.7, y: 0.3, w: 11, h: 0.7,
+    x: 0.7 + indent, y: 0.3, w: 11, h: 0.7,
     fontSize: 26, bold: true, color: C.dark, fontFace: FT,
   });
   if (subtitle) {
     slide.addText(subtitle, {
-      x: 0.7, y: 0.9, w: 11, h: 0.4,
+      x: 0.7 + indent, y: 0.9, w: 11, h: 0.4,
       fontSize: 13, color: C.muted, fontFace: FB,
     });
   }
@@ -122,6 +123,101 @@ const addScoreBar = (slide: any, pptx: PptxGenJS, x: number, y: number, w: numbe
   });
 };
 
+const blockTitle = (slide: any, pptx: PptxGenJS, n: number, title: string, question: string) => {
+  addSlideHeader(slide, pptx, title, question, 0.65);
+  slide.addShape(pptx.ShapeType.ellipse, { x: 0.7, y: 0.42, w: 0.46, h: 0.46, fill: { color: C.dark } });
+  slide.addText(String(n), { x: 0.7, y: 0.42, w: 0.46, h: 0.46, fontSize: 14, bold: true, color: C.white, align: 'center', valign: 'middle', fontFace: FT });
+};
+
+/** Starting point → people → plan, the same reading order as the console and the one-page PDF. */
+const addBlockSlides = (pptx: PptxGenJS, d: SummaryPdfData) => {
+  const fr = d.lang === 'fr';
+  const L = (en: string, frText: string) => (fr ? frText : en);
+
+  // 1 · Starting point
+  const s1 = pptx.addSlide();
+  s1.background = { fill: C.bg };
+  blockTitle(s1, pptx, 1, L('Starting point', 'Point de départ'), L('Where does the account stand with AI?', 'Où en est le compte avec l’IA ?'));
+  s1.addShape(pptx.ShapeType.roundRect, { x: 0.7, y: 1.55, w: 3.2, h: 2.3, fill: { color: C.bgAlt }, rectRadius: 0.15 });
+  s1.addText(String(d.readiness), { x: 0.7, y: 1.7, w: 3.2, h: 1.2, fontSize: 60, bold: true, color: C.dark, align: 'center', fontFace: FT });
+  s1.addText('/100', { x: 0.7, y: 2.85, w: 3.2, h: 0.35, fontSize: 12, color: C.muted, align: 'center', fontFace: FB });
+  s1.addText(L('AI readiness index', 'Indice de maturité IA'), { x: 0.7, y: 3.25, w: 3.2, h: 0.35, fontSize: 11, color: C.muted, align: 'center', fontFace: FB });
+  s1.addText(d.bandTitle, { x: 4.3, y: 1.55, w: 6.2, h: 0.5, fontSize: 20, bold: true, color: C.dark, fontFace: FT });
+  if (typeof d.benchmarkDelta === 'number') {
+    const pos = d.benchmarkDelta >= 0;
+    s1.addText(`${pos ? '+' : ''}${d.benchmarkDelta} ${L('pts vs benchmark', 'pts vs benchmark')}`, { x: 10.3, y: 1.55, w: 2.3, h: 0.5, fontSize: 13, bold: true, color: pos ? C.success : C.danger, align: 'right', fontFace: FB });
+  }
+  s1.addText(`${d.synthesis}\n\n${d.completed} ${L('answers out of', 'réponses sur')} ${d.registered} ${L('registered', 'inscrits')}${d.campaignName ? ` · ${d.campaignName}` : ''}`, {
+    x: 4.3, y: 2.1, w: 8.3, h: 1.75, fontSize: 13, color: C.muted, fontFace: FB, valign: 'top', lineSpacingMultiple: 1.2,
+  });
+  const n = d.dimensions.length || 1;
+  const rowH = Math.min(0.44, 2.75 / n);
+  const barX = 3.9;
+  const barW = 7.9;
+  d.dimensions.forEach((dim, i) => {
+    const y = 4.15 + i * rowH;
+    s1.addText(dim.name, { x: 0.7, y, w: 3.1, h: rowH, fontSize: 11, color: C.dark, fontFace: FB, valign: 'middle' });
+    s1.addShape(pptx.ShapeType.roundRect, { x: barX, y: y + rowH / 2 - 0.09, w: barW, h: 0.18, fill: { color: C.bgAlt }, rectRadius: 0.09 });
+    s1.addShape(pptx.ShapeType.roundRect, { x: barX, y: y + rowH / 2 - 0.09, w: Math.max(0.18, (barW * Math.max(0, Math.min(100, dim.score))) / 100), h: 0.18, fill: { color: dim.score < 50 ? C.danger : C.primary }, rectRadius: 0.09 });
+    if (typeof dim.benchmark === 'number') {
+      s1.addShape(pptx.ShapeType.rect, { x: barX + (barW * dim.benchmark) / 100 - 0.015, y: y + rowH / 2 - 0.16, w: 0.03, h: 0.32, fill: { color: C.dark } });
+    }
+    s1.addText(String(dim.score), { x: 11.9, y, w: 0.7, h: rowH, fontSize: 12, bold: true, color: C.dark, align: 'right', valign: 'middle', fontFace: FT });
+  });
+  s1.addText(L('Bar: this cohort · tick: benchmark across all rollouts', 'Barre : cette cohorte · trait : benchmark de tous les déploiements'), {
+    x: 0.7, y: 6.85, w: 11.9, h: 0.25, fontSize: 9, color: C.mutedLight, fontFace: FB,
+  });
+
+  // 2 · People
+  const s2 = pptx.addSlide();
+  s2.background = { fill: C.bg };
+  blockTitle(s2, pptx, 2, L('People', 'Personnes'), L('Who can we rely on? Roles can overlap.', 'Sur qui s’appuyer ? Les rôles sont cumulables.'));
+  const tileW = (11.9 - 4 * 0.2) / 5;
+  d.people.slice(0, 5).forEach((p, i) => {
+    const x = 0.7 + i * (tileW + 0.2);
+    s2.addShape(pptx.ShapeType.roundRect, { x, y: 1.55, w: tileW, h: 1.35, fill: { color: C.bgAlt }, rectRadius: 0.12 });
+    s2.addText(p.label.toUpperCase(), { x: x + 0.2, y: 1.65, w: tileW - 0.4, h: 0.35, fontSize: 9, bold: true, color: C.muted, fontFace: FB, charSpacing: 1 });
+    s2.addText(String(p.count), { x: x + 0.2, y: 2.05, w: tileW - 1.2, h: 0.7, fontSize: 32, bold: true, color: C.dark, fontFace: FT });
+    s2.addText(`${p.pct}%`, { x: x + tileW - 1.1, y: 2.05, w: 0.9, h: 0.7, fontSize: 13, color: C.muted, align: 'right', fontFace: FB });
+  });
+  const colW = (11.9 - 3 * 0.25) / 4;
+  d.roles.slice(0, 4).forEach((r, i) => {
+    const x = 0.7 + i * (colW + 0.25);
+    s2.addShape(pptx.ShapeType.rect, { x, y: 3.2, w: colW, h: 0.04, fill: { color: C.dark } });
+    s2.addText(`${r.name} · ${r.count}`, { x, y: 3.3, w: colW, h: 0.4, fontSize: 13, bold: true, color: C.dark, fontFace: FT });
+    s2.addText(r.action, { x, y: 3.7, w: colW, h: 1.1, fontSize: 9.5, color: C.muted, fontFace: FB, valign: 'top' });
+    const names = r.people ?? [];
+    const shown = names.slice(0, 8);
+    const more = names.length - shown.length;
+    const list = shown.length
+      ? shown.join('\n') + (more > 0 ? `\n${L(`+ ${more} more`, `+ ${more} autres`)}` : '')
+      : L('Nobody yet', 'Personne pour l’instant');
+    s2.addText(list, { x, y: 4.85, w: colW, h: 2.2, fontSize: 10.5, color: shown.length ? C.dark : C.mutedLight, fontFace: FB, valign: 'top', lineSpacingMultiple: 1.15 });
+  });
+
+  // 3 · Rollout plan
+  const s3 = pptx.addSlide();
+  s3.background = { fill: C.bg };
+  blockTitle(s3, pptx, 3, L('Rollout plan', 'Plan de déploiement'), L('Derived from blocks 1 and 2', 'Déduit des blocs 1 et 2'));
+  const steps = d.nextSteps.slice(0, 4);
+  const cardH = Math.min(1.25, (5.4 - (steps.length - 1) * 0.2) / Math.max(1, steps.length));
+  steps.forEach((st, i) => {
+    const y = 1.55 + i * (cardH + 0.2);
+    s3.addShape(pptx.ShapeType.roundRect, { x: 0.7, y, w: 11.9, h: cardH, fill: { color: C.bgAlt }, rectRadius: 0.12 });
+    s3.addText(String(i + 1), { x: 0.9, y, w: 0.6, h: cardH, fontSize: 28, bold: true, color: C.primary, fontFace: FT, valign: 'middle' });
+    s3.addText(st.title, { x: 1.6, y: y + 0.12, w: 8.6, h: 0.45, fontSize: 15, bold: true, color: C.dark, fontFace: FT });
+    s3.addText(st.tag.toUpperCase(), { x: 10.2, y: y + 0.12, w: 2.2, h: 0.45, fontSize: 9, bold: true, color: C.muted, align: 'right', fontFace: FB, charSpacing: 1 });
+    s3.addText(st.body, { x: 1.6, y: y + 0.55, w: 10.8, h: cardH - 0.65, fontSize: 11, color: C.muted, fontFace: FB, valign: 'top' });
+  });
+
+  // Divider before the detail
+  const dv = pptx.addSlide();
+  dv.background = { fill: C.dark };
+  addGradientBar(dv, pptx, 3.9, 0.06);
+  dv.addText(L('APPENDIX', 'ANNEXE'), { x: 0.7, y: 2.6, w: 11.9, h: 0.5, fontSize: 14, bold: true, color: C.primaryMid, fontFace: FB, charSpacing: 3 });
+  dv.addText(L('The detail behind the numbers', 'Le détail derrière les chiffres'), { x: 0.7, y: 3.0, w: 11.9, h: 0.8, fontSize: 32, bold: true, color: C.white, fontFace: FT });
+};
+
 const responseToValue = (response: string): number => {
   const mapping: Record<string, number> = { disagree: 1, somewhatDisagree: 2, neutral: 3, somewhatAgree: 4, agree: 5 };
   return mapping[response] || 0;
@@ -132,7 +228,8 @@ export const exportPPT = (
   companyName: string,
   language: string,
   averageScore: number,
-  thematicAverages: { thematic: string; originalThematic: string; score: number }[]
+  thematicAverages: { thematic: string; originalThematic: string; score: number }[],
+  summary?: SummaryPdfData | null
 ) => {
   const completed = participants.filter(p => p.status === 'completed');
   const inProgress = participants.filter(p => p.status === 'in_progress');
@@ -190,64 +287,71 @@ export const exportPPT = (
   });
 
   // ============================================================
-  // SLIDE 2 — EXECUTIVE SUMMARY
+  // SLIDES 2-4 — THE CONSOLE'S THREE BLOCKS: STARTING POINT → PEOPLE → PLAN
   // ============================================================
-  const s2 = pptx.addSlide();
-  s2.background = { fill: C.bg };
-  addSlideHeader(s2, pptx,
-    language === 'fr' ? 'Synthèse Exécutive' : 'Executive Summary',
-    language === 'fr' ? `Vue d'ensemble des résultats pour ${companyName}` : `Results overview for ${companyName}`
-  );
+  if (summary) {
+    addBlockSlides(pptx, summary);
+  } else {
+    // ============================================================
+    // SLIDE 2 — EXECUTIVE SUMMARY
+    // ============================================================
+    const s2 = pptx.addSlide();
+    s2.background = { fill: C.bg };
+    addSlideHeader(s2, pptx,
+      language === 'fr' ? 'Synthèse Exécutive' : 'Executive Summary',
+      language === 'fr' ? `Vue d'ensemble des résultats pour ${companyName}` : `Results overview for ${companyName}`
+    );
 
-  addMetricCard(s2, pptx, 0.7, 1.6, 2.8, 2.2, `${averageScore}%`, language === 'fr' ? 'Score moyen global' : 'Overall avg. score', C.cta, '📊');
-  addMetricCard(s2, pptx, 3.9, 1.6, 2.8, 2.2, `${completed.length}`, language === 'fr' ? 'Tests complétés' : 'Tests completed', C.success, '✅');
-  addMetricCard(s2, pptx, 7.1, 1.6, 2.8, 2.2, `${inProgress.length}`, language === 'fr' ? 'En cours' : 'In progress', C.warning, '⏳');
-  addMetricCard(s2, pptx, 10.3, 1.6, 2.8, 2.2, `${participants.length}`, language === 'fr' ? 'Total inscrits' : 'Total enrolled', C.muted, '👥');
+    addMetricCard(s2, pptx, 0.7, 1.6, 2.8, 2.2, `${averageScore}%`, language === 'fr' ? 'Score moyen global' : 'Overall avg. score', C.cta, '📊');
+    addMetricCard(s2, pptx, 3.9, 1.6, 2.8, 2.2, `${completed.length}`, language === 'fr' ? 'Tests complétés' : 'Tests completed', C.success, '✅');
+    addMetricCard(s2, pptx, 7.1, 1.6, 2.8, 2.2, `${inProgress.length}`, language === 'fr' ? 'En cours' : 'In progress', C.warning, '⏳');
+    addMetricCard(s2, pptx, 10.3, 1.6, 2.8, 2.2, `${participants.length}`, language === 'fr' ? 'Total inscrits' : 'Total enrolled', C.muted, '👥');
 
-  const completionRate = participants.length > 0 ? Math.round(completed.length / participants.length * 100) : 0;
-  s2.addText(language === 'fr' ? `Taux de complétion: ${completionRate}%` : `Completion rate: ${completionRate}%`, {
-    x: 0.7, y: 4.2, w: 12, h: 0.4,
-    fontSize: 12, color: C.muted, fontFace: FB,
-  });
-  addScoreBar(s2, pptx, 0.7, 4.6, 11.9, completionRate);
+    const completionRate = participants.length > 0 ? Math.round(completed.length / participants.length * 100) : 0;
+    s2.addText(language === 'fr' ? `Taux de complétion: ${completionRate}%` : `Completion rate: ${completionRate}%`, {
+      x: 0.7, y: 4.2, w: 12, h: 0.4,
+      fontSize: 12, color: C.muted, fontFace: FB,
+    });
+    addScoreBar(s2, pptx, 0.7, 4.6, 11.9, completionRate);
 
-  const sorted = [...thematicAverages].sort((a, b) => b.score - a.score);
-  const best = sorted[0];
-  const worst = sorted[sorted.length - 1];
-  if (best && worst) {
-    s2.addShape(pptx.ShapeType.roundRect, {
-      x: 0.7, y: 5.2, w: 5.8, h: 1.6, fill: { color: C.successBg }, rectRadius: 0.2,
-      line: { color: C.success, width: 0.5 },
-    });
-    s2.addText(`🏆 ${language === 'fr' ? 'Meilleure thématique' : 'Top theme'}`, {
-      x: 1, y: 5.3, w: 5, h: 0.4,
-      fontSize: 10, bold: true, color: C.success, fontFace: FB,
-    });
-    s2.addText(best.thematic, {
-      x: 1, y: 5.7, w: 4, h: 0.5,
-      fontSize: 16, bold: true, color: C.dark, fontFace: FB,
-    });
-    s2.addText(`${best.score}%`, {
-      x: 5, y: 5.7, w: 1.2, h: 0.5,
-      fontSize: 18, bold: true, color: C.success, fontFace: FT, align: 'right',
-    });
+    const sorted = [...thematicAverages].sort((a, b) => b.score - a.score);
+    const best = sorted[0];
+    const worst = sorted[sorted.length - 1];
+    if (best && worst) {
+      s2.addShape(pptx.ShapeType.roundRect, {
+        x: 0.7, y: 5.2, w: 5.8, h: 1.6, fill: { color: C.successBg }, rectRadius: 0.2,
+        line: { color: C.success, width: 0.5 },
+      });
+      s2.addText(`🏆 ${language === 'fr' ? 'Meilleure thématique' : 'Top theme'}`, {
+        x: 1, y: 5.3, w: 5, h: 0.4,
+        fontSize: 10, bold: true, color: C.success, fontFace: FB,
+      });
+      s2.addText(best.thematic, {
+        x: 1, y: 5.7, w: 4, h: 0.5,
+        fontSize: 16, bold: true, color: C.dark, fontFace: FB,
+      });
+      s2.addText(`${best.score}%`, {
+        x: 5, y: 5.7, w: 1.2, h: 0.5,
+        fontSize: 18, bold: true, color: C.success, fontFace: FT, align: 'right',
+      });
 
-    s2.addShape(pptx.ShapeType.roundRect, {
-      x: 6.9, y: 5.2, w: 5.8, h: 1.6, fill: { color: C.dangerBg }, rectRadius: 0.2,
-      line: { color: C.danger, width: 0.5 },
-    });
-    s2.addText(`⚠️ ${language === 'fr' ? 'Axe d\'amélioration' : 'Area for improvement'}`, {
-      x: 7.2, y: 5.3, w: 5, h: 0.4,
-      fontSize: 10, bold: true, color: C.danger, fontFace: FB,
-    });
-    s2.addText(worst.thematic, {
-      x: 7.2, y: 5.7, w: 4, h: 0.5,
-      fontSize: 16, bold: true, color: C.dark, fontFace: FB,
-    });
-    s2.addText(`${worst.score}%`, {
-      x: 11.2, y: 5.7, w: 1.2, h: 0.5,
-      fontSize: 18, bold: true, color: C.danger, fontFace: FT, align: 'right',
-    });
+      s2.addShape(pptx.ShapeType.roundRect, {
+        x: 6.9, y: 5.2, w: 5.8, h: 1.6, fill: { color: C.dangerBg }, rectRadius: 0.2,
+        line: { color: C.danger, width: 0.5 },
+      });
+      s2.addText(`⚠️ ${language === 'fr' ? 'Axe d\'amélioration' : 'Area for improvement'}`, {
+        x: 7.2, y: 5.3, w: 5, h: 0.4,
+        fontSize: 10, bold: true, color: C.danger, fontFace: FB,
+      });
+      s2.addText(worst.thematic, {
+        x: 7.2, y: 5.7, w: 4, h: 0.5,
+        fontSize: 16, bold: true, color: C.dark, fontFace: FB,
+      });
+      s2.addText(`${worst.score}%`, {
+        x: 11.2, y: 5.7, w: 1.2, h: 0.5,
+        fontSize: 18, bold: true, color: C.danger, fontFace: FT, align: 'right',
+      });
+    }
   }
 
   // ============================================================
