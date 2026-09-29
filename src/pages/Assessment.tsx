@@ -507,17 +507,10 @@ const Assessment = () => {
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-50 border-b border-border bg-card">
           <div className="mx-auto flex h-14 max-w-[780px] items-center justify-between px-4">
-            <Link to="/" className="rounded-md" aria-label="Dust">
-              <DustWordmark subtitle={language === 'fr' ? 'Évaluation de maturité IA' : 'AI maturity assessment'} />
-            </Link>
+            {/* Respondents never land on the internal landing page: no link back to "/" in the survey. */}
+            <DustWordmark subtitle={language === 'fr' ? 'Évaluation de maturité IA' : 'AI maturity assessment'} />
             <div className="flex items-center gap-1">
               <LanguageSwitcher />
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4" />
-                  {t.back}
-                </Link>
-              </Button>
             </div>
           </div>
         </header>
@@ -656,7 +649,10 @@ const Assessment = () => {
                     ? 'Ce profil est un signal, pas un verdict : il sera confirmé avec vous avant toute proposition de rôle.'
                     : 'This profile is a signal, not a verdict: it will be confirmed with you before any role is proposed.'}
                 </p>
-                <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-border pt-4">
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+                  <p className="text-[13px] text-muted-foreground">
+                    {fr ? 'Merci ! Vous pouvez fermer cette page.' : 'Thank you! You can close this page.'}
+                  </p>
                   <Button
                     variant="ghost"
                     onClick={() => {
@@ -667,9 +663,6 @@ const Assessment = () => {
                   >
                     <PencilLine className="h-4 w-4" />
                     {fr ? 'Modifier mes réponses' : 'Edit my answers'}
-                  </Button>
-                  <Button variant="outline" onClick={() => navigate('/')}>
-                    {t.backHome}
                   </Button>
                 </div>
               </>

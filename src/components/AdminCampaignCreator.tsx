@@ -49,8 +49,8 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
 
   const message = created
     ? campaignLanguage === 'fr'
-      ? `Bonjour,\n\nDans le cadre du déploiement de Dust chez ${created.company}${teamFr}, nous vous invitons à répondre à un court questionnaire (environ 8 minutes) sur vos usages de l'IA.\n\nVos réponses nous aideront à adapter l'accompagnement à votre équipe.\n\nLien : ${link}\nCode (si demandé) : ${created.code}\n\nMerci !`
-      : `Hello,\n\nAs part of the Dust rollout at ${created.company}${teamEn}, we invite you to answer a short questionnaire (about 8 minutes) on how you use AI today.\n\nYour answers will help us tailor the rollout to your team.\n\nLink: ${link}\nCode (if asked): ${created.code}\n\nThank you!`
+      ? `Bonjour,\n\nDans le cadre du déploiement de Dust chez ${created.company}${teamFr}, nous vous invitons à répondre à un court questionnaire (moins de 5 minutes) sur vos usages de l'IA.\n\nVos réponses nous aideront à adapter l'accompagnement à votre équipe.\n\nLien : ${link}\nCode (si demandé) : ${created.code}\n\nMerci !`
+      : `Hello,\n\nAs part of the Dust rollout at ${created.company}${teamEn}, we invite you to answer a short questionnaire (less than 5 minutes) on how you use AI today.\n\nYour answers will help us tailor the rollout to your team.\n\nLink: ${link}\nCode (if asked): ${created.code}\n\nThank you!`
     : '';
 
   const copy = async (what: 'link' | 'message' | 'results') => {

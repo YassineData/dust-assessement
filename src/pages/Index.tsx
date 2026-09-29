@@ -215,8 +215,8 @@ const Index = () => {
           </h1>
           <p className="lp-pop mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-slate" style={{ animationDelay: '0.2s' }}>
             {L(
-              'An 8-minute survey sent before kickoff: team maturity, champions, priority use cases, and a baseline to measure progress.',
-              'Un questionnaire de 8 minutes envoyé avant le kickoff : maturité des équipes, champions, cas d’usage prioritaires et une baseline pour mesurer la progression.'
+              'A survey of less than 5 minutes, sent before kickoff: team maturity, champions, priority use cases, and a baseline to measure progress.',
+              'Un questionnaire de moins de 5 minutes, envoyé avant le kickoff : maturité des équipes, champions, cas d’usage prioritaires et une baseline pour mesurer la progression.'
             )}
           </p>
           <div className="lp-pop mt-7 flex flex-col justify-center gap-2 sm:flex-row" style={{ animationDelay: '0.3s' }}>
@@ -227,7 +227,7 @@ const Index = () => {
             <Button size="lg" variant="outline" className="h-11 bg-card/80 px-6 text-[14px]" asChild>
               <Link to="/exemple">
                 <ClipboardList className="h-4 w-4" />
-                {L('Take the 8-min survey', 'Répondre au questionnaire (8 min)')}
+                {L('Take the survey (< 5 min)', 'Répondre au questionnaire (< 5 min)')}
               </Link>
             </Button>
           </div>

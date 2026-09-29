@@ -31,7 +31,6 @@ const ChampionKit = () => {
   const variant: KitVariant = params.get('variant') === 'sales' ? 'sales' : 'deployment';
   const code = (params.get('code') || 'XXXXXXXX').toUpperCase();
   const company = params.get('company') || L('your company', 'votre entreprise');
-  const minutes = Math.max(5, Math.round(V2_QUESTIONS.length / 4.5));
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const linkFor = (a: SurveyAudience) =>
     `${origin}/assessment?lang=${language}&code=${code}${AUDIENCE_PARAM[a] ? `&for=${AUDIENCE_PARAM[a]}` : ''}`;
@@ -52,8 +51,8 @@ const ChampionKit = () => {
     {
       title: L('What it is', 'De quoi il s’agit'),
       body: L(
-        `An ${minutes}-minute online survey: ${V2_QUESTIONS.length} short statements plus a few questions about the tools people use and the tasks they would like help with. No account needed, English or French, answers saved as people go.`,
-        `Un questionnaire en ligne de ${minutes} minutes : ${V2_QUESTIONS.length} affirmations courtes et quelques questions sur les outils utilisés et les tâches où l'on aimerait de l'aide. Sans compte, en français ou en anglais, réponses enregistrées au fil de l'eau.`
+        `A short online survey, less than 5 minutes: ${V2_QUESTIONS.length} short statements plus a few questions about the tools people use and the tasks they would like help with. No account needed, English or French, answers saved as people go.`,
+        `Un court questionnaire en ligne, moins de 5 minutes : ${V2_QUESTIONS.length} affirmations courtes et quelques questions sur les outils utilisés et les tâches où l'on aimerait de l'aide. Sans compte, en français ou en anglais, réponses enregistrées au fil de l'eau.`
       ),
     },
     {
@@ -92,8 +91,8 @@ const ChampionKit = () => {
   ];
 
   const forwardMessage = L(
-    `Hi all,\n\nDust is our new AI platform. The Dust team wants to learn more about you and what you do, so the rollout fits the way we work.\n\nIt takes about ${minutes} minutes: ${linkFor('general')}\n\nThanks!`,
-    `Bonjour à tous,\n\nDust est notre nouvelle plateforme d'IA. L'équipe Dust veut en savoir plus sur vous et sur ce que vous faites, pour que le déploiement colle à notre façon de travailler.\n\nCela prend environ ${minutes} minutes : ${linkFor('general')}\n\nMerci !`
+    `Hi all,\n\nDust is our new AI platform. The Dust team wants to learn more about you and what you do, so the rollout fits the way we work.\n\nIt takes less than 5 minutes: ${linkFor('general')}\n\nThanks!`,
+    `Bonjour à tous,\n\nDust est notre nouvelle plateforme d'IA. L'équipe Dust veut en savoir plus sur vous et sur ce que vous faites, pour que le déploiement colle à notre façon de travailler.\n\nCela prend moins de 5 minutes : ${linkFor('general')}\n\nMerci !`
   );
 
   const copyMessage = async () => {

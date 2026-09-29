@@ -365,9 +365,9 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
     const emailLang = language;
     const link = `${window.location.origin}/assessment?lang=${emailLang}&code=${campaignCode || 'XXXXXXXX'}${AUDIENCE_PARAM[shareAudience] ? `&for=${AUDIENCE_PARAM[shareAudience]}` : ''}`;
     if (emailLang === 'fr') {
-      return `Bonjour,\n\nJe vous invite à participer à notre évaluation de maturité IA.\n\n🔗 Cliquez sur ce lien pour démarrer directement en français : ${link}\n📝 (Au besoin, code à saisir : ${campaignCode || 'XXXXXXXX'})\n\nCe test prend environ 8 minutes et nous permettra d'évaluer ensemble votre niveau de maîtrise des outils d'intelligence artificielle.\n\nMerci de votre participation !`;
+      return `Bonjour,\n\nJe vous invite à participer à notre évaluation de maturité IA.\n\n🔗 Cliquez sur ce lien pour démarrer directement en français : ${link}\n📝 (Au besoin, code à saisir : ${campaignCode || 'XXXXXXXX'})\n\nCe test prend moins de 5 minutes et nous permettra d'évaluer ensemble votre niveau de maîtrise des outils d'intelligence artificielle.\n\nMerci de votre participation !`;
     }
-    return `Hello,\n\nI invite you to participate in our AI maturity assessment.\n\n🔗 Click this link to start directly in English: ${link}\n📝 (If needed, code to enter: ${campaignCode || 'XXXXXXXX'})\n\nThis test takes about 8 minutes and will help us assess your level of AI tool proficiency.\n\nThank you for your participation!`;
+    return `Hello,\n\nI invite you to participate in our AI maturity assessment.\n\n🔗 Click this link to start directly in English: ${link}\n📝 (If needed, code to enter: ${campaignCode || 'XXXXXXXX'})\n\nThis test takes less than 5 minutes and will help us assess your level of AI tool proficiency.\n\nThank you for your participation!`;
   };
 
   const handleCopyEmail = () => {
@@ -444,8 +444,8 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
     const company = companyShort || (fr ? 'votre équipe' : 'your team');
     const code = campaignCode || 'XXXXXXXX';
     return fr
-      ? `Bonjour à tous,\n\nNous lançons l'évaluation de maturité IA de ${company}. Le questionnaire prend environ 8 minutes et vos réponses sont enregistrées au fil de l'eau.\n\nLien : ${shareLink}\nCode (si demandé) : ${code}\n\nMerci de votre participation !`
-      : `Hi everyone,\n\nWe're launching the AI maturity assessment for ${company}. The questionnaire takes about 8 minutes and your answers are saved as you go.\n\nLink: ${shareLink}\nCode (if asked): ${code}\n\nThank you for taking part!`;
+      ? `Bonjour à tous,\n\nNous lançons l'évaluation de maturité IA de ${company}. Le questionnaire prend moins de 5 minutes et vos réponses sont enregistrées au fil de l'eau.\n\nLien : ${shareLink}\nCode (si demandé) : ${code}\n\nMerci de votre participation !`
+      : `Hi everyone,\n\nWe're launching the AI maturity assessment for ${company}. The questionnaire takes less than 5 minutes and your answers are saved as you go.\n\nLink: ${shareLink}\nCode (if asked): ${code}\n\nThank you for taking part!`;
   };
 
   const copyText = async (text: string, title: string) => {
@@ -570,7 +570,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
             {
               icon: Timer,
               term: fr ? 'Durée' : 'Duration',
-              desc: fr ? 'Environ 8 minutes, une thématique à la fois.' : 'About 8 minutes, one theme at a time.',
+              desc: fr ? 'Moins de 5 minutes, une thématique à la fois.' : 'Less than 5 minutes, one theme at a time.',
             },
             {
               icon: Save,
