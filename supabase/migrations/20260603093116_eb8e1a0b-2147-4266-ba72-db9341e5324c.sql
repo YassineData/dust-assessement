@@ -1,1 +1,0 @@
-ALTER TYPE public.campaign_member_role ADD VALUE IF NOT EXISTS 'consultant';
