@@ -141,6 +141,8 @@ export const getDemoData = () => {
   const campaigns: Row[] = COMPANIES.map((c) => ({
     id: c.id,
     code: c.code,
+    // Private results link of the demo client view: /results?key=demo-<code>
+    access_key: `demo-${c.code.toLowerCase()}`,
     company_name: c.name,
     campaign_name: c.label ?? `Dust rollout · ${c.employees.toLocaleString('en-US')} employees`,
     creator_email: 'demo@dust.tt',

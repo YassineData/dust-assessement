@@ -124,7 +124,8 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
       setError('');
       setAdminKey(null);
       setAccessKey(key.trim());
-      const { data, error: err } = await supabase.from('campaigns').select(CAMPAIGN_COLUMNS).limit(1);
+      // RLS already limits a client to its campaign; the explicit filter also serves demo mode.
+      const { data, error: err } = await supabase.from('campaigns').select(CAMPAIGN_COLUMNS).eq('access_key' as never, key.trim() as never).limit(1);
       setIsLoading(false);
       const campaign = (data as AdminCampaign[] | null)?.[0];
       if (err || !campaign) {

@@ -495,7 +495,7 @@ const Dashboard = () => {
 
   // Attendre l'initialisation avant d'afficher quoi que ce soit
   // Client manager (private results link): their campaign only, without Dust settings and admin tools.
-  const isClientView = !!campaignAccess && !isAdmin && !isDemoMode();
+  const isClientView = !!campaignAccess && !isAdmin;
   useEffect(() => {
     if (isClientView && CLIENT_HIDDEN_TABS.includes(activeTab)) setActiveTab('overview');
   }, [isClientView, activeTab]);
