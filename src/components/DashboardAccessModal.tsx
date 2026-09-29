@@ -28,6 +28,12 @@ interface DashboardAccessModalProps {
 const CAMPAIGN_COLUMNS = 'id, code, company_name, campaign_name, creator_email, created_at';
 
 /**
+ * Email login (@dust.tt magic link) is built but off until the email service is set up
+ * (Resend SMTP + auth hook, see supabase/002-dust-email-login.sql). Turn on with VITE_EMAIL_LOGIN=true.
+ */
+const EMAIL_LOGIN_ENABLED = import.meta.env.VITE_EMAIL_LOGIN === 'true';
+
+/**
  * Console access. Every way in is checked by the database (row level security):
  *  - Dust team: login link sent by email, @dust.tt addresses only → every campaign;
  *  - Dust team fallback: the admin key (stored hashed server-side) → every campaign;
@@ -42,7 +48,9 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
   const [showKey, setShowKey] = useState(false);
   const [email, setEmail] = useState('');
   const [linkSentTo, setLinkSentTo] = useState<string | null>(null);
-  const [useKey, setUseKey] = useState(false);
+  const [useKey, setUseKey] = useState(!EMAIL_LOGIN_ENABLED);
+  // The Dust team sign-in stays folded: clients only see how to open their results.
+  const [dustOpen, setDustOpen] = useState(false);
   const handledLink = useRef(false);
   const handledSession = useRef(false);
 
@@ -180,8 +188,16 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
           </div>
         </div>
 
+        {/* Errors from a client results link, shown while the Dust sign-in is folded */}
+        {!dustOpen && error && (
+          <div role="alert" className="mt-2 flex items-center gap-2 rounded-md border-l-2 border-risk bg-risk-soft px-3 py-2 text-[13px] text-risk-ink">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
         {/* Dust team: login link by email (@dust.tt only) */}
-        {!useKey && (linkSentTo ? (
+        {dustOpen && !useKey && (linkSentTo ? (
           <div role="status" className="mt-2 flex gap-3 rounded-md bg-ok-soft p-3 text-ok-ink">
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
             <div className="text-[13px]">
@@ -224,8 +240,8 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
           </form>
         ))}
 
-        {/* Fallback: admin key */}
-        {useKey && (
+        {/* Admin key (fallback, or the only Dust sign-in while email login is off) */}
+        {dustOpen && useKey && (
           <form onSubmit={handleAdminSubmit} className="mt-2 space-y-3">
             <div className="space-y-2">
               <Label htmlFor="admin-key" className="flex items-center gap-2">
@@ -267,13 +283,23 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
             </Button>
           </form>
         )}
-        <button
-          type="button"
-          className="mt-1 self-start text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-          onClick={() => { setUseKey((v) => !v); setError(''); }}
-        >
-          {useKey ? (fr ? 'Se connecter avec une adresse @dust.tt' : 'Sign in with a @dust.tt address') : (fr ? 'Utiliser la clé admin (secours)' : 'Use the admin key instead')}
-        </button>
+        {!dustOpen ? (
+          <button
+            type="button"
+            className="mt-1 self-start text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            onClick={() => { setDustOpen(true); setError(''); }}
+          >
+            {fr ? 'Équipe Dust : se connecter' : 'Dust team sign-in'}
+          </button>
+        ) : EMAIL_LOGIN_ENABLED && (
+          <button
+            type="button"
+            className="mt-1 self-start text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            onClick={() => { setUseKey((v) => !v); setError(''); }}
+          >
+            {useKey ? (fr ? 'Se connecter avec une adresse @dust.tt' : 'Sign in with a @dust.tt address') : (fr ? 'Utiliser la clé admin (secours)' : 'Use the admin key instead')}
+          </button>
+        )}
 
         <div className="mt-2 flex items-center gap-3 border-t border-border pt-4">
           <div className="min-w-0 flex-1">

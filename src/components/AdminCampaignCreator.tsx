@@ -216,8 +216,8 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
         <p className="text-[14px] font-medium text-foreground">{fr ? 'Réservé à l’équipe Dust' : 'For the Dust team only'}</p>
         <p className="text-[13px] text-muted-foreground">
           {fr
-            ? 'Connectez-vous avec votre adresse @dust.tt pour créer un lien de campagne.'
-            : 'Sign in with your @dust.tt address to create a campaign link.'}
+            ? 'Connectez-vous côté équipe Dust (Console → « Équipe Dust : se connecter ») pour créer un lien de campagne.'
+            : 'Sign in as the Dust team (Console → "Dust team sign-in") to create a campaign link.'}
         </p>
         <Button asChild>
           <Link to="/dashboard">{fr ? 'Se connecter' : 'Sign in'}</Link>
