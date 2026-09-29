@@ -437,6 +437,11 @@ const Dashboard = () => {
   };
 
   const handleAdminAccessGranted = (campaigns: AdminCampaign[], superAdmin = false) => {
+    // No campaign yet (fresh database): nothing to show, go straight to creating the first one.
+    if (campaigns.length === 0) {
+      navigate('/create-campaign');
+      return;
+    }
     setIsAdmin(true);
     setIsSuperAdmin(superAdmin);
     setAllCampaigns(campaigns);
