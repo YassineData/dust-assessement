@@ -6,6 +6,7 @@ import { TopBar, PageHeader } from '@/components/CampaignHeader';
 import { DashboardSidebar, TabId, TAB_LABELS, CLIENT_HIDDEN_TABS } from '@/components/DashboardSidebar';
 import { SectionCard } from '@/components/console/SectionCard';
 import { OpenAnswersCard } from '@/components/console/OpenAnswersCard';
+import { SignInLog } from '@/components/console/SignInLog';
 import { HeroDiagnostic, KpiCards, DimensionBars, RankedList, PendingBanner, NextSteps, CardLink } from '@/components/console/OverviewBlocks';
 import { ParticipantDrawer } from '@/components/console/ParticipantDrawer';
 import { CompareView } from '@/components/console/CompareView';
@@ -25,7 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { DEMO_FLAG, isDemoMode } from '@/demo/demo-data';
 import { clearAccessKeys } from '@/lib/access';
-import { DashboardAccessModal, AdminCampaign } from '@/components/DashboardAccessModal';
+import { DashboardAccessModal, AdminCampaign, ADMIN_EMAIL_KEY } from '@/components/DashboardAccessModal';
 import { EmptyDashboardState } from '@/components/EmptyDashboardState';
 import { DownloadOptionsModal } from '@/components/DownloadOptionsModal';
 import { DetailedScoresTab } from '@/components/DetailedScoresTab';
@@ -517,6 +518,14 @@ const Dashboard = () => {
   // Attendre l'initialisation avant d'afficher quoi que ce soit
   // Client manager (private results link): their campaign only, without Dust settings and admin tools.
   const isClientView = !!campaignAccess && !isAdmin;
+  // The signed-in Dust person (from the sign-in form), shown in the header.
+  const adminEmail = (() => {
+    try {
+      return isDemoMode() ? 'demo@dust.tt' : localStorage.getItem(ADMIN_EMAIL_KEY) ?? '';
+    } catch {
+      return '';
+    }
+  })();
   useEffect(() => {
     if (isClientView && CLIENT_HIDDEN_TABS.includes(activeTab)) setActiveTab('overview');
   }, [isClientView, activeTab]);
@@ -781,7 +790,7 @@ const Dashboard = () => {
           campaignName={campaignName}
           campaignsCount={isAdmin ? allCampaigns.length : undefined}
           campaignCode={campaignCodeForLinks}
-          userEmail={campaignAccess.creatorEmail}
+          userEmail={isAdmin ? (adminEmail || undefined) : undefined}
           roleLabel={isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : 'Manager'}
           isDemo={isDemoMode()}
           onOpenNav={() => setMobileNavOpen(true)}
@@ -1225,6 +1234,8 @@ const Dashboard = () => {
             )}
           </div>
         )}
+
+        {activeTab === 'signIns' && !isClientView && <SignInLog fr={fr} />}
 
         {activeTab === 'openAnswers' && (
           <OpenAnswersCard participants={participants} fr={fr} showEmpty />

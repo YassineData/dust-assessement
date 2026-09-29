@@ -23,7 +23,7 @@ Results read in three blocks: **starting point** (where the account stands) → 
 | `/internal` | Internal pitch for the Dust team (video, ROI calculator, demo). Not indexed |
 | `/assessment?code=XXXX` | The survey. Add `&for=sales` or `&for=cs` for the Sales / Customer Success versions |
 | `/exemple`, `/exemple/sales`, `/exemple/cs` | Preview of the survey, nothing is saved |
-| `/login` | Dust team sign-in page (admin key), then the console |
+| `/login` | Dust team sign-in (@dust.tt email + admin key, every attempt logged), then the console |
 | `/dashboard` | Console for the Dust team (admin key). "Try the platform" opens it with sample data |
 | `/results?key=…` | Client manager view of one campaign (private link from the Share page) |
 | `/create-campaign` | Create a campaign link (Dust team only) |

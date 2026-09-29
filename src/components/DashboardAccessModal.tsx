@@ -30,6 +30,9 @@ const CAMPAIGN_COLUMNS = 'id, code, company_name, campaign_name, creator_email, 
  * Email login (@dust.tt magic link) is built but off until the email service is set up
  * (Resend SMTP + auth hook, see supabase/002-dust-email-login.sql). Turn on with VITE_EMAIL_LOGIN=true.
  */
+/** Who signed in last on this browser (shown in the console header, pre-filled next time). */
+export const ADMIN_EMAIL_KEY = 'dust_admin_email';
+
 const EMAIL_LOGIN_ENABLED = import.meta.env.VITE_EMAIL_LOGIN === 'true';
 
 /**
@@ -42,6 +45,13 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
   const { language } = useLanguage();
   const fr = language === 'fr';
   const [adminKey, setAdminKeyInput] = useState('');
+  const [adminEmail, setAdminEmail] = useState(() => {
+    try {
+      return localStorage.getItem(ADMIN_EMAIL_KEY) ?? '';
+    } catch {
+      return '';
+    }
+  });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showKey, setShowKey] = useState(false);
@@ -141,6 +151,11 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
     e.preventDefault();
     setError('');
     const key = adminKey.trim();
+    const mail = adminEmail.trim().toLowerCase();
+    if (!isDustEmail(mail)) {
+      setError(fr ? 'Utilisez votre adresse @dust.tt.' : 'Use your @dust.tt address.');
+      return;
+    }
     if (!key) {
       setError(fr ? 'Saisissez la clé admin Dust.' : 'Enter the Dust admin key.');
       return;
@@ -149,13 +164,30 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
     try {
       setAccessKey(null);
       setAdminKey(key);
-      const { data: ok, error: checkErr } = await supabase.rpc('check_admin' as never);
-      if (checkErr || ok !== true) {
+      // dust_sign_in checks the key and the @dust.tt address server-side and logs the attempt.
+      let result: string | null = null;
+      const signIn = await supabase.rpc('dust_sign_in' as never, { p_email: mail } as never);
+      if (!signIn.error) {
+        result = signIn.data as unknown as string;
+      } else {
+        // Log table not installed yet (supabase/003-sign-in-log.sql): fall back to the key check alone.
+        const { data: ok, error: checkErr } = await supabase.rpc('check_admin' as never);
+        result = checkErr ? null : ok === true ? 'ok' : 'bad_key';
+      }
+      if (result !== 'ok') {
         setAdminKey(null);
-        setError(checkErr
-          ? (fr ? 'Impossible de vérifier la clé. Réessayez.' : 'Could not check the key. Please try again.')
-          : (fr ? 'Clé admin incorrecte.' : 'Wrong admin key.'));
+        setError(
+          result === 'not_dust' ? (fr ? 'Réservé aux adresses @dust.tt.' : 'Only @dust.tt addresses can sign in.')
+          : result === 'too_many' ? (fr ? 'Trop de tentatives. Réessayez dans quelques minutes.' : 'Too many attempts. Try again in a few minutes.')
+          : result === 'bad_key' ? (fr ? 'Clé admin incorrecte.' : 'Wrong admin key.')
+          : (fr ? 'Impossible de vérifier la clé. Réessayez.' : 'Could not check the key. Please try again.')
+        );
         return;
+      }
+      try {
+        localStorage.setItem(ADMIN_EMAIL_KEY, mail);
+      } catch {
+        /* convenience only */
       }
       await openAllCampaigns();
     } finally {
@@ -250,6 +282,22 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
         {dustOpen && useKey && (
           <form onSubmit={handleAdminSubmit} className="mt-2 space-y-3">
             <div className="space-y-2">
+              <Label htmlFor="admin-email" className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                {fr ? 'Votre adresse @dust.tt' : 'Your @dust.tt address'}
+              </Label>
+              <Input
+                id="admin-email"
+                name="email"
+                type="email"
+                autoComplete="username"
+                placeholder="name@dust.tt"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                autoFocus={!adminEmail}
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="admin-key" className="flex items-center gap-2">
                 <Key className="h-4 w-4 text-muted-foreground" />
                 {fr ? 'Clé admin Dust' : 'Dust admin key'}
@@ -264,7 +312,7 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
                   onChange={(e) => setAdminKeyInput(e.target.value)}
                   className="w-full pr-10"
                   maxLength={200}
-                  autoFocus
+                  autoFocus={!!adminEmail}
                 />
                 <button
                   type="button"

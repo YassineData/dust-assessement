@@ -13,6 +13,7 @@ import {
   SlidersHorizontal,
   KeyRound,
   Activity,
+  LogIn,
   ExternalLink,
   PanelLeftClose,
   PanelLeftOpen,
@@ -35,7 +36,8 @@ export type TabId =
   | 'share'
   | 'campaignSettings'
   | 'access'
-  | 'dataHealth';
+  | 'dataHealth'
+  | 'signIns';
 
 interface NavItem {
   id: TabId | 'takeAssessment';
@@ -86,12 +88,13 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'access', fr: 'Accès & codes', en: 'Access & codes', icon: KeyRound },
       { id: 'dataHealth', fr: 'Santé des données', en: 'Data health', icon: Activity },
+      { id: 'signIns', fr: 'Connexions', en: 'Sign-ins', icon: LogIn },
     ],
   },
 ];
 
 /** What a client manager sees: results, analysis and sharing, never settings or admin. */
-export const CLIENT_HIDDEN_TABS: TabId[] = ['campaignSettings', 'access', 'dataHealth'];
+export const CLIENT_HIDDEN_TABS: TabId[] = ['campaignSettings', 'access', 'dataHealth', 'signIns'];
 const CLIENT_NAV_GROUPS: NavGroup[] = NAV_GROUPS.filter((g) => g.en !== 'Admin').map((g) => ({
   ...g,
   items: g.items.filter((i) => !CLIENT_HIDDEN_TABS.includes(i.id as TabId)),
