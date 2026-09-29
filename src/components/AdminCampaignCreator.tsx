@@ -7,12 +7,13 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { validateProfessionalEmail } from '@/lib/email-validation';
 import { cn } from '@/lib/utils';
 import { resultsLink } from '@/lib/access';
 import { useIsDustTeam } from '@/hooks/useIsDustTeam';
 import { Link } from 'react-router-dom';
 import { DUST_TEAM, splitName } from '@/lib/dust-team';
+
+const TEAM_NAMES = DUST_TEAM.flatMap((g) => g.names);
 
 interface AdminCampaignCreatorProps {
   defaultCompany?: string;
@@ -21,8 +22,7 @@ interface AdminCampaignCreatorProps {
   onCreated?: () => void;
 }
 
-const CREATOR_KEY = 'dust_campaign_creator';
-const OTHER = '__other';
+const CREATOR_KEY = 'dust_campaign_creator_name';
 
 /**
  * Creates a deployment and hands back a link (+ code) to send to the client.
@@ -35,19 +35,14 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
 
   const [company, setCompany] = useState(defaultCompany ?? '');
   const [campaignName, setCampaignName] = useState('');
-  const [email, setEmail] = useState(defaultCreatorEmail ?? '');
-  // Who is creating it: remembered on this browser so the Dust owner doesn't retype it every time.
-  const saved = (() => {
+  // Who is creating it: one field with the Dust team as suggestions, remembered on this browser.
+  const [creator, setCreator] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem(CREATOR_KEY) || '{}') as { first?: string; last?: string; picked?: string };
+      return localStorage.getItem(CREATOR_KEY) ?? '';
     } catch {
-      return {};
+      return '';
     }
-  })();
-  // Picked from the Dust team list; OTHER falls back to two free fields.
-  const [picked, setPicked] = useState(saved.picked ?? '');
-  const [firstName, setFirstName] = useState(saved.picked === OTHER ? saved.first ?? '' : '');
-  const [lastName, setLastName] = useState(saved.picked === OTHER ? saved.last ?? '' : '');
+  });
   const [campaignLanguage, setCampaignLanguage] = useState<'fr' | 'en'>('en');
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<{ code: string; company: string; accessKey: string } | null>(null);
@@ -57,7 +52,6 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
   // One link per audience: all teams, Sales or Customer Success (own survey header, team pre-selected).
   const [audience, setAudience] = useState<SurveyAudience>('general');
 
-  const askEmail = !defaultCreatorEmail;
   const audienceParam = AUDIENCE_PARAM[audience];
   const link = created ? `${window.location.origin}/assessment?lang=${campaignLanguage}&code=${created.code}${audienceParam ? `&for=${audienceParam}` : ''}` : '';
   const teamFr = audience === 'general' ? '' : ` (${AUDIENCES[audience].label.fr})`;
@@ -82,23 +76,16 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const companyClean = company.trim();
-    const owner = email.trim().toLowerCase();
-    const { first, last } = picked && picked !== OTHER ? splitName(picked) : { first: firstName.trim(), last: lastName.trim() };
-    if (!companyClean || !owner || !first || !last) {
+    const creatorClean = creator.trim().replace(/\s+/g, ' ');
+    if (!companyClean || !creatorClean) {
       toast({
         title: fr ? 'Erreur' : 'Error',
-        description: fr ? 'Indiquez le client et qui crée la campagne' + (askEmail ? ', et votre email' : '') : 'Enter the client and who is creating the campaign' + (askEmail ? ', and your email' : ''),
+        description: fr ? 'Indiquez le client et votre nom' : 'Enter the client and your name',
         variant: 'destructive',
       });
       return;
     }
-    if (askEmail) {
-      const v = validateProfessionalEmail(owner);
-      if (!v.valid) {
-        toast({ title: fr ? 'Email invalide' : 'Invalid email', description: v.message, variant: 'destructive' });
-        return;
-      }
-    }
+    const { first, last } = splitName(creatorClean);
 
     setCreating(true);
     try {
@@ -112,12 +99,12 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
         campaign_name: campaignName.trim() || (fr ? 'Déploiement Dust' : 'Dust rollout'),
         creator_first_name: first,
         creator_last_name: last,
-        creator_email: owner,
+        creator_email: defaultCreatorEmail || 'team@dust.tt',
         language: campaignLanguage,
       } as any).select('access_key').maybeSingle();
       if (error) throw error;
       try {
-        localStorage.setItem(CREATOR_KEY, JSON.stringify({ first, last, picked }));
+        localStorage.setItem(CREATOR_KEY, creatorClean);
       } catch {
         /* per-browser convenience only */
       }
@@ -268,50 +255,24 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="cc-owner">{fr ? 'Créée par' : 'Created by'}</Label>
-        <select
+        <Label htmlFor="cc-owner">{fr ? 'Votre nom' : 'Your name'}</Label>
+        <Input
           id="cc-owner"
-          value={picked}
-          onChange={(e) => setPicked(e.target.value)}
-          className={cn(
-            'flex h-10 w-full rounded-md border border-input bg-card px-3 text-[14px] ring-offset-background',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-            !picked && 'text-muted-foreground'
-          )}
-        >
-          <option value="" disabled>{fr ? 'Choisissez votre nom' : 'Pick your name'}</option>
-          {DUST_TEAM.map((g) => (
-            <optgroup key={g.group} label={g.group}>
-              {g.names.map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </optgroup>
+          list="cc-team"
+          value={creator}
+          onChange={(e) => setCreator(e.target.value)}
+          autoComplete="off"
+          placeholder={fr ? 'Tapez les premières lettres' : 'Start typing'}
+        />
+        <datalist id="cc-team">
+          {TEAM_NAMES.map((n) => (
+            <option key={n} value={n} />
           ))}
-          <option value={OTHER}>{fr ? 'Autre (pas dans la liste)' : 'Someone else (not listed)'}</option>
-        </select>
+        </datalist>
         <p className="text-[12px] text-muted-foreground">
-          {fr ? 'Affiché dans la liste des campagnes, pour savoir qui a lancé quoi. Mémorisé sur ce navigateur.' : 'Shown in the campaign list, so the team knows who launched what. Remembered on this browser.'}
+          {fr ? 'Pour savoir qui a lancé quelle campagne. Mémorisé sur ce navigateur.' : 'So the team knows who launched which campaign. Remembered on this browser.'}
         </p>
       </div>
-      {picked === OTHER && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="cc-first">{fr ? 'Prénom' : 'First name'}</Label>
-            <Input id="cc-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cc-last">{fr ? 'Nom' : 'Last name'}</Label>
-            <Input id="cc-last" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
-          </div>
-        </div>
-      )}
-
-      {askEmail && (
-        <div className="space-y-1.5">
-          <Label htmlFor="cc-email">{fr ? 'Votre email (accès aux résultats)' : 'Your email (results access)'}</Label>
-          <Input id="cc-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={fr ? "prenom@entreprise.com" : "name@company.com"} />
-        </div>
-      )}
 
       <div className="space-y-1.5">
         <Label>{fr ? 'Langue du questionnaire' : 'Questionnaire language'}</Label>

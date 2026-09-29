@@ -816,10 +816,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
                       <TableCell className="pl-5 font-medium">{(c as any).campaign_name || c.company_name}</TableCell>
                       <TableCell className="hidden text-[12px] sm:table-cell">
                         {creatorName(c) ? (
-                          <>
-                            <span className="block font-medium text-foreground">{creatorName(c)}</span>
-                            <span className="block text-muted-foreground">{c.creator_email}</span>
-                          </>
+                          <span className="font-medium text-foreground">{creatorName(c)}</span>
                         ) : (
                           <span className="text-muted-foreground">{c.creator_email}</span>
                         )}
