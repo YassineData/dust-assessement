@@ -423,6 +423,17 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
   // ===== Shared building blocks =====
   const fr = language === 'fr';
   const companyShort = (companyName ?? '').split(' — ')[0];
+
+  // Ready-to-send email for the client contact with their private results link.
+  const resultsEmail = (accessKey: string) => {
+    const company = companyShort || (fr ? 'votre entreprise' : 'your company');
+    const link = resultsLink(accessKey);
+    const subject = fr ? `Vos résultats AI Maturity Assessment · ${company}` : `Your AI Maturity Assessment results · ${company}`;
+    const body = fr
+      ? `Bonjour,\n\nVoici votre accès aux résultats de l'AI Maturity Assessment de ${company} :\n${link}\n\nVous y verrez en direct la participation, la maturité IA par équipe, vos builders et champions, et le plan de déploiement proposé. Le lien est personnel : merci de ne pas le transférer aux répondants.\n\nÀ bientôt,`
+      : `Hello,\n\nHere is your access to the AI Maturity Assessment results for ${company}:\n${link}\n\nYou will see participation live, AI readiness by team, your builders and champions, and the proposed rollout plan. The link is personal: please don't forward it to respondents.\n\nBest,`;
+    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
   const audienceSuffix = AUDIENCE_PARAM[shareAudience] ? `&for=${AUDIENCE_PARAM[shareAudience]}` : '';
   const shareLink = `${window.location.origin}/assessment?lang=${language}&code=${campaignCode || 'XXXXXXXX'}${audienceSuffix}`;
   const pendingParticipants = nonAdminParticipants.filter((p) => p.status !== 'completed');
@@ -593,7 +604,18 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
               <Copy className="h-4 w-4" />
               {fr ? 'Copier' : 'Copy'}
             </Button>
+            <Button className="gap-1.5 sm:flex-none" asChild>
+              <a href={resultsEmail(clientAccessKey)}>
+                <Mail className="h-4 w-4" />
+                {fr ? 'Envoyer par e-mail' : 'Send by email'}
+              </a>
+            </Button>
           </div>
+          <p className="mt-2 text-[12px] text-muted-foreground">
+            {fr
+              ? 'Ouvre votre messagerie avec un e-mail prêt : ajoutez simplement l’adresse de votre contact. Pour voir ce qu’il verra, ouvrez le lien dans une fenêtre de navigation privée.'
+              : 'Opens your email app with a ready-to-send message: just add your contact’s address. To see what they will see, open the link in a private browsing window.'}
+          </p>
         </SectionCard>
       )}
 
