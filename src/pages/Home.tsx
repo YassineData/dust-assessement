@@ -102,9 +102,9 @@ const Home = () => {
   ];
 
   const weeks = [
-    { when: L('Week 1', 'Semaine 1'), title: L('You send the link', 'Vous envoyez le lien'), body: L('To the teams in scope, with the message we prepare.', 'Aux équipes concernées, avec le message qu’on prépare.') },
-    { when: L('Weeks 1–2', 'Semaines 1–2'), title: L('Teams answer', 'Les équipes répondent'), body: L('You follow the response rate live from your private link.', 'Vous suivez le taux de réponse en direct depuis votre lien privé.') },
-    { when: L('Week 3', 'Semaine 3'), title: L('Readout with Dust', 'Restitution avec Dust'), body: L('Thirty minutes on the results and the plan. It shapes your kickoff.', 'Trente minutes sur les résultats et le plan. Elle façonne votre kickoff.') },
+    { when: L('Step 1', 'Étape 1'), title: L('You send the link', 'Vous envoyez le lien'), body: L('To the teams in scope, with the message we prepare.', 'Aux équipes concernées, avec le message qu’on prépare.') },
+    { when: L('Step 2', 'Étape 2'), title: L('Teams answer', 'Les équipes répondent'), body: L('You follow the response rate live from your private link.', 'Vous suivez le taux de réponse en direct depuis votre lien privé.') },
+    { when: L('Step 3', 'Étape 3'), title: L('Readout with Dust', 'Restitution avec Dust'), body: L('Thirty minutes on the results and the plan. It shapes your kickoff.', 'Trente minutes sur les résultats et le plan. Elle façonne votre kickoff.') },
   ];
 
   return (
