@@ -1,12 +1,13 @@
 import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BarChart3, Eye, GraduationCap, Lock, Rocket, Smartphone, Timer, Users, Zap } from 'lucide-react';
+import { ArrowRight, BarChart3, ChevronDown, Eye, GraduationCap, Lock, Rocket, Smartphone, Timer, Users, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { DustWordmark } from '@/components/DustMark';
 import { Reveal } from '@/components/Reveal';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { ProductStory } from '@/components/home/ProductStory';
 
 /* The Dust brand shapes (brand guide: circle, arch, square, quarter circles), in brand colors. */
 type Shape = 'circle' | 'arch' | 'square' | 'quarterR' | 'quarterL';
@@ -41,6 +42,14 @@ const ShapeGrid = () => (
   </div>
 );
 
+const ShapeRow = () => (
+  <div className="flex gap-1.5" aria-hidden="true">
+    {GRID.slice(0, 5).map((g, i) => (
+      <div key={i} className="home-shape h-4 w-4" style={{ background: g.color, borderRadius: RADIUS[g.shape], '--d': `${i * 80}ms` } as CSSProperties} />
+    ))}
+  </div>
+);
+
 /**
  * Public home page (dust-assessment.com), written for the manager running the Dust rollout at the
  * client: why the survey is worth five minutes of their teams' time and what they get back.
@@ -58,6 +67,20 @@ const Home = () => {
     // Full page load so the startup checks (demo vs real campaign) run for this code.
     if (c) window.location.assign(`/assessment?lang=${language}&code=${c}`);
   };
+
+  const problems = [
+    { title: L('Everyone gets the same training', 'La même formation pour tous'), body: L('Power users get bored, beginners get lost, both stop coming.', 'Les avancés s’ennuient, les débutants décrochent, et les deux arrêtent de venir.') },
+    { title: L('First use cases are guessed', 'Des cas d’usage devinés'), body: L('Picked in a meeting room, not from the work people actually do.', 'Choisis en réunion, pas à partir du travail réel des équipes.') },
+    { title: L('Relays are found by luck', 'Des relais trouvés par hasard'), body: L('The people who could carry adoption stay invisible for months.', 'Ceux qui pourraient porter l’adoption restent invisibles pendant des mois.') },
+  ];
+
+  const faq = [
+    { q: L('Is it anonymous?', 'Est-ce anonyme ?'), a: L('No: people give their name so we can find the right relays in each team. But only the Dust team and your project lead see the answers, and nobody is evaluated on them.', 'Non : chacun donne son nom pour qu’on trouve les bons relais dans chaque équipe. Mais seuls l’équipe Dust et votre chef de projet voient les réponses, et personne n’est évalué dessus.') },
+    { q: L('Who should answer?', 'Qui doit répondre ?'), a: L('Everyone in the teams that will use Dust, not only the enthusiasts. The more people answer, the more reliable the picture.', 'Toutes les personnes des équipes qui vont utiliser Dust, pas seulement les enthousiastes. Plus il y a de réponses, plus la vue est fiable.') },
+    { q: L('What do people see at the end?', 'Que voient les gens à la fin ?'), a: L('A thank-you screen. No score and no label: profiles are for planning the rollout, and they are always confirmed in conversation.', 'Un écran de remerciement. Ni score ni étiquette : les profils servent à préparer le déploiement, et ils sont toujours confirmés en discutant.') },
+    { q: L('What do I receive?', 'Qu’est-ce que je reçois ?'), a: L('A private link to your results, updated live, plus a one-page summary and a kickoff deck for the readout with Dust.', 'Un lien privé vers vos résultats, à jour en direct, plus une synthèse d’une page et un deck de kickoff pour la restitution avec Dust.') },
+    { q: L('Which languages?', 'Quelles langues ?'), a: L('English and French. Each person can switch at any time.', 'Anglais et français. Chacun peut changer à tout moment.') },
+  ];
 
   const blocks = [
     { n: 1, color: '#1C91FF', title: L('Where your teams stand', 'Où en sont vos équipes'), body: L('An AI readiness index for the company, by team and by area: usage, depth, motivation, governance, team habits.', 'Un indice de maturité IA pour l’entreprise, par équipe et par domaine : usage, profondeur, motivation, gouvernance, habitudes d’équipe.') },
@@ -103,9 +126,10 @@ const Home = () => {
 
       <main>
         {/* Hero */}
-        <section className="mx-auto grid max-w-[1080px] items-center gap-12 px-4 pb-14 pt-14 sm:pt-20 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-16">
+        <section className="mx-auto grid max-w-[1120px] items-center gap-12 px-4 pb-16 pt-12 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_440px] lg:gap-14">
           <div className="home-rise">
-            <p className="eyebrow">{L('For companies rolling out Dust', 'Pour les entreprises qui déploient Dust')}</p>
+            <ShapeRow />
+            <p className="eyebrow mt-5">{L('For companies rolling out Dust', 'Pour les entreprises qui déploient Dust')}</p>
             <h1 className="mt-3 text-[38px] font-semibold leading-[1.05] tracking-[-0.02em] text-foreground sm:text-[54px]">
               {L('Know your teams before you roll out AI.', 'Connaissez vos équipes avant de déployer l’IA.')}
             </h1>
@@ -132,8 +156,35 @@ const Home = () => {
             <p className="mt-3 text-[12px] text-muted-foreground">{L('The sample uses a fictional company. Nothing is saved.', 'L’exemple utilise une entreprise fictive. Rien n’est enregistré.')}</p>
           </div>
 
-          <div className="mx-auto w-[200px] sm:w-[300px]">
-            <ShapeGrid />
+          <div className="home-rise w-full" style={{ animationDelay: '200ms' }}>
+            <ProductStory lang={fr ? 'fr' : 'en'} />
+          </div>
+        </section>
+
+        {/* Why: the problem it solves */}
+        <section className="border-t border-border">
+          <div className="mx-auto grid max-w-[1080px] gap-10 px-4 py-16 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
+            <div>
+              <Reveal>
+                <p className="eyebrow">{L('Why a survey first', 'Pourquoi un questionnaire d’abord')}</p>
+                <h2 className="mt-2 max-w-[640px] text-[28px] font-semibold tracking-[-0.01em] text-foreground">
+                  {L('AI rollouts rarely stall on the technology. They stall on people.', 'Les déploiements IA calent rarement sur la technologie. Ils calent sur les gens.')}
+                </h2>
+              </Reveal>
+              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                {problems.map((pb, i) => (
+                  <Reveal key={pb.title} delay={i * 100}>
+                    <div className="h-full border-t-2 border-ink pt-4">
+                      <h3 className="text-[15px] font-semibold text-foreground">{pb.title}</h3>
+                      <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">{pb.body}</p>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+            <div className="mx-auto hidden w-[260px] lg:block">
+              <ShapeGrid />
+            </div>
           </div>
         </section>
 
@@ -208,6 +259,25 @@ const Home = () => {
                 ))}
               </ol>
             </Reveal>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="mx-auto max-w-[780px] px-4 pt-16">
+          <Reveal>
+            <p className="eyebrow">{L('Questions', 'Questions')}</p>
+            <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.01em] text-foreground">{L('What managers usually ask.', 'Ce que les managers demandent souvent.')}</h2>
+          </Reveal>
+          <div className="mt-6 divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+            {faq.map((f) => (
+              <details key={f.q} className="group px-5 py-4">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium text-foreground">
+                  {f.q}
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+                </summary>
+                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{f.a}</p>
+              </details>
+            ))}
           </div>
         </section>
 
