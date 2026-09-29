@@ -1,73 +1,66 @@
-# Welcome to your Lovable project
+# Dust · AI Maturity Assessment
 
-## Project info
+**Deploy with data, not guesswork.**
+An 8-minute survey sent to a client before (or during) a Dust rollout. It tells the deployment team where each team stands with AI, who can build, who will drive adoption, and what to roll out first. A second pass a few months later measures progress.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Live: **https://dust-assessment.com**
 
-## How can I edit this code?
+## What it does
 
-There are several ways of editing your application.
+| For | What they get |
+|---|---|
+| **Respondents** (client employees) | A short survey (EN / FR): a few context questions, 35 statements across 9 dimensions, optional open questions. No account. They get their own AI profile at the end. |
+| **Dust team** (Deployment, CS, Sales) | A console per campaign: readiness index vs benchmark, results by team, builders / champions / trainers / sponsors, a rollout plan per profile, comparisons with past rollouts and sectors, exports. |
+| **Client contact** | A private results link to follow answers live, and a one-pager to forward the survey to their teams. |
 
-**Use Lovable**
+Results read in three blocks: **starting point** (where the account stands) → **people** (who to rely on) → **rollout plan** (what to do, with whom).
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Main routes
 
-Changes made via Lovable will be committed automatically to this repo.
+| Route | What |
+|---|---|
+| `/` | Landing page (pitch, video, ROI calculator) |
+| `/assessment?code=XXXX` | The survey. Add `&for=sales` or `&for=cs` for the Sales / Customer Success versions |
+| `/exemple`, `/exemple/sales`, `/exemple/cs` | Preview of the survey, nothing is saved |
+| `/dashboard` | Console. "Try the platform" opens it with sample data |
+| `/create-campaign` | Create a campaign link (Dust team) |
+| `/kit?code=XXXX&company=…&variant=deployment\|sales` | One-pager for the client champion (prints to PDF) |
+| `/film/index.html` | The 2 min 30 pitch and demo video |
 
-**Use your preferred IDE**
+## Where things live
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- `src/lib/assessment-v2.ts`: the questionnaire (statements, dimensions, context and open questions), scoring, roles and result classes, survey headers per team
+- `src/pages/Assessment.tsx`: the survey flow
+- `src/pages/Dashboard.tsx` and `src/components/console/`: the console
+- `src/pages/Index.tsx`: the landing page
+- `src/pages/ChampionKit.tsx`: the one-pagers
+- `src/demo/demo-data.ts`: sample data for the demo mode (fictional companies)
+- `public/film/`: the pitch video (HTML canvas, voice-over in `vo/`)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Run it locally
 
-Follow these steps:
+Requires Node.js 18+.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm install
+npm run dev      # http://localhost:8080
+npm run build    # production build in dist/
 ```
 
-**Edit a file directly in GitHub**
+Environment variables (`.env` locally, Vercel settings in production):
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+VITE_SUPABASE_URL=
+VITE_SUPABASE_PUBLISHABLE_KEY=
+VITE_SUPABASE_PROJECT_ID=
+```
 
-**Use GitHub Codespaces**
+Without them, the landing page and the demo mode still work.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Stack and hosting
 
-## What technologies are used for this project?
+Vite, React, TypeScript, Tailwind CSS, shadcn/ui. Data in Supabase (Postgres). Hosted on Vercel: every push to `main` deploys to production.
 
-This project is built with:
+## Status
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Prototype, in test with the Dust deployment team. Before sending to real clients, the data access is being moved to a dedicated Supabase project with row level security (branch `secure-database`): respondents only write their own answers, the Dust team uses an admin key, and each client only sees its own campaign through a private link.
