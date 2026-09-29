@@ -19,7 +19,7 @@ Results read in three blocks: **starting point** (where the account stands) → 
 
 | Route | What |
 |---|---|
-| `/` | Public home for clients: what the survey is, data note, enter a code |
+| `/` | Public home for the client manager: what they get, why it helps, sample results; respondents can enter a code |
 | `/internal` | Internal pitch for the Dust team (video, ROI calculator, demo). Not indexed |
 | `/assessment?code=XXXX` | The survey. Add `&for=sales` or `&for=cs` for the Sales / Customer Success versions |
 | `/exemple`, `/exemple/sales`, `/exemple/cs` | Preview of the survey, nothing is saved |

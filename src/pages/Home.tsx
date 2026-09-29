@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ClipboardList, Lock, ShieldCheck, Sparkles, Timer, Users } from 'lucide-react';
+import { ArrowRight, BarChart3, Eye, GraduationCap, Lock, Rocket, Smartphone, Timer, Users, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -42,9 +42,9 @@ const ShapeGrid = () => (
 );
 
 /**
- * Public home page (dust-assessment.com). Readers here are client employees and managers who
- * reached the bare domain: explain the survey, reassure on data, let them enter a code.
- * The internal pitch for the Dust team lives at /internal.
+ * Public home page (dust-assessment.com), written for the manager running the Dust rollout at the
+ * client: why the survey is worth five minutes of their teams' time and what they get back.
+ * Respondents can still enter a code. The internal pitch for the Dust team lives at /internal.
  */
 const Home = () => {
   const { language } = useLanguage();
@@ -59,16 +59,29 @@ const Home = () => {
     if (c) window.location.assign(`/assessment?lang=${language}&code=${c}`);
   };
 
-  const facts = [
-    { icon: Timer, title: L('Less than 5 minutes', 'Moins de 5 minutes'), body: L('A few words about you, five open questions, then 26 quick statements. On a phone or a laptop.', 'Quelques mots sur vous, cinq questions ouvertes, puis 26 affirmations rapides. Sur téléphone ou ordinateur.') },
-    { icon: ShieldCheck, title: L('Not an evaluation', 'Pas une évaluation'), body: L('There are no right or wrong answers. Nobody is graded: we look at teams, not at individual performance.', 'Il n’y a pas de bonne ou de mauvaise réponse. Personne n’est noté : on regarde les équipes, pas la performance individuelle.') },
-    { icon: Sparkles, title: L('A rollout that fits you', 'Un déploiement qui vous ressemble'), body: L('Your answers decide which teams start first, which agents we build and who we train.', 'Vos réponses décident des équipes qui démarrent, des agents à construire et des personnes à former.') },
+  const blocks = [
+    { n: 1, color: '#1C91FF', title: L('Where your teams stand', 'Où en sont vos équipes'), body: L('An AI readiness index for the company, by team and by area: usage, depth, motivation, governance, team habits.', 'Un indice de maturité IA pour l’entreprise, par équipe et par domaine : usage, profondeur, motivation, gouvernance, habitudes d’équipe.') },
+    { n: 2, color: '#418B5C', title: L('Who will carry the rollout', 'Qui portera le déploiement'), body: L('By name: who can train others, who can build agents, who connects teams, who should sponsor, and who needs convincing.', 'Nommément : qui peut former les autres, qui peut construire des agents, qui relie les équipes, qui doit sponsoriser, et qui est à convaincre.') },
+    { n: 3, color: '#FE9C1A', title: L('What to do first', 'Par quoi commencer'), body: L('Next steps and first use cases, drawn from what your teams wrote in their own words.', 'Les prochaines étapes et les premiers cas d’usage, tirés de ce que vos équipes ont écrit avec leurs mots.') },
   ];
 
-  const steps = [
-    { icon: ClipboardList, title: L('You answer', 'Vous répondez'), body: L('Through the link your company shared. Your progress is saved as you go.', 'Via le lien partagé par votre entreprise. Vos réponses sont enregistrées au fil de l’eau.') },
-    { icon: Users, title: L('We read the whole team', 'On lit l’ensemble de l’équipe'), body: L('Where AI already helps, where time is lost, who wants to build or to teach.', 'Où l’IA aide déjà, où le temps se perd, qui veut construire ou transmettre.') },
-    { icon: ArrowRight, title: L('Your rollout starts', 'Votre déploiement démarre'), body: L('Training, first use cases and support shaped around what your teams told us.', 'Formation, premiers cas d’usage et accompagnement construits sur ce que vos équipes nous ont dit.') },
+  const gains = [
+    { icon: GraduationCap, title: L('Training that fits', 'Une formation qui colle'), body: L('Beginners and power users get different sessions, so nobody drops out bored or lost.', 'Débutants et utilisateurs avancés ont des sessions différentes : personne ne décroche, ni par ennui ni par peur.') },
+    { icon: Zap, title: L('Faster first wins', 'Des premiers résultats plus vite'), body: L('The first agents solve problems your people named themselves, so they actually use them.', 'Les premiers agents règlent des problèmes nommés par vos équipes : elles les utilisent vraiment.') },
+    { icon: Users, title: L('Relays from day one', 'Des relais dès le premier jour'), body: L('You know who to lean on in each team before the kickoff, instead of finding them months later.', 'Vous savez sur qui vous appuyer dans chaque équipe avant le kickoff, pas des mois plus tard.') },
+    { icon: BarChart3, title: L('Progress you can show', 'Des progrès à montrer'), body: L('Run it again a few months later and show your leadership how far the company has moved.', 'Relancez-le quelques mois plus tard et montrez à votre direction le chemin parcouru.') },
+  ];
+
+  const asks = [
+    { icon: Timer, text: L('Less than 5 minutes per person', 'Moins de 5 minutes par personne') },
+    { icon: Smartphone, text: L('One link, no account, phone or laptop', 'Un lien, pas de compte, mobile ou ordinateur') },
+    { icon: Rocket, text: L('A ready-made message to forward', 'Un message prêt à transférer') },
+  ];
+
+  const weeks = [
+    { when: L('Week 1', 'Semaine 1'), title: L('You send the link', 'Vous envoyez le lien'), body: L('To the teams in scope, with the message we prepare.', 'Aux équipes concernées, avec le message qu’on prépare.') },
+    { when: L('Weeks 1–2', 'Semaines 1–2'), title: L('Teams answer', 'Les équipes répondent'), body: L('You follow the response rate live from your private link.', 'Vous suivez le taux de réponse en direct depuis votre lien privé.') },
+    { when: L('Week 3', 'Semaine 3'), title: L('Readout with Dust', 'Restitution avec Dust'), body: L('Thirty minutes on the results and the plan. It shapes your kickoff.', 'Trente minutes sur les résultats et le plan. Elle façonne votre kickoff.') },
   ];
 
   return (
@@ -79,7 +92,7 @@ const Home = () => {
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
-              <Link to="/dashboard">
+              <Link to="/dashboard" aria-label={L('Dust team', 'Équipe Dust')}>
                 <Lock className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">{L('Dust team', 'Équipe Dust')}</span>
               </Link>
@@ -90,24 +103,154 @@ const Home = () => {
 
       <main>
         {/* Hero */}
-        <section className="mx-auto grid max-w-[1080px] items-center gap-12 px-4 pb-16 pt-14 sm:pt-20 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-16">
+        <section className="mx-auto grid max-w-[1080px] items-center gap-12 px-4 pb-14 pt-14 sm:pt-20 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-16">
           <div className="home-rise">
-            <p className="eyebrow">{L('A Dust survey', 'Un questionnaire Dust')}</p>
+            <p className="eyebrow">{L('For companies rolling out Dust', 'Pour les entreprises qui déploient Dust')}</p>
             <h1 className="mt-3 text-[38px] font-semibold leading-[1.05] tracking-[-0.02em] text-foreground sm:text-[54px]">
-              {L('Help us shape your AI rollout.', 'Aidez-nous à construire votre déploiement IA.')}
+              {L('Know your teams before you roll out AI.', 'Connaissez vos équipes avant de déployer l’IA.')}
             </h1>
-            <p className="mt-5 max-w-[560px] text-[16px] leading-relaxed text-muted-foreground sm:text-[17px]">
+            <p className="mt-5 max-w-[580px] text-[16px] leading-relaxed text-muted-foreground sm:text-[17px]">
               {L(
-                'Your company is rolling out Dust. This short survey tells us how your teams use AI today, so the rollout fits the way you actually work.',
-                'Votre entreprise déploie Dust. Ce court questionnaire nous dit comment vos équipes utilisent l’IA aujourd’hui, pour que le déploiement colle à votre façon de travailler.'
+                'A five-minute survey for your employees. You get a clear picture of where each team stands, who can carry the rollout and what to build first.',
+                'Un questionnaire de cinq minutes pour vos collaborateurs. Vous obtenez une vue claire : où en est chaque équipe, qui peut porter le déploiement, et quoi construire en premier.'
               )}
             </p>
+            <div className="mt-8 flex flex-wrap gap-2">
+              <Button asChild size="lg">
+                <a href="/results?key=demo-velor119">
+                  <Eye className="h-4 w-4" />
+                  {L('See sample results', 'Voir un exemple de résultats')}
+                </a>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <a href={`/assessment?preview=1&lang=${language}`}>
+                  {L('Preview the survey', 'Voir le questionnaire')}
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              </Button>
+            </div>
+            <p className="mt-3 text-[12px] text-muted-foreground">{L('The sample uses a fictional company. Nothing is saved.', 'L’exemple utilise une entreprise fictive. Rien n’est enregistré.')}</p>
+          </div>
 
-            <form onSubmit={openCode} className="mt-8 max-w-[460px] rounded-xl bg-card p-4 shadow-sm ring-1 ring-border">
-              <label htmlFor="home-code" className="text-[13px] font-medium text-foreground">
-                {L('Received a code instead of a link?', 'Vous avez reçu un code plutôt qu’un lien ?')}
+          <div className="mx-auto w-[200px] sm:w-[300px]">
+            <ShapeGrid />
+          </div>
+        </section>
+
+        {/* What you get */}
+        <section className="border-y border-border bg-card">
+          <div className="mx-auto max-w-[1080px] px-4 py-16">
+            <Reveal>
+              <p className="eyebrow">{L('What you get', 'Ce que vous obtenez')}</p>
+              <h2 className="mt-2 max-w-[720px] text-[28px] font-semibold tracking-[-0.01em] text-foreground">{L('One clear picture of your company, in three parts.', 'Une vue claire de votre entreprise, en trois parties.')}</h2>
+            </Reveal>
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              {blocks.map((b, i) => (
+                <Reveal key={b.n} delay={i * 110}>
+                  <div className="h-full rounded-xl bg-background p-5 ring-1 ring-border">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold text-white" style={{ background: b.color }}>{b.n}</span>
+                    <h3 className="mt-4 text-[17px] font-semibold text-foreground">{b.title}</h3>
+                    <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">{b.body}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Why it helps you */}
+        <section className="mx-auto max-w-[1080px] px-4 py-16">
+          <Reveal>
+            <p className="eyebrow">{L('Why it helps you', 'Ce que ça change pour vous')}</p>
+            <h2 className="mt-2 max-w-[720px] text-[28px] font-semibold tracking-[-0.01em] text-foreground">{L('A rollout built on your data, not on guesswork.', 'Un déploiement construit sur vos données, pas à l’intuition.')}</h2>
+          </Reveal>
+          <div className="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-2">
+            {gains.map((g, i) => (
+              <Reveal key={g.title} delay={(i % 2) * 100}>
+                <div className="flex gap-4">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-ink">
+                    <g.icon className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-[16px] font-semibold text-foreground">{g.title}</h3>
+                    <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">{g.body}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        {/* What it asks, and how it runs */}
+        <section className="border-y border-border bg-card">
+          <div className="mx-auto grid max-w-[1080px] gap-12 px-4 py-16 lg:grid-cols-[320px_minmax(0,1fr)]">
+            <Reveal>
+              <p className="eyebrow">{L('What it asks of you', 'Ce que ça vous demande')}</p>
+              <h2 className="mt-2 text-[24px] font-semibold tracking-[-0.01em] text-foreground">{L('Very little.', 'Très peu.')}</h2>
+              <ul className="mt-5 space-y-3">
+                {asks.map((a) => (
+                  <li key={a.text} className="flex items-center gap-3 text-[14px] text-foreground">
+                    <a.icon className="h-4 w-4 shrink-0 text-brand-ink" />
+                    {a.text}
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+            <Reveal delay={100}>
+              <p className="eyebrow">{L('How it runs', 'Comment ça se passe')}</p>
+              <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+                {weeks.map((w) => (
+                  <li key={w.title} className="rounded-xl bg-background p-4 ring-1 ring-border">
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-brand-ink">{w.when}</p>
+                    <h3 className="mt-2 text-[15px] font-semibold text-foreground">{w.title}</h3>
+                    <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{w.body}</p>
+                  </li>
+                ))}
+              </ol>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* Data */}
+        <section className="mx-auto max-w-[1080px] px-4 py-16">
+          <Reveal>
+            <div className="grid gap-6 rounded-2xl bg-ink p-7 text-white sm:p-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+              <div>
+                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-sky">{L('Your people’s answers', 'Les réponses de vos équipes')}</p>
+                <h2 className="mt-2 text-[24px] font-semibold leading-snug">{L('Only used to plan the rollout. Never to evaluate anyone.', 'Utilisées pour préparer le déploiement. Jamais pour évaluer qui que ce soit.')}</h2>
+                <p className="mt-3 max-w-[620px] text-[14px] leading-relaxed text-white/75">
+                  {L(
+                    'Only the Dust team and your project lead see the results, through a private link. Anyone can ask for their answers to be deleted.',
+                    'Seuls l’équipe Dust et votre chef de projet voient les résultats, via un lien privé. Chacun peut demander la suppression de ses réponses.'
+                  )}
+                </p>
+              </div>
+              <Button asChild variant="secondary" className="justify-self-start">
+                <a href="https://dust.tt" target="_blank" rel="noopener noreferrer">
+                  {L('Discover Dust', 'Découvrir Dust')}
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              </Button>
+            </div>
+          </Reveal>
+        </section>
+
+        {/* Next step + respondents' code */}
+        <section className="mx-auto grid max-w-[1080px] gap-6 px-4 pb-20 md:grid-cols-2">
+          <Reveal>
+            <div className="h-full rounded-2xl bg-brand-strong p-7 text-white sm:p-8">
+              <h2 className="text-[22px] font-semibold leading-snug">{L('Want it for your teams?', 'Vous le voulez pour vos équipes ?')}</h2>
+              <p className="mt-2 text-[14px] leading-relaxed text-white/90">
+                {L('Ask your Dust contact: we set up your survey link and a ready-to-send message for your teams.', 'Demandez à votre contact Dust : on prépare votre lien et un message prêt à envoyer à vos équipes.')}
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={100}>
+            <form onSubmit={openCode} className="h-full rounded-2xl bg-card p-7 ring-1 ring-border sm:p-8">
+              <label htmlFor="home-code" className="text-[15px] font-semibold text-foreground">
+                {L('Invited to answer? Enter your code.', 'Invité à répondre ? Entrez votre code.')}
               </label>
-              <div className="mt-2 flex gap-2">
+              <div className="mt-3 flex gap-2">
                 <Input
                   id="home-code"
                   value={code}
@@ -125,66 +268,6 @@ const Home = () => {
                 {L('With a link, just open it: you will land straight on the survey.', 'Avec un lien, ouvrez-le simplement : vous arriverez directement sur le questionnaire.')}
               </p>
             </form>
-          </div>
-
-          <div className="mx-auto w-[200px] sm:w-[300px]">
-            <ShapeGrid />
-          </div>
-        </section>
-
-        {/* Three facts */}
-        <section className="border-y border-border bg-card">
-          <div className="mx-auto grid max-w-[1080px] gap-8 px-4 py-14 md:grid-cols-3">
-            {facts.map((f, i) => (
-              <Reveal key={f.title} delay={i * 100}>
-                <f.icon className="h-5 w-5 text-brand-ink" />
-                <h2 className="mt-3 text-[17px] font-semibold text-foreground">{f.title}</h2>
-                <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">{f.body}</p>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-
-        {/* How it works */}
-        <section className="mx-auto max-w-[1080px] px-4 py-16">
-          <Reveal>
-            <p className="eyebrow">{L('How it works', 'Comment ça marche')}</p>
-            <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.01em] text-foreground">{L('Five minutes from you, a rollout built around your teams.', 'Cinq minutes de votre temps, un déploiement construit autour de vos équipes.')}</h2>
-          </Reveal>
-          <ol className="mt-8 grid gap-4 md:grid-cols-3">
-            {steps.map((s, i) => (
-              <Reveal key={s.title} delay={i * 120}>
-                <li className="h-full rounded-xl bg-card p-5 ring-1 ring-border">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-[13px] font-semibold text-white">{i + 1}</span>
-                  <h3 className="mt-4 text-[16px] font-semibold text-foreground">{s.title}</h3>
-                  <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">{s.body}</p>
-                </li>
-              </Reveal>
-            ))}
-          </ol>
-        </section>
-
-        {/* Data */}
-        <section className="mx-auto max-w-[1080px] px-4 pb-20">
-          <Reveal>
-            <div className="grid gap-6 rounded-2xl bg-ink p-7 text-white sm:p-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-              <div>
-                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-sky">{L('Your answers', 'Vos réponses')}</p>
-                <h2 className="mt-2 text-[24px] font-semibold leading-snug">{L('Only used to plan the rollout.', 'Utilisées uniquement pour préparer le déploiement.')}</h2>
-                <p className="mt-3 max-w-[620px] text-[14px] leading-relaxed text-white/75">
-                  {L(
-                    'Only the Dust team and the person running the project at your company can see them. To have your answers deleted, just ask the person who sent you the link.',
-                    'Seules l’équipe Dust et la personne qui pilote le projet chez vous les voient. Pour faire supprimer vos réponses, il suffit de le demander à la personne qui vous a envoyé le lien.'
-                  )}
-                </p>
-              </div>
-              <Button asChild variant="secondary" className="justify-self-start">
-                <a href="https://dust.tt" target="_blank" rel="noopener noreferrer">
-                  {L('Discover Dust', 'Découvrir Dust')}
-                  <ArrowRight className="h-4 w-4" />
-                </a>
-              </Button>
-            </div>
           </Reveal>
         </section>
       </main>
