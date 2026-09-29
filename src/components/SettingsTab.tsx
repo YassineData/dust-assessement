@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Loader2, Users, Clock, CheckCircle2, CircleDashed, Copy, Check, Mail, Trash2, Plus, Info, Upload, Search, Link2, ExternalLink, KeyRound, Timer, Save, MessageSquare, ArrowRight, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AUDIENCES, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
-import { getAdminKey, resultsLink } from '@/lib/access';
+import { resultsLink } from '@/lib/access';
+import { useIsDustTeam } from '@/hooks/useIsDustTeam';
 import { SectionCard } from '@/components/console/SectionCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -69,8 +70,9 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
   const [shareAudience, setShareAudience] = useState<SurveyAudience>('general');
   // Secret of the client's private results link: readable by the Dust team (admin key) only.
   const [clientAccessKey, setClientAccessKey] = useState<string | null>(null);
+  const isDustTeam = useIsDustTeam();
   useEffect(() => {
-    if (!campaignId || !getAdminKey()) {
+    if (!campaignId || !isDustTeam) {
       setClientAccessKey(null);
       return;
     }
@@ -79,7 +81,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
       if (!cancelled) setClientAccessKey((data as { access_key?: string } | null)?.access_key ?? null);
     });
     return () => { cancelled = true; };
-  }, [campaignId]);
+  }, [campaignId, isDustTeam]);
   const { toast } = useToast();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [members, setMembers] = useState<{ id: string; email: string; role: MemberRole }[]>([]);

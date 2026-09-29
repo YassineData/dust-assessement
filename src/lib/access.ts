@@ -42,4 +42,6 @@ export const accessHeaders = (): Record<string, string> => {
 };
 
 /** Private results link for a client (opens the console on that campaign only). */
-export const resultsLink = (accessKey: string) => `${window.location.origin}/dashboard?key=${accessKey}`;
+export const resultsLink = (accessKey: string) => `${window.location.origin}/results?key=${accessKey}`;
+
+export const isDustEmail = (email?: string | null) => !!email && email.trim().toLowerCase().endsWith('@dust.tt');

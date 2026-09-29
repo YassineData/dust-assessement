@@ -3,11 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, Key, AlertCircle, Eye, EyeOff, Loader2, MousePointerClick, Link2 } from 'lucide-react';
+import { Lock, Key, AlertCircle, Eye, EyeOff, Loader2, MousePointerClick, Link2, Mail, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { enterDemo } from '@/demo/demo-data';
-import { setAccessKey, setAdminKey } from '@/lib/access';
+import { isDustEmail, setAccessKey, setAdminKey } from '@/lib/access';
 
 export interface AdminCampaign {
   id: string;
@@ -28,8 +28,9 @@ interface DashboardAccessModalProps {
 const CAMPAIGN_COLUMNS = 'id, code, company_name, campaign_name, creator_email, created_at';
 
 /**
- * Console access. Two ways in, both checked by the database (row level security):
- *  - Dust team: the admin key (stored hashed server-side) → every campaign;
+ * Console access. Every way in is checked by the database (row level security):
+ *  - Dust team: login link sent by email, @dust.tt addresses only → every campaign;
+ *  - Dust team fallback: the admin key (stored hashed server-side) → every campaign;
  *  - client: the private results link Dust sends (/dashboard?key=…) → that campaign only.
  */
 export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdminAccessGranted }: DashboardAccessModalProps) => {
@@ -39,7 +40,64 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showKey, setShowKey] = useState(false);
+  const [email, setEmail] = useState('');
+  const [linkSentTo, setLinkSentTo] = useState<string | null>(null);
+  const [useKey, setUseKey] = useState(false);
   const handledLink = useRef(false);
+  const handledSession = useRef(false);
+
+  const openAllCampaigns = async () => {
+    const { data, error: listErr } = await supabase.from('campaigns').select(CAMPAIGN_COLUMNS).order('created_at', { ascending: false });
+    if (listErr) {
+      setError(fr ? 'Une erreur est survenue. Réessayez.' : 'An error occurred. Please try again.');
+      return false;
+    }
+    onAdminAccessGranted?.((data as AdminCampaign[]) ?? [], true);
+    return true;
+  };
+
+  // Dust team signed in with the email link: open everything.
+  useEffect(() => {
+    if (!isOpen) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('key')) return;
+    const tryOpen = async (userEmail?: string | null) => {
+      if (handledSession.current || !isDustEmail(userEmail)) return;
+      handledSession.current = true;
+      setIsLoading(true);
+      setAccessKey(null);
+      await openAllCampaigns();
+      setIsLoading(false);
+    };
+    supabase.auth.getSession().then(({ data }) => tryOpen(data.session?.user?.email));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      tryOpen(session?.user?.email);
+    });
+    return () => sub.subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const address = email.trim().toLowerCase();
+    // Only @dust.tt addresses: others never get an email (enforced again server-side by an auth hook).
+    if (!isDustEmail(address)) {
+      setError(fr ? 'Seules les adresses @dust.tt peuvent se connecter ici.' : 'Only @dust.tt addresses can sign in here.');
+      return;
+    }
+    setIsLoading(true);
+    const { error: otpErr } = await supabase.auth.signInWithOtp({
+      email: address,
+      options: { emailRedirectTo: `${window.location.origin}/dashboard`, shouldCreateUser: true },
+    });
+    setIsLoading(false);
+    if (otpErr) {
+      setError(fr ? 'Impossible d’envoyer le lien pour le moment. Réessayez dans une minute.' : 'Could not send the link right now. Try again in a minute.');
+      return;
+    }
+    setLinkSentTo(address);
+  };
 
   // Private results link: /dashboard?key=… opens that campaign only.
   useEffect(() => {
@@ -90,12 +148,7 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
           : (fr ? 'Clé admin incorrecte.' : 'Wrong admin key.'));
         return;
       }
-      const { data, error: listErr } = await supabase.from('campaigns').select(CAMPAIGN_COLUMNS).order('created_at', { ascending: false });
-      if (listErr) {
-        setError(fr ? 'Une erreur est survenue. Réessayez.' : 'An error occurred. Please try again.');
-        return;
-      }
-      onAdminAccessGranted?.((data as AdminCampaign[]) ?? [], true);
+      await openAllCampaigns();
     } finally {
       setIsLoading(false);
     }
@@ -127,49 +180,100 @@ export const DashboardAccessModal = ({ isOpen, onClose, onAccessGranted, onAdmin
           </div>
         </div>
 
-        {/* Dust team: admin key */}
-        <form onSubmit={handleAdminSubmit} className="mt-2 space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="admin-key" className="flex items-center gap-2">
-              <Key className="h-4 w-4 text-muted-foreground" />
-              {fr ? 'Équipe Dust : clé admin' : 'Dust team: admin key'}
-            </Label>
-            <div className="relative">
-              <Input
-                id="admin-key"
-                name="password"
-                type={showKey ? 'text' : 'password'}
-                autoComplete="current-password"
-                value={adminKey}
-                onChange={(e) => setAdminKeyInput(e.target.value)}
-                className="w-full pr-10"
-                maxLength={200}
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setShowKey((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
-                tabIndex={-1}
-                aria-label={showKey ? (fr ? 'Masquer' : 'Hide') : (fr ? 'Afficher' : 'Show')}
-              >
-                {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        {/* Dust team: login link by email (@dust.tt only) */}
+        {!useKey && (linkSentTo ? (
+          <div role="status" className="mt-2 flex gap-3 rounded-md bg-ok-soft p-3 text-ok-ink">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="text-[13px]">
+              <p className="font-medium">{fr ? 'Lien envoyé' : 'Link sent'}</p>
+              <p className="mt-0.5">
+                {fr ? `Ouvrez l’e-mail envoyé à ${linkSentTo} et cliquez sur le lien pour vous connecter.` : `Open the email sent to ${linkSentTo} and click the link to sign in.`}
+              </p>
+              <button type="button" className="mt-1 underline underline-offset-2" onClick={() => setLinkSentTo(null)}>
+                {fr ? 'Utiliser une autre adresse' : 'Use another address'}
               </button>
             </div>
           </div>
-
-          {error && (
-            <div role="alert" className="flex items-center gap-2 rounded-md border-l-2 border-risk bg-risk-soft px-3 py-2 text-[13px] text-risk-ink">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              <span>{error}</span>
+        ) : (
+          <form onSubmit={handleEmailSubmit} className="mt-2 space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="dust-email" className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                {fr ? 'Équipe Dust : votre adresse @dust.tt' : 'Dust team: your @dust.tt address'}
+              </Label>
+              <Input
+                id="dust-email"
+                type="email"
+                autoComplete="email"
+                placeholder="name@dust.tt"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoFocus
+              />
             </div>
-          )}
+            {error && (
+              <div role="alert" className="flex items-center gap-2 rounded-md border-l-2 border-risk bg-risk-soft px-3 py-2 text-[13px] text-risk-ink">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {fr ? 'Recevoir un lien de connexion' : 'Email me a login link'}
+            </Button>
+          </form>
+        ))}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isLoading ? (fr ? 'Vérification…' : 'Checking…') : (fr ? 'Accéder à toutes les campagnes' : 'Open all campaigns')}
-          </Button>
-        </form>
+        {/* Fallback: admin key */}
+        {useKey && (
+          <form onSubmit={handleAdminSubmit} className="mt-2 space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="admin-key" className="flex items-center gap-2">
+                <Key className="h-4 w-4 text-muted-foreground" />
+                {fr ? 'Clé admin Dust' : 'Dust admin key'}
+              </Label>
+              <div className="relative">
+                <Input
+                  id="admin-key"
+                  name="password"
+                  type={showKey ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  value={adminKey}
+                  onChange={(e) => setAdminKeyInput(e.target.value)}
+                  className="w-full pr-10"
+                  maxLength={200}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1}
+                  aria-label={showKey ? (fr ? 'Masquer' : 'Hide') : (fr ? 'Afficher' : 'Show')}
+                >
+                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            {error && (
+              <div role="alert" className="flex items-center gap-2 rounded-md border-l-2 border-risk bg-risk-soft px-3 py-2 text-[13px] text-risk-ink">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isLoading ? (fr ? 'Vérification…' : 'Checking…') : (fr ? 'Accéder à toutes les campagnes' : 'Open all campaigns')}
+            </Button>
+          </form>
+        )}
+        <button
+          type="button"
+          className="mt-1 self-start text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          onClick={() => { setUseKey((v) => !v); setError(''); }}
+        >
+          {useKey ? (fr ? 'Se connecter avec une adresse @dust.tt' : 'Sign in with a @dust.tt address') : (fr ? 'Utiliser la clé admin (secours)' : 'Use the admin key instead')}
+        </button>
 
         <div className="mt-2 flex items-center gap-3 border-t border-border pt-4">
           <div className="min-w-0 flex-1">

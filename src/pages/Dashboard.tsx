@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TopBar, PageHeader } from '@/components/CampaignHeader';
-import { DashboardSidebar, TabId, TAB_LABELS } from '@/components/DashboardSidebar';
+import { DashboardSidebar, TabId, TAB_LABELS, CLIENT_HIDDEN_TABS } from '@/components/DashboardSidebar';
 import { SectionCard } from '@/components/console/SectionCard';
 import { HeroDiagnostic, KpiCards, DimensionBars, RankedList, PendingBanner, NextSteps, CardLink } from '@/components/console/OverviewBlocks';
 import { ParticipantDrawer } from '@/components/console/ParticipantDrawer';
@@ -494,6 +494,12 @@ const Dashboard = () => {
   };
 
   // Attendre l'initialisation avant d'afficher quoi que ce soit
+  // Client manager (private results link): their campaign only, without Dust settings and admin tools.
+  const isClientView = !!campaignAccess && !isAdmin && !isDemoMode();
+  useEffect(() => {
+    if (isClientView && CLIENT_HIDDEN_TABS.includes(activeTab)) setActiveTab('overview');
+  }, [isClientView, activeTab]);
+
   if (!isInitialized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -537,6 +543,7 @@ const Dashboard = () => {
       return;
     }
     clearAccessKeys();
+    supabase.auth.signOut().catch(() => {});
     setCampaignAccess(null);
     setIsAdmin(false);
     setIsSuperAdmin(false);
@@ -703,6 +710,7 @@ const Dashboard = () => {
         onToggleCollapsed={toggleSidebar}
         mobileOpen={mobileNavOpen}
         onMobileClose={closeMobileNav}
+        clientView={isClientView}
       />
 
       <div className={cn('min-h-screen transition-[margin] duration-150', sidebarCollapsed ? 'lg:ml-14' : 'lg:ml-64')}>
@@ -750,6 +758,12 @@ const Dashboard = () => {
               <EmptyDashboardState type="overview" />
             ) : (
               <div className="space-y-5">
+                {isClientView && (
+                  <div className="flex flex-wrap items-center gap-3 rounded-lg bg-brand-soft px-4 py-3 text-[13px] text-brand-ink">
+                    <span className="font-semibold">{fr ? `Résultats de ${campaignAccess.companyName}, partagés par Dust` : `${campaignAccess.companyName} results, shared by Dust`}</span>
+                    <span className="text-brand-ink/80">{fr ? 'Mis à jour en direct à chaque nouvelle réponse. Seule votre campagne est visible ici.' : 'Updated live with every new answer. Only your campaign is visible here.'}</span>
+                  </div>
+                )}
                 {/* Results read as three blocks: starting point → people → plan (the plan is derived from 1 + 2). */}
                 <OverviewBlockHeader
                   n={1}

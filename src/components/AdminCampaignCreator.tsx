@@ -9,8 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { validateProfessionalEmail } from '@/lib/email-validation';
 import { cn } from '@/lib/utils';
-import { getAdminKey, resultsLink } from '@/lib/access';
-import { isDemoMode } from '@/demo/demo-data';
+import { resultsLink } from '@/lib/access';
+import { useIsDustTeam } from '@/hooks/useIsDustTeam';
 import { Link } from 'react-router-dom';
 
 interface AdminCampaignCreatorProps {
@@ -37,7 +37,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
   const [created, setCreated] = useState<{ code: string; company: string; accessKey: string } | null>(null);
   const [copied, setCopied] = useState<'link' | 'message' | 'results' | null>(null);
   // Only the Dust team (admin key) can create campaigns; the database enforces it too.
-  const canCreate = !!getAdminKey() || isDemoMode();
+  const canCreate = useIsDustTeam();
   // One link per audience: all teams, Sales or Customer Success (own survey header, team pre-selected).
   const [audience, setAudience] = useState<SurveyAudience>('general');
 
@@ -216,8 +216,8 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
         <p className="text-[14px] font-medium text-foreground">{fr ? 'Réservé à l’équipe Dust' : 'For the Dust team only'}</p>
         <p className="text-[13px] text-muted-foreground">
           {fr
-            ? 'Connectez-vous avec la clé admin Dust pour créer un lien de campagne.'
-            : 'Sign in with the Dust admin key to create a campaign link.'}
+            ? 'Connectez-vous avec votre adresse @dust.tt pour créer un lien de campagne.'
+            : 'Sign in with your @dust.tt address to create a campaign link.'}
         </p>
         <Button asChild>
           <Link to="/dashboard">{fr ? 'Se connecter' : 'Sign in'}</Link>

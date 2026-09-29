@@ -87,6 +87,13 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+/** What a client manager sees: results, analysis and sharing, never settings or admin. */
+export const CLIENT_HIDDEN_TABS: TabId[] = ['campaignSettings', 'access', 'dataHealth'];
+const CLIENT_NAV_GROUPS: NavGroup[] = NAV_GROUPS.filter((g) => g.en !== 'Admin').map((g) => ({
+  ...g,
+  items: g.items.filter((i) => !CLIENT_HIDDEN_TABS.includes(i.id as TabId)),
+}));
+
 export const TAB_LABELS: Record<TabId, { fr: string; en: string; group: { fr: string; en: string } }> =
   NAV_GROUPS.reduce((acc, group) => {
     group.items.forEach((item) => {
@@ -113,6 +120,8 @@ interface DashboardSidebarProps {
   onToggleCollapsed: () => void;
   mobileOpen: boolean;
   onMobileClose: () => void;
+  /** Client manager view: their campaign only, without the Dust team's settings and admin tools. */
+  clientView?: boolean;
 }
 
 export const DashboardSidebar = ({
@@ -128,6 +137,7 @@ export const DashboardSidebar = ({
   onToggleCollapsed,
   mobileOpen,
   onMobileClose,
+  clientView = false,
 }: DashboardSidebarProps) => {
   const { language } = useLanguage();
   const fr = language === 'fr';
@@ -178,7 +188,7 @@ export const DashboardSidebar = ({
           <DustMark className="h-7 w-7 shrink-0" />
           <div className={cn('min-w-0 leading-none', hideWhenCollapsed)}>
             <p className="text-base font-semibold tracking-tight text-white">Dust</p>
-            <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-sidebar-foreground/80">Assessment</p>
+            <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-sidebar-foreground/80">{clientView ? (fr ? 'Vos résultats' : 'Your results') : 'Assessment'}</p>
           </div>
           <button
             type="button"
@@ -204,7 +214,7 @@ export const DashboardSidebar = ({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2 pb-3">
-          {NAV_GROUPS.map((group) => (
+          {(clientView ? CLIENT_NAV_GROUPS : NAV_GROUPS).map((group) => (
             <div key={group.en} className="mt-3 first:mt-1">
               <p
                 className={cn(

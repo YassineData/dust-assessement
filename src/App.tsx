@@ -24,6 +24,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            {/* Client manager's private results link: /results?key=… (same console, client view) */}
+            <Route path="/results" element={<Dashboard />} />
             <Route path="/assessment" element={<Assessment />} />
             <Route path="/exemple" element={<Navigate to="/assessment?preview=1" replace />} />
             <Route path="/exemple/sales" element={<Navigate to="/assessment?preview=1&for=sales" replace />} />
