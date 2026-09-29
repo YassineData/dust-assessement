@@ -11,7 +11,6 @@ import {
   V2_QUESTIONS,
   computeScores,
   dimensionLabel,
-  getResultClass,
   isV2Responses,
   optionLabel,
   questionText,
@@ -27,7 +26,7 @@ import { AssessmentProgress } from '@/components/AssessmentProgress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, ArrowRight, RotateCcw, UserPlus, AlertCircle, Loader2, CheckCircle2, Timer, Save, Check, BookOpen, PencilLine } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCcw, UserPlus, AlertCircle, Loader2, CheckCircle2, Timer, Save, Check, BookOpen } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -349,7 +348,6 @@ const Assessment = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const finalScores = useMemo(() => computeScores(answers, context), [answers, context]);
 
   // Current question number within thematic for progress
   const answeredInThematic = questionsInCurrentThematic.filter(q => answers[q.id] !== undefined).length;
@@ -625,7 +623,6 @@ const Assessment = () => {
   );
 
   if (isComplete || isSaving) {
-    const cls = getResultClass(finalScores.classId);
     return (
       <div className="min-h-screen bg-background">
         {topBar()}
@@ -650,36 +647,12 @@ const Assessment = () => {
                     ? 'Vos réponses vont nous aider à construire un déploiement de Dust adapté à votre équipe. L’équipe Dust reviendra vers vous très vite avec la suite.'
                     : 'Your answers will help us build a Dust rollout that fits your team. The Dust team will get back to you soon with the next steps.'}
                 </p>
-                <p className="eyebrow mt-6">{fr ? 'Votre profil' : 'Your profile'}</p>
-                <h2 className="card-title mt-1 text-[20px]">{fr ? cls.name.fr : cls.name.en}</h2>
-                <p className="mt-2 text-[14px] leading-relaxed text-foreground">{fr ? cls.meaning.fr : cls.meaning.en}</p>
-                <div className="mt-5 flex items-baseline gap-2 border-l-2 border-brand pl-4">
-                  <span className="text-[13px] text-muted-foreground">{fr ? 'Indice de maturité IA' : 'AI readiness index'}</span>
-                  <span className="text-[22px] font-semibold tabular-nums text-foreground">{finalScores.readiness}</span>
-                  <span className="text-[13px] text-muted-foreground">/100</span>
-                </div>
-                <p className="mt-4 text-[13px] text-muted-foreground">
-                  {fr
-                    ? 'Ce profil est un signal, pas un verdict : il sera confirmé avec vous avant toute proposition de rôle.'
-                    : 'This profile is a signal, not a verdict: it will be confirmed with you before any role is proposed.'}
-                </p>
-                <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+                <div className="mt-6 border-t border-border pt-4">
                   <Button asChild>
                     <a href="https://dust.tt" target="_blank" rel="noopener noreferrer">
                       {fr ? 'Découvrir Dust' : 'Discover Dust'}
                       <ArrowRight className="h-4 w-4" />
                     </a>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setIsComplete(false);
-                      setPhase('context');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                  >
-                    <PencilLine className="h-4 w-4" />
-                    {fr ? 'Modifier mes réponses' : 'Edit my answers'}
                   </Button>
                 </div>
               </>
