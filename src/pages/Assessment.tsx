@@ -69,6 +69,28 @@ const storeToken = (code: string, email: string, token: string) => {
   }
 };
 
+/** Local copy of unfinished answers (and the sign-in fields), so nothing is lost if the tab closes. */
+const draftKey = (code: string, email: string) => `dust_draft_${code.toUpperCase()}_${email.toLowerCase().trim()}`;
+const regKey = (code: string) => `dust_reg_${code.toUpperCase()}`;
+const readJSON = <T,>(key: string): T | null => {
+  try {
+    const v = localStorage.getItem(key);
+    return v ? (JSON.parse(v) as T) : null;
+  } catch {
+    return null;
+  }
+};
+const writeJSON = (key: string, value: unknown) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* storage full or blocked: the server copy still applies */
+  }
+};
+type Draft = { answers: Record<string, AnswerValue>; context: ContextAnswers; open: OpenAnswers };
+const answeredCount = (d: Partial<Draft> | null | undefined) =>
+  Object.keys(d?.answers ?? {}).length + Object.values(d?.open ?? {}).filter((v) => (v ?? '').toString().trim()).length + Object.keys(d?.context ?? {}).length;
+
 const Assessment = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -113,11 +135,11 @@ const Assessment = () => {
   }, [searchParams, isPreview]);
 
 
-  const [registrationForm, setRegistrationForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    campaignCode: (searchParams.get('code') || '').toUpperCase()
+  const [registrationForm, setRegistrationForm] = useState(() => {
+    const code = (searchParams.get('code') || '').toUpperCase();
+    // Coming back to the same link: name and email are filled in again.
+    const saved = code ? readJSON<{ firstName: string; lastName: string; email: string }>(regKey(code)) : null;
+    return { firstName: saved?.firstName ?? '', lastName: saved?.lastName ?? '', email: saved?.email ?? '', campaignCode: code };
   });
 
   // Apply lang query param on mount
@@ -276,6 +298,19 @@ const Assessment = () => {
       console.error('Error saving progress:', err);
     }
   }, [participantInfo, answers, context, open]);
+
+  // Every change is kept: at once in this browser, and on the server a moment after the person stops.
+  const autosaveReady = useRef(false);
+  useEffect(() => {
+    if (!participantInfo || isPreview || isComplete || isSaving) return;
+    writeJSON(draftKey(participantInfo.campaignCode, participantInfo.email), { answers, context, open });
+    if (!autosaveReady.current) {
+      autosaveReady.current = true;
+      return;
+    }
+    const t = setTimeout(() => saveProgress(false), 1500);
+    return () => clearTimeout(t);
+  }, [answers, context, open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Advance when a section is complete; the last one shows the submit button (the open questions come before the statements).
   useEffect(() => {
@@ -457,12 +492,17 @@ const Assessment = () => {
       }
 
       storeToken(code, email, result.token);
+      writeJSON(regKey(code), { firstName: registrationForm.firstName.trim(), lastName: registrationForm.lastName.trim(), email });
       const participantId = result.id;
 
       if (result.resumed) {
         // Restore previous v2 answers if any (answers to the previous questionnaire are not reusable)
-        if (isV2Responses(result.responses)) {
-          const saved = result.responses;
+        const local = readJSON<Draft>(draftKey(code, email));
+        const server = isV2Responses(result.responses) ? result.responses : null;
+        // Keep whichever copy holds more answers (the local one wins if the last save never reached the server).
+        const best = local && answeredCount(local) > answeredCount(server) ? { version: 2 as const, ...local } : server;
+        if (best) {
+          const saved = best;
           setAnswers(saved.answers || {});
           setContext(saved.context || {});
           setOpen(saved.open || {});

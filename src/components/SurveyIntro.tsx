@@ -36,11 +36,14 @@ export const SurveyIntro = ({ audience, fr, company, custom }: { audience: Surve
           </div>
         ))}
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-border px-5 py-3 text-[12px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5"><Timer className="h-3.5 w-3.5" />{fr ? 'Moins de 5 minutes' : 'Less than 5 minutes'}</span>
-        <span className="inline-flex items-center gap-1.5"><Save className="h-3.5 w-3.5" />{fr ? 'Réponses enregistrées au fil de l’eau' : 'Answers saved as you go'}</span>
-        <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" />{fr ? 'Ce n’est pas une évaluation' : 'Not an evaluation of you'}</span>
-      </div>
+      {/* A client-specific note already says it: no repeated chips. */}
+      {!a.note && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-border px-5 py-3 text-[12px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5"><Timer className="h-3.5 w-3.5" />{fr ? 'Moins de 5 minutes' : 'Less than 5 minutes'}</span>
+          <span className="inline-flex items-center gap-1.5"><Save className="h-3.5 w-3.5" />{fr ? 'Réponses enregistrées au fil de l’eau' : 'Answers saved as you go'}</span>
+          <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" />{fr ? 'Ce n’est pas une évaluation' : 'Not an evaluation of you'}</span>
+        </div>
+      )}
       <p className="border-t border-border px-5 py-3 text-[12px] leading-relaxed text-muted-foreground">
         {a.note
           ? L(a.note)
