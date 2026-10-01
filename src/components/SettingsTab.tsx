@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Loader2, Users, Clock, CheckCircle2, CircleDashed, Copy, Check, Mail, Trash2, Plus, Info, Upload, Search, Link2, ExternalLink, KeyRound, Timer, Save, MessageSquare, ArrowRight, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AUDIENCES, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
+import { AUDIENCES, AUDIENCE_ORDER, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
 import { resultsLink } from '@/lib/access';
 import { useIsDustTeam } from '@/hooks/useIsDustTeam';
 import { SectionCard } from '@/components/console/SectionCard';
@@ -520,7 +520,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
         description={fr ? 'Le lien à envoyer aux répondants. Le code de campagne est déjà inclus.' : 'The link to send to respondents. The campaign code is already included.'}
       >
         <div role="radiogroup" aria-label={fr ? 'Équipe visée' : 'Target team'} className="mb-3 flex flex-wrap items-center gap-2">
-          {(['general', 'sales', 'success'] as SurveyAudience[]).map((a) => (
+          {AUDIENCE_ORDER.map((a) => (
             <button
               key={a}
               type="button"

@@ -92,6 +92,18 @@ const Assessment = () => {
         }
       : null
   );
+  // Client name for the survey header ("Dust at Datadog"), looked up from the code in the link.
+  const [introCompany, setIntroCompany] = useState<string | null>(null);
+  useEffect(() => {
+    const code = (searchParams.get('code') || '').toUpperCase().trim();
+    if (!code || isPreview) return;
+    (async () => {
+      const { data } = await supabase.rpc('get_campaign_by_code' as never, { p_code: code } as never);
+      const row = (data as unknown as { company_name: string }[] | null)?.[0];
+      if (row?.company_name) setIntroCompany(row.company_name);
+    })();
+  }, [searchParams, isPreview]);
+
   const [registrationForm, setRegistrationForm] = useState({
     firstName: '',
     lastName: '',
@@ -138,7 +150,7 @@ const Assessment = () => {
     emailPlaceholder: language === 'fr' ? 'votre.email@entreprise.com' : 'your.email@company.com',
     codePlaceholder: 'Ex: A1B2C3D4',
     validating: language === 'fr' ? 'Vérification...' : 'Verifying...',
-    startQuiz: language === 'fr' ? 'Commencer le quiz' : 'Start the quiz',
+    startQuiz: language === 'fr' ? 'Commencer le questionnaire' : 'Start the survey',
     noCode: language === 'fr' ? 'Vous n\'avez pas de code de campagne ?' : 'Don\'t have a campaign code?',
     createAssessment: language === 'fr' ? 'Créer un assessment pour mon équipe' : 'Create an assessment for my team',
     error: language === 'fr' ? 'Erreur' : 'Error',
@@ -523,7 +535,7 @@ const Assessment = () => {
 
         <main className="mx-auto max-w-[720px] px-4 py-10">
           <div className="mb-5">
-            <SurveyIntro audience={audience} fr={language === 'fr'} />
+            <SurveyIntro audience={audience} fr={language === 'fr'} company={introCompany} />
           </div>
           <h2 className="card-title mb-1">{t.title}</h2>
           <p className="mb-3 text-[13px] text-muted-foreground">{t.description}</p>

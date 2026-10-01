@@ -598,13 +598,20 @@ export const isV2ItemScores = (s: unknown): s is V2Scores =>
 /* Survey audiences: one link per team, each with its own header        */
 /* ------------------------------------------------------------------ */
 
-export type SurveyAudience = 'general' | 'sales' | 'success';
+export type SurveyAudience = 'general' | 'sales' | 'success' | 'builders';
 
 /** `?for=sales` or `?for=cs` on the survey link. */
 export const audienceFromParam = (v: string | null): SurveyAudience =>
-  v === 'sales' ? 'sales' : v === 'cs' || v === 'success' ? 'success' : 'general';
+  v === 'sales' ? 'sales' : v === 'cs' || v === 'success' ? 'success' : v === 'builders' ? 'builders' : 'general';
 
-export const AUDIENCE_PARAM: Record<SurveyAudience, string | null> = { general: null, sales: 'sales', success: 'cs' };
+export const AUDIENCE_PARAM: Record<SurveyAudience, string | null> = { general: null, sales: 'sales', success: 'cs', builders: 'builders' };
+
+/** Audiences offered when creating or sharing a link, in display order. */
+export const AUDIENCE_ORDER: SurveyAudience[] = ['general', 'sales', 'success', 'builders'];
+
+/** `{company}` in audience texts becomes the client's name (or "your company" before it is known). */
+export const withCompany = (text: string, company: string | null | undefined, fr: boolean) =>
+  text.replace(/\{company\}/g, company?.trim() || (fr ? 'votre entreprise' : 'your company'));
 
 /** Who Dust is, shown at the top of every survey. */
 export const DUST_ABOUT: L = {
@@ -623,6 +630,10 @@ export interface AudienceInfo {
   output: L;
   /** Placeholder examples for the use-case open question. */
   useCaseExamples: L;
+  /** Replaces the generic "Dust is your new AI platform…" line. */
+  about?: L;
+  /** Replaces the generic data note at the bottom of the intro. */
+  note?: L;
 }
 
 export const AUDIENCES: Record<SurveyAudience, AudienceInfo> = {
@@ -654,5 +665,16 @@ export const AUDIENCES: Record<SurveyAudience, AudienceInfo> = {
     whyItMatters: { en: 'Your answers decide which CS agents we build first and who in the team gets early access and training, so you spend less time on prep and more with customers.', fr: "Vos réponses décident des premiers agents CS à construire et des personnes qui auront un accès anticipé et une formation, pour passer moins de temps à préparer et plus de temps avec les clients." },
     output: { en: 'A Customer Success rollout plan: the first agents to build, the people to train first, and a baseline to measure progress.', fr: 'Un plan de déploiement Customer Success : les premiers agents à construire, les personnes à former en premier et une baseline pour mesurer les progrès.' },
     useCaseExamples: { en: 'e.g. QBR prep, account health summaries, answering recurring customer questions', fr: 'ex. préparation des QBR, synthèse de la santé des comptes, réponses aux questions récurrentes des clients' },
+  },
+  builders: {
+    id: 'builders',
+    label: { en: 'Community builders', fr: 'Community builders' },
+    title: { en: 'Dust at {company}: Community Builder Survey', fr: 'Dust chez {company} : questionnaire Community Builder' },
+    about: { en: 'As a Community Builder, you’ll help your teams get started with Dust.', fr: 'En tant que Community Builder, vous aiderez vos équipes à démarrer avec Dust.' },
+    whatFor: { en: 'Understanding how you use AI today and which workflows in your week Dust could help with most.', fr: 'Comprendre comment vous utilisez l’IA aujourd’hui et quels workflows de votre semaine Dust pourrait le plus aider.' },
+    whyItMatters: { en: 'Your answers inform which use cases we focus on, what we cover in the session, and which agents we build first with you.', fr: 'Vos réponses orientent les cas d’usage sur lesquels on se concentre, ce qu’on couvre pendant la session et les premiers agents qu’on construit avec vous.' },
+    output: { en: 'A session and use-case tracks built around the work you described, not a generic training.', fr: 'Une session et des parcours de cas d’usage construits autour du travail que vous avez décrit, pas une formation générique.' },
+    useCaseExamples: { en: 'e.g. a weekly report, answering recurring questions, preparing a meeting', fr: 'ex. un reporting hebdo, répondre aux questions récurrentes, préparer une réunion' },
+    note: { en: 'This survey should take less than 5 minutes and is not an evaluation. Only the Dust team and {company}’s Dust project team will see your answers. Thank you!', fr: 'Ce questionnaire prend moins de 5 minutes et n’est pas une évaluation. Seules l’équipe Dust et l’équipe projet Dust de {company} verront vos réponses. Merci !' },
   },
 };

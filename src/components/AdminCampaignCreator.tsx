@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Check, Copy, ExternalLink, Link2, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AUDIENCES, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
+import { AUDIENCES, AUDIENCE_ORDER, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
@@ -128,7 +128,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
         <div className="space-y-1.5">
           <Label>{fr ? 'Pour quelle équipe ?' : 'Which team is it for?'}</Label>
           <div role="radiogroup" className="flex flex-wrap gap-2">
-            {(['general', 'sales', 'success'] as SurveyAudience[]).map((a) => (
+            {AUDIENCE_ORDER.map((a) => (
               <button
                 key={a}
                 type="button"
