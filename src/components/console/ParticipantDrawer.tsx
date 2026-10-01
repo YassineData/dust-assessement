@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 import { X, BadgeCheck, Target, FileText, AlertTriangle, Trash2 } from 'lucide-react';
 import { DeleteParticipantDialog } from '@/components/DeleteParticipantDialog';
-import { CONTEXT_FIELDS, OPEN_FIELDS, contextLabels, READINESS_DIMENSION_IDS } from '@/lib/assessment-v2';
+import { CONTEXT_FIELDS, OPEN_FIELDS, V2_QUESTIONS, contextLabels, READINESS_DIMENSION_IDS } from '@/lib/assessment-v2';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CampaignParticipant } from '@/hooks/useCampaignParticipants';
@@ -33,6 +33,50 @@ export const ParticipantDrawer = ({ participant: p, thematics, translateThematic
     .map((th) => ({ id: th, name: translateThematic(th), score: p.thematicScores[th] ?? 0, inIndex: inIndex(th) }))
     .sort((a, b) => Number(b.inIndex) - Number(a.inIndex) || b.score - a.score);
 
+  // Context and open answers: shown as soon as they are filled in, finished or not.
+  const hasContext = CONTEXT_FIELDS.some((f) => {
+    const v = p.context[f.id];
+    return Array.isArray(v) ? v.length > 0 : !!v;
+  });
+  const details = (
+    <>
+        {hasContext && (
+        <div>
+          <p className="eyebrow mb-2">{fr ? 'Contexte déclaré' : 'Declared context'}</p>
+          <dl className="space-y-1.5 rounded-md p-3 text-[12px] ring-1 ring-border">
+            {CONTEXT_FIELDS.map((field) => {
+              const v = p.context[field.id];
+              const list = Array.isArray(v) ? v : v ? [v] : [];
+              if (!list.length) return null;
+              return (
+                <div key={field.id} className="grid grid-cols-[110px_minmax(0,1fr)] gap-2">
+                  <dt className="text-muted-foreground">{fr ? field.label.fr : field.label.en}</dt>
+                  <dd className="text-foreground">{contextLabels(p.context, field.id, fr ? 'fr' : 'en').join(', ')}</dd>
+                </div>
+              );
+            })}
+          </dl>
+        </div>
+        )}
+
+        {OPEN_FIELDS.some((f) => p.open[f.id]) && (
+          <div>
+            <p className="eyebrow mb-2">{fr ? 'Réponses ouvertes' : 'Open answers'}</p>
+            <div className="space-y-2">
+              {OPEN_FIELDS.filter((f) => p.open[f.id]).map((f) => (
+                <div key={f.id} className="rounded-md p-3 ring-1 ring-border">
+                  <p className="text-[11px] text-muted-foreground">{fr ? f.label.fr : f.label.en}</p>
+                  <p className="mt-0.5 text-[13px] leading-relaxed text-foreground">« {p.open[f.id]} »</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+    </>
+  );
+  const answered = V2_QUESTIONS.filter((q) => p.responses?.[q.id]);
+  const scale = (v: string) => { const label = t(`assessment.likert.${v}`); return label.startsWith('assessment.') ? v : label; };
+
   return (
     <aside className="card-elevated flex max-h-[calc(100vh-7rem)] flex-col overflow-hidden xl:sticky xl:top-[4.5rem]" aria-label={`${p.firstName} ${p.lastName}`}>
       <div className="flex items-start gap-3 border-b border-border p-4">
@@ -53,9 +97,32 @@ export const ParticipantDrawer = ({ participant: p, thematics, translateThematic
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
         {!completed ? (
-          <p className="rounded-md bg-warn-soft px-3 py-2 text-[13px] text-warn-ink">
-            {fr ? 'Test non terminé : pas encore de résultats.' : 'Test not completed: no results yet.'}
-          </p>
+          <>
+            <p className="rounded-md bg-warn-soft px-3 py-2 text-[13px] text-warn-ink">
+              {p.status === 'not_started'
+                ? (fr ? 'Inscrit, mais pas encore commencé.' : 'Registered, not started yet.')
+                : fr
+                  ? `En cours : ${answered.length} affirmation(s) sur ${V2_QUESTIONS.length}. Le profil et les scores arrivent quand la personne termine.`
+                  : `In progress: ${answered.length} of ${V2_QUESTIONS.length} statements answered. Profile and scores come when they finish.`}
+            </p>
+            {details}
+            {answered.length > 0 && (
+              <div>
+                <p className="eyebrow mb-2">{fr ? 'Réponses jusqu’ici' : 'Answers so far'}</p>
+                <ul className="space-y-1.5">
+                  {answered.map((q) => (
+                    <li key={q.id} className="rounded-md p-2.5 text-[12px] ring-1 ring-border">
+                      <p className="text-foreground">{fr ? q.text.fr : q.text.en}</p>
+                      <p className="mt-0.5 font-medium text-brand-ink">{scale(p.responses![q.id])}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {!hasContext && answered.length === 0 && !OPEN_FIELDS.some((f) => p.open[f.id]) && (
+              <p className="text-[12px] text-muted-foreground">{fr ? 'Rien de rempli pour l’instant.' : 'Nothing filled in yet.'}</p>
+            )}
+          </>
         ) : (
           <>
             <div className="flex items-center justify-between gap-3 rounded-md bg-lav-50 p-3 ring-1 ring-lav-200">
@@ -137,36 +204,7 @@ export const ParticipantDrawer = ({ participant: p, thematics, translateThematic
               </div>
             )}
 
-            <div>
-              <p className="eyebrow mb-2">{fr ? 'Contexte déclaré' : 'Declared context'}</p>
-              <dl className="space-y-1.5 rounded-md p-3 text-[12px] ring-1 ring-border">
-                {CONTEXT_FIELDS.map((field) => {
-                  const v = p.context[field.id];
-                  const list = Array.isArray(v) ? v : v ? [v] : [];
-                  if (!list.length) return null;
-                  return (
-                    <div key={field.id} className="grid grid-cols-[110px_minmax(0,1fr)] gap-2">
-                      <dt className="text-muted-foreground">{fr ? field.label.fr : field.label.en}</dt>
-                      <dd className="text-foreground">{contextLabels(p.context, field.id, fr ? 'fr' : 'en').join(', ')}</dd>
-                    </div>
-                  );
-                })}
-              </dl>
-            </div>
-
-            {OPEN_FIELDS.some((f) => p.open[f.id]) && (
-              <div>
-                <p className="eyebrow mb-2">{fr ? 'Réponses ouvertes' : 'Open answers'}</p>
-                <div className="space-y-2">
-                  {OPEN_FIELDS.filter((f) => p.open[f.id]).map((f) => (
-                    <div key={f.id} className="rounded-md p-3 ring-1 ring-border">
-                      <p className="text-[11px] text-muted-foreground">{fr ? f.label.fr : f.label.en}</p>
-                      <p className="mt-0.5 text-[13px] leading-relaxed text-foreground">« {p.open[f.id]} »</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {details}
           </>
         )}
 
