@@ -171,12 +171,21 @@ const Assessment = () => {
   const manualNavRef = useRef(false);
 
   // Translations
+  // The link already carries the campaign code: no need to show it to respondents.
+  const codeFromLink = !!searchParams.get('code');
+  // Respondent-facing name: no "maturity" wording.
+  useEffect(() => {
+    document.title = language === 'fr' ? 'Dust · Cadrage du déploiement' : 'Dust · Deployment scoping';
+  }, [language]);
+
   const t = {
     back: language === 'fr' ? 'Retour' : 'Back',
     title: language === 'fr' ? 'Avant de commencer' : 'Before you start',
-    description: language === 'fr' 
-      ? 'Renseignez vos informations et le code de campagne fourni par votre responsable'
-      : 'Enter your information and the campaign code provided by your manager',
+    description: codeFromLink
+      ? (language === 'fr' ? 'Indiquez votre nom et votre email professionnel pour commencer.' : 'Enter your name and work email to start.')
+      : language === 'fr'
+        ? 'Renseignez vos informations et le code reçu avec le questionnaire'
+        : 'Enter your information and the code you received with the survey',
     firstName: language === 'fr' ? 'Prénom' : 'First Name',
     lastName: language === 'fr' ? 'Nom' : 'Last Name',
     email: language === 'fr' ? 'Adresse email professionnelle' : 'Professional email address',
@@ -580,7 +589,7 @@ const Assessment = () => {
         <header className="sticky top-0 z-50 border-b border-border bg-card">
           <div className="mx-auto flex h-14 max-w-[780px] items-center justify-between px-4">
             {/* Respondents never land on the internal landing page: no link back to "/" in the survey. */}
-            <DustWordmark subtitle={language === 'fr' ? 'Évaluation de maturité IA' : 'AI maturity assessment'} />
+            <DustWordmark subtitle={language === 'fr' ? 'Cadrage du déploiement' : 'Deployment scoping'} />
             <div className="flex items-center gap-1">
               <LanguageSwitcher />
             </div>
@@ -643,6 +652,7 @@ const Assessment = () => {
                 )}
               </div>
 
+              {!codeFromLink && (
               <div className="space-y-1.5">
                 <Label htmlFor="campaignCode">{t.campaignCode}</Label>
                 <Input
@@ -653,6 +663,7 @@ const Assessment = () => {
                   className="font-mono uppercase tracking-widest"
                 />
               </div>
+              )}
 
               <Button type="submit" className="w-full" disabled={isValidating}>
                 {isValidating && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -662,10 +673,12 @@ const Assessment = () => {
           </div>
 
           {/* People without a code: campaigns are created by the Dust team only */}
+          {!codeFromLink && (
           <p className="mt-5 rounded-lg border border-dashed border-border px-4 py-3 text-[13px] text-muted-foreground">
             {t.noCode}{' '}
             {language === 'fr' ? 'Demandez le lien à la personne qui vous a envoyé le questionnaire.' : 'Ask the person who sent you the survey for the link.'}
           </p>
+          )}
         </main>
       </div>
     );
