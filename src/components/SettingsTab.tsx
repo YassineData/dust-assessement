@@ -603,8 +603,8 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
               icon: Save,
               term: fr ? 'Enregistrement' : 'Saving',
               desc: fr
-                ? 'Sauvegarde automatique à chaque thématique terminée. Reprise possible avec le même email.'
-                : 'Saved automatically after each completed theme. Can be resumed with the same email.',
+                ? 'Chaque réponse est enregistrée au fil de l’eau. On peut fermer et reprendre plus tard avec le même lien.'
+                : 'Every answer is saved as they go. People can close it and finish later from the same link.',
             },
           ].map(({ icon: Icon, term, desc }) => (
             <div key={term} className="flex gap-2.5">
