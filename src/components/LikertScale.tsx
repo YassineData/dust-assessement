@@ -25,12 +25,15 @@ export const LikertScale = forwardRef<HTMLDivElement, LikertScaleProps>(
     // Une question est "active" seulement si elle n'a pas de réponse ET qu'elle est la question courante
     const isCurrentActive = isActive && !value;
 
-    const handleClick = (bubbleValue: AnswerValue) => {
-      // Permettre de cliquer seulement si c'est la question active sans réponse
-      if (!isCurrentActive) return;
+    // Answered statements stay editable: clicking another button changes the answer.
+    const canAnswer = isCurrentActive || !!value;
 
+    const handleClick = (bubbleValue: AnswerValue) => {
+      if (!canAnswer) return;
+      const firstAnswer = !value;
       onChange(bubbleValue);
-      if (onAutoAdvance) {
+      // Only the first answer moves on to the next statement; a change stays put.
+      if (firstAnswer && onAutoAdvance) {
         setTimeout(() => {
           onAutoAdvance();
         }, 300);
@@ -67,7 +70,7 @@ export const LikertScale = forwardRef<HTMLDivElement, LikertScaleProps>(
           isAnswered && 'border-border bg-brand-soft/60',
           isUpcoming && 'pointer-events-none border-border bg-card opacity-55'
         )}
-        aria-disabled={!isCurrentActive || undefined}
+        aria-disabled={!canAnswer || undefined}
       >
         <div className="flex items-start gap-3">
           {questionNumber && (
@@ -106,13 +109,13 @@ export const LikertScale = forwardRef<HTMLDivElement, LikertScaleProps>(
                   aria-label={bubbleLabels[option]}
                   title={bubbleLabels[option]}
                   onClick={() => handleClick(option)}
-                  disabled={!isCurrentActive}
+                  disabled={!canAnswer}
                   className={cn(
                     'group relative flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors duration-150 sm:h-11 sm:w-11',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
                     selected
                       ? 'border-brand bg-brand-strong text-white'
-                      : isCurrentActive
+                      : canAnswer
                         ? 'border-line bg-card text-muted-foreground hover:border-brand hover:bg-brand-soft'
                         : 'border-line bg-card text-muted-foreground'
                   )}

@@ -75,7 +75,15 @@ export const ParticipantDrawer = ({ participant: p, thematics, translateThematic
     </>
   );
   const answered = V2_QUESTIONS.filter((q) => p.responses?.[q.id]);
-  const scale = (v: string) => { const label = t(`assessment.likert.${v}`); return label.startsWith('assessment.') ? v : label; };
+  // Same wording as the buttons respondents click.
+  const SCALE_LABELS: Record<string, { en: string; fr: string }> = {
+    disagree: { en: 'Strongly disagree', fr: "Pas du tout d'accord" },
+    somewhatDisagree: { en: 'Somewhat disagree', fr: "Plutôt pas d'accord" },
+    neutral: { en: 'Neutral', fr: 'Neutre' },
+    somewhatAgree: { en: 'Somewhat agree', fr: "Plutôt d'accord" },
+    agree: { en: 'Strongly agree', fr: "Tout à fait d'accord" },
+  };
+  const scale = (v: string) => (SCALE_LABELS[v] ? (fr ? SCALE_LABELS[v].fr : SCALE_LABELS[v].en) : v);
 
   return (
     <aside className="card-elevated flex max-h-[calc(100vh-7rem)] flex-col overflow-hidden xl:sticky xl:top-[4.5rem]" aria-label={`${p.firstName} ${p.lastName}`}>

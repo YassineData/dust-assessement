@@ -320,7 +320,7 @@ const Assessment = () => {
       setTimeout(() => {
         setCurrentThematicIndex(prev => prev + 1);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 500);
+      }, 900);
     } else if (isCurrentThematicComplete && currentThematicIndex === thematicOrder.length - 1 && participantInfo) {
       saveProgress(false);
       setTimeout(() => submitRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
