@@ -37,8 +37,9 @@ const C = {
   traditional: 'E14322',
 };
 
-const FT = 'Geist';   // Titles (Dust brand typeface)
-const FB = 'Geist'; // Body
+// Geist (Dust brand) is rarely installed: PowerPoint would fall back to a serif. Arial is the closest safe face.
+const FT = 'Arial';   // Titles
+const FB = 'Arial'; // Body
 
 // v2 result classes
 const PROFILE_COLORS: Record<string, string> = {
@@ -74,7 +75,7 @@ const addSlideHeader = (slide: any, pptx: PptxGenJS, title: string, subtitle?: s
   slide.addShape(pptx.ShapeType.rect, {
     x: 0.7, y: 7.15, w: 11.9, h: 0.01, fill: { color: C.bgAlt },
   });
-  slide.addText('Dust — AI readiness assessment', {
+  slide.addText('Dust · AI Readiness Assessment', {
     x: 0.7, y: 7.15, w: 6, h: 0.3,
     fontSize: 8, color: C.mutedLight, fontFace: FB,
   });
@@ -83,7 +84,7 @@ const addSlideHeader = (slide: any, pptx: PptxGenJS, title: string, subtitle?: s
 const addMetricCard = (slide: any, pptx: PptxGenJS, x: number, y: number, w: number, h: number, value: string, label: string, color: string, icon?: string) => {
   slide.addShape(pptx.ShapeType.roundRect, {
     x, y, w, h, fill: { color: C.white },
-    shadow: { type: 'outer', blur: 12, offset: 3, color: '0000000A' },
+    shadow: { type: 'outer', blur: 12, offset: 3, color: '000000', opacity: 0.06 },
     rectRadius: 0.2,
   });
   slide.addShape(pptx.ShapeType.rect, {
@@ -218,6 +219,27 @@ const addBlockSlides = (pptx: PptxGenJS, d: SummaryPdfData) => {
   dv.addText(L('The detail behind the numbers', 'Le détail derrière les chiffres'), { x: 0.7, y: 3.0, w: 11.9, h: 0.8, fontSize: 32, bold: true, color: C.white, fontFace: FT });
 };
 
+/** Dust brand shapes (brand guide): circle, arch, square, rounded and half-round blocks. */
+const addBrandShapes = (slide: any, pptx: PptxGenJS, x: number, y: number, s: number, gap = 0.08) => {
+  const shapes: [string, string, number][] = [
+    [pptx.ShapeType.ellipse, '418B5C', 0],
+    [pptx.ShapeType.roundRect, '9FDBFF', 0],
+    [pptx.ShapeType.rect, 'FFC3DF', 0],
+    [pptx.ShapeType.ellipse, '1C91FF', 0],
+    [pptx.ShapeType.ellipse, 'FE9C1A', 0],
+  ];
+  shapes.forEach(([type, color, rotate], i) => {
+    slide.addShape(type, { x: x + i * (s + gap), y, w: s, h: s, fill: { color }, line: { color, width: 0 }, rotate });
+  });
+};
+
+const addWordmark = (slide: any, x: number, y: number, color: string) => {
+  slide.addText([
+    { text: 'Dust', options: { bold: true, color } },
+    { text: '  AI Readiness Assessment', options: { color: '9AA3B2' } },
+  ], { x, y, w: 6, h: 0.4, fontSize: 14, fontFace: FT });
+};
+
 const responseToValue = (response: string): number => {
   const mapping: Record<string, number> = { disagree: 1, somewhatDisagree: 2, neutral: 3, somewhatAgree: 4, agree: 5 };
   return mapping[response] || 0;
@@ -236,7 +258,9 @@ export const exportPPT = (
   const pptx = new PptxGenJS();
   pptx.defineLayout({ name: 'CUSTOM', width: 13.33, height: 7.5 });
   pptx.layout = 'CUSTOM';
-  pptx.author = 'Dust — AI readiness assessment';
+  pptx.author = 'Dust';
+  pptx.company = 'Dust';
+  pptx.title = `${companyName} · AI Readiness Assessment`;
   pptx.subject = language === 'fr' ? 'Rapport de Maturité IA' : 'AI Maturity Report';
 
   const date = new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-GB', {
@@ -248,20 +272,15 @@ export const exportPPT = (
   // ============================================================
   const s1 = pptx.addSlide();
   s1.background = { fill: C.dark };
-  s1.addShape(pptx.ShapeType.ellipse, {
-    x: -2, y: -2, w: 8, h: 8, fill: { color: C.primary, transparency: 88 },
-  });
-  s1.addShape(pptx.ShapeType.ellipse, {
-    x: 8, y: 3, w: 9, h: 9, fill: { color: C.primaryLight, transparency: 92 },
-  });
-  addGradientBar(s1, pptx, 2.2, 0.06);
+  addWordmark(s1, 0.7, 0.5, C.white);
+  addBrandShapes(s1, pptx, 13.33 - 0.7 - 5 * 0.42 - 4 * 0.08, 0.5, 0.42);
   s1.addText((language === 'fr' ? 'RAPPORT DE\nMATURITÉ IA' : 'AI MATURITY\nREPORT').toUpperCase(), {
-    x: 1, y: 0.8, w: 11.3, h: 2,
+    x: 1, y: 1.2, w: 11.3, h: 2,
     fontSize: 52, bold: true, color: C.white, align: 'center', fontFace: FT,
     lineSpacingMultiple: 1.15,
   });
   s1.addText(companyName.toUpperCase(), {
-    x: 1, y: 3.1, w: 11.3, h: 0.8,
+    x: 1, y: 3.4, w: 11.3, h: 0.8,
     fontSize: 22, color: C.primaryGlow, align: 'center', fontFace: FB,
     charSpacing: 4,
   });
@@ -302,10 +321,10 @@ export const exportPPT = (
       language === 'fr' ? `Vue d'ensemble des résultats pour ${companyName}` : `Results overview for ${companyName}`
     );
 
-    addMetricCard(s2, pptx, 0.7, 1.6, 2.8, 2.2, `${averageScore}%`, language === 'fr' ? 'Score moyen global' : 'Overall avg. score', C.cta, '📊');
-    addMetricCard(s2, pptx, 3.9, 1.6, 2.8, 2.2, `${completed.length}`, language === 'fr' ? 'Tests complétés' : 'Tests completed', C.success, '✅');
-    addMetricCard(s2, pptx, 7.1, 1.6, 2.8, 2.2, `${inProgress.length}`, language === 'fr' ? 'En cours' : 'In progress', C.warning, '⏳');
-    addMetricCard(s2, pptx, 10.3, 1.6, 2.8, 2.2, `${participants.length}`, language === 'fr' ? 'Total inscrits' : 'Total enrolled', C.muted, '👥');
+    addMetricCard(s2, pptx, 0.7, 1.6, 2.8, 2.2, `${averageScore}%`, language === 'fr' ? 'Score moyen global' : 'Overall avg. score', C.cta);
+    addMetricCard(s2, pptx, 3.9, 1.6, 2.8, 2.2, `${completed.length}`, language === 'fr' ? 'Tests complétés' : 'Tests completed', C.success);
+    addMetricCard(s2, pptx, 7.1, 1.6, 2.8, 2.2, `${inProgress.length}`, language === 'fr' ? 'En cours' : 'In progress', C.warning);
+    addMetricCard(s2, pptx, 10.3, 1.6, 2.8, 2.2, `${participants.length}`, language === 'fr' ? 'Total inscrits' : 'Total enrolled', C.muted);
 
     const completionRate = participants.length > 0 ? Math.round(completed.length / participants.length * 100) : 0;
     s2.addText(language === 'fr' ? `Taux de complétion: ${completionRate}%` : `Completion rate: ${completionRate}%`, {
@@ -322,7 +341,7 @@ export const exportPPT = (
         x: 0.7, y: 5.2, w: 5.8, h: 1.6, fill: { color: C.successBg }, rectRadius: 0.2,
         line: { color: C.success, width: 0.5 },
       });
-      s2.addText(`🏆 ${language === 'fr' ? 'Meilleure thématique' : 'Top theme'}`, {
+      s2.addText(`${language === 'fr' ? 'Meilleure thématique' : 'Top theme'}`, {
         x: 1, y: 5.3, w: 5, h: 0.4,
         fontSize: 10, bold: true, color: C.success, fontFace: FB,
       });
@@ -339,7 +358,7 @@ export const exportPPT = (
         x: 6.9, y: 5.2, w: 5.8, h: 1.6, fill: { color: C.dangerBg }, rectRadius: 0.2,
         line: { color: C.danger, width: 0.5 },
       });
-      s2.addText(`⚠️ ${language === 'fr' ? 'Axe d\'amélioration' : 'Area for improvement'}`, {
+      s2.addText(`${language === 'fr' ? 'Axe d\'amélioration' : 'Area for improvement'}`, {
         x: 7.2, y: 5.3, w: 5, h: 0.4,
         fontSize: 10, bold: true, color: C.danger, fontFace: FB,
       });
@@ -366,7 +385,7 @@ export const exportPPT = (
 
   const profileData = CLASS_PROFILES.map(profile => ({
     name: classLabel(profile.id, language === 'en' ? 'en' : 'fr'),
-    emoji: PROFILE_EMOJI[profile.id] || '📊',
+    emoji: '',
     count: completed.filter(p => p.profile.id === profile.id).length,
     color: PROFILE_COLORS[profile.id] || C.muted,
     id: profile.id,
@@ -395,7 +414,7 @@ export const exportPPT = (
     s3.addShape(pptx.ShapeType.roundRect, {
       x: 6.5, y: cardY, w: 6.3, h: 0.9,
       fill: { color: C.white },
-      shadow: { type: 'outer', blur: 6, offset: 1, color: '0000000A' },
+      shadow: { type: 'outer', blur: 6, offset: 1, color: '000000', opacity: 0.06 },
       rectRadius: 0.2,
     });
     s3.addShape(pptx.ShapeType.rect, {
@@ -705,13 +724,7 @@ export const exportPPT = (
   // ============================================================
   const lastSlide = pptx.addSlide();
   lastSlide.background = { fill: C.dark };
-  lastSlide.addShape(pptx.ShapeType.ellipse, {
-    x: 3, y: -1, w: 7, h: 7, fill: { color: C.primary, transparency: 90 },
-  });
-  lastSlide.addShape(pptx.ShapeType.ellipse, {
-    x: 7, y: 3, w: 8, h: 8, fill: { color: C.primaryLight, transparency: 93 },
-  });
-  addGradientBar(lastSlide, pptx, 2.9, 0.06);
+  addBrandShapes(lastSlide, pptx, (13.33 - (5 * 0.42 + 4 * 0.08)) / 2, 1.0, 0.42);
   lastSlide.addText((language === 'fr' ? 'MERCI' : 'THANK YOU').toUpperCase(), {
     x: 1, y: 1.8, w: 11.3, h: 1.2,
     fontSize: 52, bold: true, color: C.white, align: 'center', fontFace: FT,
@@ -724,7 +737,7 @@ export const exportPPT = (
     fontSize: 14, color: C.mutedLight, align: 'center', fontFace: FB,
     lineSpacingMultiple: 1.5,
   });
-  lastSlide.addText('Dust — AI readiness assessment', {
+  lastSlide.addText('Dust · AI Readiness Assessment · dust-assessment.com', {
     x: 1, y: 5.2, w: 11.3, h: 0.5,
     fontSize: 12, color: C.primaryGlow, align: 'center', fontFace: FB,
     charSpacing: 2,
@@ -734,5 +747,5 @@ export const exportPPT = (
     fontSize: 10, color: C.muted, align: 'center', fontFace: FB,
   });
 
-  pptx.writeFile({ fileName: `rapport-ia-${companyName.replace(/\s+/g, '-').toLowerCase()}.pptx` });
+  pptx.writeFile({ fileName: `dust-ai-readiness-${companyName.replace(/\s+/g, '-').toLowerCase()}.pptx` });
 };
