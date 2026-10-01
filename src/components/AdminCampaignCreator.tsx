@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { resultsLink } from '@/lib/access';
 import { useIsDustTeam } from '@/hooks/useIsDustTeam';
 import { DUST_TEAM, splitName } from '@/lib/dust-team';
+import type { Campaign } from '@/components/CampaignSelector';
 
 const TEAM_NAMES = DUST_TEAM.flatMap((g) => g.names);
 
@@ -19,6 +20,8 @@ interface AdminCampaignCreatorProps {
   /** Email that will own the results (dashboard login). Asked only when not provided. */
   defaultCreatorEmail?: string;
   onCreated?: () => void;
+  /** Called as soon as the campaign exists, so the console can list and open it. */
+  onCampaignCreated?: (campaign: Campaign) => void;
 }
 
 const CREATOR_KEY = 'dust_campaign_creator_name';
@@ -27,7 +30,7 @@ const CREATOR_KEY = 'dust_campaign_creator_name';
  * Creates a deployment and hands back a link (+ code) to send to the client.
  * No recipient list: respondents register themselves when they open the link.
  */
-export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCreated }: AdminCampaignCreatorProps) => {
+export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCreated, onCampaignCreated }: AdminCampaignCreatorProps) => {
   const { language } = useLanguage();
   const fr = language !== 'en';
   const { toast } = useToast();
@@ -48,8 +51,12 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
   const [copied, setCopied] = useState<'link' | 'message' | 'results' | null>(null);
   // Only the Dust team (admin key) can create campaigns; the database enforces it too.
   const canCreate = useIsDustTeam();
-  // One link per audience: all teams, Sales or Customer Success (own survey header, team pre-selected).
+  // Survey type, saved with the campaign (own header; Sales and CS pre-select the team). Default: all teams.
   const [audience, setAudience] = useState<SurveyAudience>('general');
+  // Optional intro written for this client, replacing the standard title and first line.
+  const [introOpen, setIntroOpen] = useState(false);
+  const [introTitle, setIntroTitle] = useState('');
+  const [introBody, setIntroBody] = useState('');
 
   const audienceParam = AUDIENCE_PARAM[audience];
   const link = created ? `${window.location.origin}/assessment?lang=${campaignLanguage}&code=${created.code}${audienceParam ? `&for=${audienceParam}` : ''}` : '';
@@ -92,7 +99,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
       if (codeError) throw codeError;
       const code = codeData as string;
 
-      const { data: inserted, error } = await supabase.from('campaigns').insert({
+      const base = {
         code,
         company_name: companyClean,
         campaign_name: campaignName.trim() || (fr ? 'Déploiement Dust' : 'Dust rollout'),
@@ -100,8 +107,16 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
         creator_last_name: last,
         creator_email: defaultCreatorEmail || 'team@dust.tt',
         language: campaignLanguage,
-      } as any).select('access_key').maybeSingle();
+      };
+      const intro = introTitle.trim() || introBody.trim() ? { title: introTitle.trim(), body: introBody.trim() } : null;
+      const COLS = 'id, code, company_name, campaign_name, creator_email, creator_first_name, creator_last_name, created_at, access_key';
+      let { data: inserted, error } = await supabase.from('campaigns').insert({ ...base, audience, intro } as any).select(COLS).maybeSingle();
+      // Columns not installed yet (supabase/004-campaign-audience.sql): create without them; the link still carries the type.
+      if (error && /audience|intro|column/i.test(error.message || '')) {
+        ({ data: inserted, error } = await supabase.from('campaigns').insert(base as any).select(COLS).maybeSingle());
+      }
       if (error) throw error;
+      onCampaignCreated?.({ ...base, created_at: new Date().toISOString(), ...(inserted as object | null ?? {}) } as unknown as Campaign);
       try {
         localStorage.setItem(CREATOR_KEY, creatorClean);
       } catch {
@@ -125,31 +140,11 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
           <p className="text-[13px] font-medium">{fr ? `Lien créé pour ${created.company}` : `Link created for ${created.company}`}</p>
         </div>
 
-        <div className="space-y-1.5">
-          <Label>{fr ? 'Pour quelle équipe ?' : 'Which team is it for?'}</Label>
-          <div role="radiogroup" className="flex flex-wrap gap-2">
-            {AUDIENCE_ORDER.map((a) => (
-              <button
-                key={a}
-                type="button"
-                role="radio"
-                aria-checked={audience === a}
-                onClick={() => setAudience(a)}
-                className={cn(
-                  'rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors duration-150',
-                  audience === a ? 'bg-ink text-white ring-ink' : 'bg-card text-foreground ring-border hover:bg-paper'
-                )}
-              >
-                {fr ? AUDIENCES[a].label.fr : AUDIENCES[a].label.en}
-              </button>
-            ))}
-          </div>
-          <p className="text-[12px] text-muted-foreground">
-            {fr
-              ? 'Chaque lien a son propre en-tête (à quoi ça sert, pourquoi, ce qui en ressort) et pré-sélectionne l’équipe. Toutes les réponses arrivent dans la même campagne.'
-              : 'Each link has its own header (what it’s for, why it matters, what comes out) and pre-selects the team. All answers land in the same campaign.'}
-          </p>
-        </div>
+        <p className="text-[13px] text-muted-foreground">
+          {fr ? 'Questionnaire : ' : 'Survey: '}
+          <span className="font-medium text-foreground">{fr ? AUDIENCES[audience].label.fr : AUDIENCES[audience].label.en}</span>
+          {(introTitle.trim() || introBody.trim()) && (fr ? ' · intro personnalisée' : ' · custom intro')}
+        </p>
 
         <div className="space-y-1.5">
           <Label>{fr ? 'Lien à envoyer au client' : 'Link to send to the client'}</Label>
@@ -271,6 +266,47 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
         <p className="text-[12px] text-muted-foreground">
           {fr ? 'Pour savoir qui a lancé quelle campagne. Mémorisé sur ce navigateur.' : 'So the team knows who launched which campaign. Remembered on this browser.'}
         </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>{fr ? 'Type de questionnaire' : 'Survey type'}</Label>
+        <div role="radiogroup" className="flex flex-wrap gap-2">
+          {AUDIENCE_ORDER.map((a) => (
+            <button
+              key={a}
+              type="button"
+              role="radio"
+              aria-checked={audience === a}
+              onClick={() => setAudience(a)}
+              className={cn(
+                'rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors duration-150',
+                audience === a ? 'bg-ink text-white ring-ink' : 'bg-card text-foreground ring-border hover:bg-paper'
+              )}
+            >
+              {fr ? AUDIENCES[a].label.fr : AUDIENCES[a].label.en}
+            </button>
+          ))}
+        </div>
+        <p className="text-[12px] text-muted-foreground">
+          {fr ? 'Change l’en-tête du questionnaire (à quoi ça sert, pourquoi, ce qui en ressort). Les questions restent les mêmes.' : 'Changes the survey header (what it’s for, why it matters, what comes out). The questions stay the same.'}
+        </p>
+        {!introOpen ? (
+          <button type="button" className="text-[12px] font-medium text-brand-ink hover:underline" onClick={() => setIntroOpen(true)}>
+            {fr ? '+ Écrire une intro personnalisée (facultatif)' : '+ Write a custom intro (optional)'}
+          </button>
+        ) : (
+          <div className="space-y-2 rounded-md bg-paper p-3 ring-1 ring-border">
+            <Input value={introTitle} onChange={(e) => setIntroTitle(e.target.value)} placeholder={fr ? 'Titre, ex : Dust chez Acme : questionnaire Builders' : 'Title, e.g. Dust at Acme: Builder Survey'} />
+            <textarea
+              value={introBody}
+              onChange={(e) => setIntroBody(e.target.value)}
+              rows={3}
+              placeholder={fr ? 'Une ou deux phrases sous le titre' : 'One or two sentences under the title'}
+              className="w-full rounded-md border border-input bg-card px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            <p className="text-[12px] text-muted-foreground">{fr ? 'Remplace le titre et la première phrase de l’en-tête.' : 'Replaces the header title and first line.'}</p>
+          </div>
+        )}
       </div>
 
       <div className="space-y-1.5">

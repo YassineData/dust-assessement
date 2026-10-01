@@ -6,6 +6,7 @@ import {
   CONTEXT_FIELDS,
   GLOSSARY,
   audienceFromParam,
+  type SurveyAudience,
   OPEN_FIELDS,
   DIMENSION_IDS,
   V2_QUESTIONS,
@@ -76,7 +77,10 @@ const Assessment = () => {
   // /exemple (or ?preview=1): straight into the questionnaire, nothing is saved.
   const isPreview = searchParams.get('preview') === '1';
   // ?for=sales or ?for=cs: team-specific survey (own header, team pre-selected).
-  const audience = audienceFromParam(searchParams.get('for'));
+  // The survey type comes from the campaign; an explicit ?for= in the link still wins (older links).
+  const forParam = searchParams.get('for');
+  const [storedAudience, setStoredAudience] = useState<SurveyAudience | null>(null);
+  const audience: SurveyAudience = forParam ? audienceFromParam(forParam) : storedAudience ?? 'general';
   const [participantInfo, setParticipantInfo] = useState<ParticipantInfo | null>(() =>
     isPreview
       ? {
@@ -92,17 +96,22 @@ const Assessment = () => {
         }
       : null
   );
-  // Client name for the survey header ("Dust at Datadog"), looked up from the code in the link.
+  // Client name, survey type and custom intro for the header ("Dust at Datadog"), looked up from the code in the link.
   const [introCompany, setIntroCompany] = useState<string | null>(null);
+  const [customIntro, setCustomIntro] = useState<{ title?: string; body?: string } | null>(null);
   useEffect(() => {
     const code = (searchParams.get('code') || '').toUpperCase().trim();
     if (!code || isPreview) return;
     (async () => {
       const { data } = await supabase.rpc('get_campaign_by_code' as never, { p_code: code } as never);
-      const row = (data as unknown as { company_name: string }[] | null)?.[0];
-      if (row?.company_name) setIntroCompany(row.company_name);
+      const row = (data as unknown as { company_name: string; audience?: string; intro?: { title?: string; body?: string } | null }[] | null)?.[0];
+      if (!row) return;
+      if (row.company_name) setIntroCompany(row.company_name);
+      if (row.audience && row.audience in AUDIENCES) setStoredAudience(row.audience as SurveyAudience);
+      if (row.intro && (row.intro.title || row.intro.body)) setCustomIntro(row.intro);
     })();
   }, [searchParams, isPreview]);
+
 
   const [registrationForm, setRegistrationForm] = useState({
     firstName: '',
@@ -123,6 +132,11 @@ const Assessment = () => {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [context, setContext] = useState<ContextAnswers>(() => (AUDIENCES[audience].team ? { team: AUDIENCES[audience].team } : {}));
+  // Sales / CS surveys pre-select the team once the type is known (still editable).
+  useEffect(() => {
+    const team = AUDIENCES[audience].team;
+    if (team) setContext((prev) => (prev.team ? prev : { ...prev, team }));
+  }, [audience]);
   const [open, setOpen] = useState<OpenAnswers>({});
   const [phase, setPhase] = useState<'context' | 'questions' | 'open'>('context');
   const [isComplete, setIsComplete] = useState(false);
@@ -535,7 +549,7 @@ const Assessment = () => {
 
         <main className="mx-auto max-w-[720px] px-4 py-10">
           <div className="mb-5">
-            <SurveyIntro audience={audience} fr={language === 'fr'} company={introCompany} />
+            <SurveyIntro audience={audience} fr={language === 'fr'} company={introCompany} custom={customIntro} />
           </div>
           <h2 className="card-title mb-1">{t.title}</h2>
           <p className="mb-3 text-[13px] text-muted-foreground">{t.description}</p>

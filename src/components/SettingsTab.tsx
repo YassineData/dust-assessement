@@ -62,17 +62,25 @@ interface SettingsTabProps {
   creatorEmail?: string;
   onSelectCampaign?: (campaign: Campaign) => void;
   /** Navigate to another console screen (e.g. from Share to Data health). */
-  onNavigate?: (tab: 'dataHealth') => void;
+  onNavigate?: (tab: 'dataHealth' | 'campaignSettings') => void;
   /** Open the “create a link” dialog on mount (sidebar “New campaign”). */
   openCreate?: boolean;
+  /** A campaign was just created: the console lists it and opens it. */
+  onCampaignCreated?: (campaign: Campaign) => void;
   /** A campaign was deleted (Dust team only): the console drops it and moves on. */
   onCampaignDeleted?: (campaignId: string) => void;
 }
 
-export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, campaignParticipants, averageScore, thematicAverages, view, allCampaigns = [], creatorEmail, onSelectCampaign, onNavigate, openCreate, onCampaignDeleted }: SettingsTabProps) => {
+export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, campaignParticipants, averageScore, thematicAverages, view, allCampaigns = [], creatorEmail, onSelectCampaign, onNavigate, openCreate, onCampaignDeleted, onCampaignCreated }: SettingsTabProps) => {
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
+  const [justCreated, setJustCreated] = useState<Campaign | null>(null);
   const { language } = useLanguage();
   const [shareAudience, setShareAudience] = useState<SurveyAudience>('general');
+  // Survey type and custom intro saved with the campaign (Campaign settings).
+  const [typeAvailable, setTypeAvailable] = useState(true);
+  const [typeDraft, setTypeDraft] = useState<SurveyAudience>('general');
+  const [introDraft, setIntroDraft] = useState({ title: '', body: '' });
+  const [savingType, setSavingType] = useState(false);
   // Secret of the client's private results link: readable by the Dust team (admin key) only.
   const [clientAccessKey, setClientAccessKey] = useState<string | null>(null);
   const isDustTeam = useIsDustTeam();
@@ -114,15 +122,31 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
   useEffect(() => {
     if (!campaignId) return;
     (async () => {
-      const { data } = await supabase
-        .from('campaigns')
-        .select('language')
-        .eq('id', campaignId)
-        .maybeSingle();
-      const lang = ((data as any)?.language as 'fr' | 'en') || 'en';
-      setCampaignLanguage(lang);
+      let { data, error } = await supabase.from('campaigns').select('language, audience, intro').eq('id', campaignId).maybeSingle();
+      // Survey type columns not installed yet (supabase/004-campaign-audience.sql)
+      if (error) ({ data } = await supabase.from('campaigns').select('language').eq('id', campaignId).maybeSingle());
+      setTypeAvailable(!error);
+      const row = data as { language?: string; audience?: string; intro?: { title?: string; body?: string } | null } | null;
+      setCampaignLanguage(((row?.language as 'fr' | 'en') || 'en'));
+      const aud = row?.audience && row.audience in AUDIENCES ? (row.audience as SurveyAudience) : 'general';
+      setShareAudience(aud);
+      setTypeDraft(aud);
+      setIntroDraft({ title: row?.intro?.title ?? '', body: row?.intro?.body ?? '' });
     })();
   }, [campaignId]);
+
+  const handleSaveType = async () => {
+    setSavingType(true);
+    const intro = introDraft.title.trim() || introDraft.body.trim() ? { title: introDraft.title.trim(), body: introDraft.body.trim() } : null;
+    const { error } = await supabase.from('campaigns').update({ audience: typeDraft, intro } as any).eq('id', campaignId);
+    setSavingType(false);
+    if (error) {
+      toast({ title: fr ? 'Enregistrement impossible' : 'Could not save', description: fr ? 'Lancez supabase/004-campaign-audience.sql dans Supabase.' : 'Run supabase/004-campaign-audience.sql in Supabase.', variant: 'destructive' });
+      return;
+    }
+    setShareAudience(typeDraft);
+    toast({ title: fr ? 'Questionnaire mis à jour' : 'Survey updated', description: fr ? 'Le lien existant affiche déjà le nouvel en-tête.' : 'The existing link already shows the new header.' });
+  };
 
   const handleChangeCampaignLanguage = async (newLang: 'fr' | 'en') => {
     setSavingLanguage(true);
@@ -504,7 +528,15 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
         </DialogHeader>
         <AdminCampaignCreator
           defaultCreatorEmail={creatorEmail}
-          onCreated={() => setCreateDialogOpen(false)}
+          onCreated={() => {
+            setCreateDialogOpen(false);
+            if (justCreated) onSelectCampaign?.(justCreated);
+            setJustCreated(null);
+          }}
+          onCampaignCreated={(c) => {
+            setJustCreated(c);
+            onCampaignCreated?.(c);
+          }}
         />
       </DialogContent>
     </Dialog>
@@ -518,26 +550,18 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
         title={fr ? 'Lien du questionnaire' : 'Assessment link'}
         description={fr ? 'Le lien à envoyer aux répondants. Le code de campagne est déjà inclus.' : 'The link to send to respondents. The campaign code is already included.'}
       >
-        <div role="radiogroup" aria-label={fr ? 'Équipe visée' : 'Target team'} className="mb-3 flex flex-wrap items-center gap-2">
-          {AUDIENCE_ORDER.map((a) => (
-            <button
-              key={a}
-              type="button"
-              role="radio"
-              aria-checked={shareAudience === a}
-              onClick={() => setShareAudience(a)}
-              className={cn(
-                'rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors duration-150',
-                shareAudience === a ? 'bg-ink text-white ring-ink' : 'bg-card text-foreground ring-border hover:bg-paper'
-              )}
-            >
-              {fr ? AUDIENCES[a].label.fr : AUDIENCES[a].label.en}
-            </button>
-          ))}
-          <span className="text-[12px] text-muted-foreground">
-            {fr ? 'Un lien par équipe, avec son propre en-tête. Toutes les réponses arrivent ici.' : 'One link per team, each with its own header. All answers land here.'}
-          </span>
-        </div>
+        <p className="mb-3 text-[13px] text-muted-foreground">
+          {fr ? 'Questionnaire : ' : 'Survey: '}
+          <span className="font-medium text-foreground">{fr ? AUDIENCES[shareAudience].label.fr : AUDIENCES[shareAudience].label.en}</span>
+          {isAdmin && onNavigate && (
+            <>
+              {' · '}
+              <button type="button" className="font-medium text-brand-ink hover:underline" onClick={() => onNavigate('campaignSettings')}>
+                {fr ? 'changer' : 'change'}
+              </button>
+            </>
+          )}
+        </p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input readOnly value={shareLink} onFocus={(e) => e.currentTarget.select()} className="font-mono text-[12px]" aria-label={fr ? 'Lien du questionnaire' : 'Assessment link'} />
           <div className="flex gap-2">
@@ -788,6 +812,60 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
           </div>
         }
       />
+
+      {isAdmin && current && (
+        <SectionCard
+          title={fr ? 'Type de questionnaire' : 'Survey type'}
+          description={fr ? 'L’en-tête que voient les répondants. Les questions restent les mêmes ; le lien ne change pas.' : 'The header respondents see. Questions stay the same; the link does not change.'}
+        >
+          {!typeAvailable ? (
+            <p className="text-[13px] text-muted-foreground">
+              {fr ? 'Pour l’activer, lancez supabase/004-campaign-audience.sql dans l’éditeur SQL de Supabase.' : 'To enable it, run supabase/004-campaign-audience.sql in the Supabase SQL editor.'}
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div role="radiogroup" className="flex flex-wrap gap-2">
+                {AUDIENCE_ORDER.map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    role="radio"
+                    aria-checked={typeDraft === a}
+                    onClick={() => setTypeDraft(a)}
+                    className={cn(
+                      'rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors duration-150',
+                      typeDraft === a ? 'bg-ink text-white ring-ink' : 'bg-card text-foreground ring-border hover:bg-paper'
+                    )}
+                  >
+                    {fr ? AUDIENCES[a].label.fr : AUDIENCES[a].label.en}
+                  </button>
+                ))}
+              </div>
+              <div className="grid gap-2">
+                <Input value={introDraft.title} onChange={(e) => setIntroDraft((d) => ({ ...d, title: e.target.value }))} placeholder={fr ? 'Titre personnalisé (facultatif)' : 'Custom title (optional)'} />
+                <textarea
+                  value={introDraft.body}
+                  onChange={(e) => setIntroDraft((d) => ({ ...d, body: e.target.value }))}
+                  rows={2}
+                  placeholder={fr ? 'Phrase d’intro personnalisée (facultatif)' : 'Custom intro line (optional)'}
+                  className="w-full rounded-md border border-input bg-card px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handleSaveType} disabled={savingType}>
+                  {savingType && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {fr ? 'Enregistrer' : 'Save'}
+                </Button>
+                {campaignCode && (
+                  <a href={`/assessment?code=${campaignCode}&lang=${language}`} target="_blank" rel="noopener noreferrer" className="text-[12px] font-medium text-brand-ink hover:underline">
+                    {fr ? 'Voir l’en-tête' : 'See the header'}
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </SectionCard>
+      )}
 
       {isAdmin && (
         <SectionCard

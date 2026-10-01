@@ -492,6 +492,18 @@ const Dashboard = () => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   };
 
+  // A campaign was just created from the console: list it right away (it opens when the dialog closes).
+  const handleCampaignCreated = (campaign: Campaign) => {
+    const list = [campaign, ...allCampaigns.filter((c) => c.id !== campaign.id)];
+    setAllCampaigns(list);
+    try {
+      const stored = JSON.parse(localStorage.getItem(SESSION_KEY) || '{}');
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ ...stored, allCampaigns: list, lastActivity: Date.now() }));
+    } catch {
+      /* the list is also reloaded from the database on the next visit */
+    }
+  };
+
   // A campaign was deleted: drop it, then open another one (or create the first).
   const handleCampaignDeleted = (id: string) => {
     const remaining = allCampaigns.filter((c) => c.id !== id);
@@ -1269,6 +1281,7 @@ const Dashboard = () => {
             onNavigate={setActiveTab}
             openCreate={createRequested > 0}
             onCampaignDeleted={isAdmin ? handleCampaignDeleted : undefined}
+            onCampaignCreated={isAdmin ? handleCampaignCreated : undefined}
             key={activeTab === 'campaignSettings' ? `settings-${createRequested}` : activeTab}
           />
         )}

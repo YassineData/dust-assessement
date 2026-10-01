@@ -3,7 +3,7 @@ import { DustMark } from '@/components/DustMark';
 import { AUDIENCES, DUST_ABOUT, withCompany, type SurveyAudience } from '@/lib/assessment-v2';
 
 /** Header of the survey: who Dust is, what the survey is for, why it matters and what comes out of it. */
-export const SurveyIntro = ({ audience, fr, company }: { audience: SurveyAudience; fr: boolean; company?: string | null }) => {
+export const SurveyIntro = ({ audience, fr, company, custom }: { audience: SurveyAudience; fr: boolean; company?: string | null; custom?: { title?: string; body?: string } | null }) => {
   const a = AUDIENCES[audience];
   const L = (x: { en: string; fr: string }) => withCompany(fr ? x.fr : x.en, company, fr);
 
@@ -22,8 +22,8 @@ export const SurveyIntro = ({ audience, fr, company }: { audience: SurveyAudienc
             {fr ? 'Un questionnaire Dust' : 'A Dust survey'}
           </span>
         </div>
-        <h1 className="page-title mt-2">{L(a.title)}</h1>
-        <p className="mt-2 text-[14px] leading-relaxed text-slate">{L(a.about ?? DUST_ABOUT)}</p>
+        <h1 className="page-title mt-2">{custom?.title || L(a.title)}</h1>
+        <p className="mt-2 text-[14px] leading-relaxed text-slate">{custom?.body || L(a.about ?? DUST_ABOUT)}</p>
       </div>
       <div className="grid gap-4 px-5 py-4 sm:grid-cols-3">
         {items.map(({ icon: Icon, title, body }) => (
