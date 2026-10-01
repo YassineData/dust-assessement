@@ -81,6 +81,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
   const [typeDraft, setTypeDraft] = useState<SurveyAudience>('general');
   const [introDraft, setIntroDraft] = useState({ title: '', body: '' });
   const [savingType, setSavingType] = useState(false);
+  const [clientDraft, setClientDraft] = useState(companyName ?? '');
   // Secret of the client's private results link: readable by the Dust team (admin key) only.
   const [clientAccessKey, setClientAccessKey] = useState<string | null>(null);
   const isDustTeam = useIsDustTeam();
@@ -138,7 +139,8 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
   const handleSaveType = async () => {
     setSavingType(true);
     const intro = introDraft.title.trim() || introDraft.body.trim() ? { title: introDraft.title.trim(), body: introDraft.body.trim() } : null;
-    const { error } = await supabase.from('campaigns').update({ audience: typeDraft, intro } as any).eq('id', campaignId);
+    const client = clientDraft.trim();
+    const { error } = await supabase.from('campaigns').update({ audience: typeDraft, intro, ...(client ? { company_name: client } : {}) } as any).eq('id', campaignId);
     setSavingType(false);
     if (error) {
       toast({ title: fr ? 'Enregistrement impossible' : 'Could not save', description: fr ? 'Lancez supabase/004-campaign-audience.sql dans Supabase.' : 'Run supabase/004-campaign-audience.sql in Supabase.', variant: 'destructive' });
@@ -842,6 +844,8 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
                 ))}
               </div>
               <div className="grid gap-2">
+                <label className="text-[12px] font-medium text-foreground" htmlFor="client-name">{fr ? 'Nom du client (affiché aux répondants)' : 'Client name (shown to respondents)'}</label>
+                <Input id="client-name" value={clientDraft} onChange={(e) => setClientDraft(e.target.value)} />
                 <Input value={introDraft.title} onChange={(e) => setIntroDraft((d) => ({ ...d, title: e.target.value }))} placeholder={fr ? 'Titre personnalisé (facultatif)' : 'Custom title (optional)'} />
                 <textarea
                   value={introDraft.body}
