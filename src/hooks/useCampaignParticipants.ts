@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fetchAllRows } from '@/lib/fetch-all';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, type AssessmentType } from '@/lib/assessment-data';
 import {
@@ -97,11 +98,15 @@ export const useCampaignParticipants = (campaignId: string | null, refreshKey: n
         }
 
         const [{ data, error: queryError }, { data: adminMembers }, { data: campaignRows }] = await Promise.all([
-          supabase
-            .from('participants')
-            .select('*')
-            .in('campaign_id', targetCampaignIds)
-            .order('completed_at', { ascending: false }),
+          fetchAllRows((from, to) =>
+            supabase
+              .from('participants')
+              .select('*')
+              .in('campaign_id', targetCampaignIds)
+              .order('completed_at', { ascending: false })
+              .order('id')
+              .range(from, to)
+          ),
           supabase
             .from('campaign_members')
             .select('email, role')

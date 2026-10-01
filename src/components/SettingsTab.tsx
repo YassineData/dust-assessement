@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { fetchAllRows } from '@/lib/fetch-all';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -193,11 +194,9 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
       setLoading(false);
       return;
     }
-    const { data, error } = await supabase
-      .from('participants')
-      .select('*')
-      .in('campaign_id', ids)
-      .order('created_at', { ascending: false });
+    const { data, error } = await fetchAllRows((from, to) =>
+      supabase.from('participants').select('*').in('campaign_id', ids).order('created_at', { ascending: false }).order('id').range(from, to)
+    );
 
     if (error) console.error('Error loading participants:', error);
     else setParticipants(data || []);
@@ -1298,10 +1297,9 @@ Best regards,`;
     if (!showCreate || companyCampaigns.length === 0) return;
     const ids = companyCampaigns.map((c) => c.id);
     (async () => {
-      const { data, error } = await supabase
-        .from('participants')
-        .select('campaign_id, status')
-        .in('campaign_id', ids);
+      const { data, error } = await fetchAllRows((from, to) =>
+        supabase.from('participants').select('id, campaign_id, status').in('campaign_id', ids).order('id').range(from, to)
+      );
       if (error || !data) return;
       const counts: Record<string, { total: number; completed: number }> = {};
       for (const id of ids) counts[id] = { total: 0, completed: 0 };

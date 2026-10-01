@@ -355,6 +355,9 @@ export const installDemoInterceptor = () => {
 
     const range = new Headers(init?.headers).get('Range');
     let slice = rows;
+    const offset = Number(params.get('offset') || 0);
+    const limit = params.get('limit');
+    if (offset || limit) slice = rows.slice(offset, limit ? offset + Number(limit) : undefined);
     if (range) {
       const [a, b] = range.split('-').map(Number);
       slice = rows.slice(a, b + 1);

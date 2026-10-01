@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fetchAllRows } from '@/lib/fetch-all';
 import { supabase } from '@/integrations/supabase/client';
 import { DIMENSION_IDS, isV2ItemScores } from '@/lib/assessment-v2';
 
@@ -44,11 +45,15 @@ export const useClientCampaigns = (
         }
 
         const ids = others.map((c) => c.id);
-        const { data: parts } = await supabase
-          .from('participants')
-          .select('campaign_id, global_score, item_scores, status')
-          .in('campaign_id', ids)
-          .eq('status', 'completed');
+        const { data: parts } = await fetchAllRows((from, to) =>
+          supabase
+            .from('participants')
+            .select('campaign_id, global_score, item_scores, status')
+            .in('campaign_id', ids)
+            .eq('status', 'completed')
+            .order('id')
+            .range(from, to)
+        );
 
         const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((x, y) => x + y, 0) / xs.length) : 0);
         const result: ClientCampaign[] = others.map((c) => {
