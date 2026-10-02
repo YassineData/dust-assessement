@@ -68,49 +68,49 @@ const Home = () => {
   };
 
   const problems = [
-    { title: L('Everyone gets the same training', 'La même formation pour tous'), body: L('Power users get bored, beginners get lost, both stop coming.', 'Les avancés s’ennuient, les débutants décrochent, et les deux arrêtent de venir.') },
+    { title: L('Everyone gets the same training', 'La même formation pour tous'), body: L('Power users get bored, beginners get lost, adoption stalls.', 'Les avancés s’ennuient, les débutants décrochent, l’adoption cale.') },
     { title: L('First use cases are guessed', 'Des cas d’usage devinés'), body: L('Picked in a meeting room, not from the work people actually do.', 'Choisis en réunion, pas à partir du travail réel des équipes.') },
-    { title: L('Relays are found by luck', 'Des relais trouvés par hasard'), body: L('The people who could carry adoption stay invisible for months.', 'Ceux qui pourraient porter l’adoption restent invisibles pendant des mois.') },
+    { title: L('Champions are found by luck', 'Des champions trouvés par hasard'), body: L('The people who could carry adoption stay invisible for months, call after call.', 'Ceux qui pourraient porter l’adoption restent invisibles pendant des mois.') },
   ];
 
   const faq = [
-    { q: L('Is it anonymous?', 'Est-ce anonyme ?'), a: L('No: people give their name so we can find the right relays in each team. But only the Dust team and your project lead see the answers, and nobody is evaluated on them.', 'Non : chacun donne son nom pour qu’on trouve les bons relais dans chaque équipe. Mais seuls l’équipe Dust et votre chef de projet voient les réponses, et personne n’est évalué dessus.') },
+    { q: L('Is it anonymous?', 'Est-ce anonyme ?'), a: L('No: people give their name so we can find the right relays in each team. But only the Dust team and their project lead see the answers, and nobody is evaluated on them.', 'Non : chacun donne son nom pour qu’on trouve les bons relais dans chaque équipe. Mais seuls l’équipe Dust et leur chef de projet voient les réponses, et personne n’est évalué dessus.') },
     { q: L('Who should answer?', 'Qui doit répondre ?'), a: L('Everyone in the teams that will use Dust, not only the enthusiasts. The more people answer, the more reliable the picture.', 'Toutes les personnes des équipes qui vont utiliser Dust, pas seulement les enthousiastes. Plus il y a de réponses, plus la vue est fiable.') },
     { q: L('What do people see at the end?', 'Que voient les gens à la fin ?'), a: L('A thank-you screen. No score and no label: profiles are for planning the rollout, and they are always confirmed in conversation.', 'Un écran de remerciement. Ni score ni étiquette : les profils servent à préparer le déploiement, et ils sont toujours confirmés en discutant.') },
-    { q: L('What do I receive?', 'Qu’est-ce que je reçois ?'), a: L('A private link to your results, updated live, plus a one-page summary and a kickoff deck for the readout with Dust.', 'Un lien privé vers vos résultats, à jour en direct, plus une synthèse d’une page et un deck de kickoff pour la restitution avec Dust.') },
+    { q: L('What do they receive?', 'Qu’est-ce qu’ils reçoivent ?'), a: L('A private link to their results, updated live, plus a one-page summary and a kickoff deck for the readout.', 'Un lien privé vers leurs résultats, à jour en direct, plus une synthèse d’une page et un deck de kickoff pour la restitution.') },
     { q: L('Which languages?', 'Quelles langues ?'), a: L('English and French. Each person can switch at any time.', 'Anglais et français. Chacun peut changer à tout moment.') },
   ];
 
   const blocks = [
-    { n: 1, color: '#1C91FF', title: L('Where your teams stand', 'Où en sont vos équipes'), body: L('An AI readiness index for the company, by team and by area: usage, depth, motivation, governance, team habits.', 'Un indice de maturité IA pour l’entreprise, par équipe et par domaine : usage, profondeur, motivation, gouvernance, habitudes d’équipe.') },
+    { n: 1, color: '#1C91FF', title: L('Where their teams stand', 'Où en sont leurs équipes'), body: L('A readiness score for the account, by team and by area, compared with our other rollouts.', 'Un score pour le compte, par équipe et par domaine, comparé à nos autres déploiements.') },
     { n: 2, color: '#418B5C', title: L('Who will carry the rollout', 'Qui portera le déploiement'), body: L('By name: who can train others, who can build agents, who connects teams, who should sponsor, and who needs convincing.', 'Nommément : qui peut former les autres, qui peut construire des agents, qui relie les équipes, qui doit sponsoriser, et qui est à convaincre.') },
-    { n: 3, color: '#FE9C1A', title: L('What to do first', 'Par quoi commencer'), body: L('Next steps and first use cases, drawn from what your teams wrote in their own words.', 'Les prochaines étapes et les premiers cas d’usage, tirés de ce que vos équipes ont écrit avec leurs mots.') },
+    { n: 3, color: '#FE9C1A', title: L('What to do first', 'Par quoi commencer'), body: L('Next steps and the first agents to build, drawn from what their teams wrote in their own words.', 'Les prochaines étapes et les premiers agents à construire, tirés de ce que leurs équipes ont écrit avec leurs mots.') },
   ];
 
   const gains = [
-    { icon: GraduationCap, title: L('Training that fits', 'Une formation qui colle'), body: L('Beginners and power users get different sessions, so nobody drops out bored or lost.', 'Débutants et utilisateurs avancés ont des sessions différentes : personne ne décroche, ni par ennui ni par peur.') },
-    { icon: Zap, title: L('Faster first wins', 'Des premiers résultats plus vite'), body: L('The first agents solve problems your people named themselves, so they actually use them.', 'Les premiers agents règlent des problèmes nommés par vos équipes : elles les utilisent vraiment.') },
-    { icon: Users, title: L('Relays from day one', 'Des relais dès le premier jour'), body: L('You know who to lean on in each team before the kickoff, instead of finding them months later.', 'Vous savez sur qui vous appuyer dans chaque équipe avant le kickoff, pas des mois plus tard.') },
-    { icon: BarChart3, title: L('Progress you can show', 'Des progrès à montrer'), body: L('Run it again a few months later and show your leadership how far the company has moved.', 'Relancez-le quelques mois plus tard et montrez à votre direction le chemin parcouru.') },
+    { icon: Zap, title: L('Sales: map the account before signature', 'Sales : cartographier le compte avant la signature'), body: L('Readiness, sponsors and use cases in the customer’s words, to support closing and size the deal.', 'Maturité, sponsors et cas d’usage dans les mots du client, pour appuyer le closing et dimensionner le deal.') },
+    { icon: GraduationCap, title: L('ADS: a kickoff built on data', 'ADS : un kickoff construit sur des données'), body: L('Train-the-trainer staffed with the right people from day one, and the first agents teams asked for.', 'Un train-the-trainer avec les bonnes personnes dès le premier jour, et les premiers agents demandés par les équipes.') },
+    { icon: BarChart3, title: L('CS: a baseline for renewals', 'CS : une baseline pour les renouvellements'), body: L('Run it again a few months later to show progress at QBRs and spot expansion signals.', 'Relancez-le quelques mois plus tard pour montrer les progrès en QBR et repérer les opportunités d’expansion.') },
+    { icon: Users, title: L('Everyone: data across accounts', 'Tout le monde : des données sur tous les comptes'), body: L('Compare accounts and rollouts, and see the pain points that come up again and again.', 'Comparez les comptes et les déploiements, et voyez les irritants qui reviennent.') },
   ];
 
   const asks = [
     { icon: Timer, text: L('Less than 5 minutes per person', 'Moins de 5 minutes par personne') },
     { icon: Smartphone, text: L('One link, no account, phone or laptop', 'Un lien, pas de compte, mobile ou ordinateur') },
-    { icon: Rocket, text: L('A ready-made message to forward', 'Un message prêt à transférer') },
+    { icon: Rocket, text: L('A one-pager and a ready-made message to forward', 'Un one-pager et un message prêt à transférer') },
   ];
 
   const weeks = [
-    { when: L('Step 1', 'Étape 1'), title: L('You send the link', 'Vous envoyez le lien'), body: L('To the teams in scope, with the message we prepare.', 'Aux équipes concernées, avec le message qu’on prépare.') },
-    { when: L('Step 2', 'Étape 2'), title: L('Teams answer', 'Les équipes répondent'), body: L('You follow the response rate live from your private link.', 'Vous suivez le taux de réponse en direct depuis votre lien privé.') },
-    { when: L('Step 3', 'Étape 3'), title: L('Readout with Dust', 'Restitution avec Dust'), body: L('Thirty minutes on the results and the plan. It shapes your kickoff.', 'Trente minutes sur les résultats et le plan. Elle façonne votre kickoff.') },
+    { when: L('Step 1', 'Étape 1'), title: L('Create the campaign', 'Créez la campagne'), body: L('Sign in, create the link, send the one-pager and message to the customer’s project lead.', 'Connectez-vous, créez le lien, envoyez le one-pager et le message au chef de projet du client.') },
+    { when: L('Step 2', 'Étape 2'), title: L('Their teams answer', 'Leurs équipes répondent'), body: L('You and the customer follow the responses live.', 'Vous et le client suivez les réponses en direct.') },
+    { when: L('Step 3', 'Étape 3'), title: L('Readout with the customer', 'Restitution avec le client'), body: L('Thirty minutes with the one-page summary and the kickoff deck. It shapes the kickoff.', 'Trente minutes avec la synthèse et le deck de kickoff. Elle prépare le kickoff.') },
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1080px] items-center justify-between px-4">
-          <DustWordmark subtitle={L('AI Readiness Assessment', 'Évaluation de maturité IA')} />
+          <DustWordmark subtitle={L('Deployment scoping · for the Dust team', 'Cadrage du déploiement · équipe Dust')} />
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
@@ -128,14 +128,14 @@ const Home = () => {
         <section className="mx-auto grid max-w-[1120px] items-center gap-12 px-4 pb-16 pt-12 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_440px] lg:gap-14">
           <div className="home-rise">
             <ShapeRow />
-            <p className="eyebrow mt-5">{L('For companies rolling out Dust', 'Pour les entreprises qui déploient Dust')}</p>
+            <p className="eyebrow mt-5">{L('For the Dust team · Sales, ADS, CS', 'Pour l’équipe Dust · Sales, ADS, CS')}</p>
             <h1 className="mt-3 text-[38px] font-semibold leading-[1.05] tracking-[-0.02em] text-foreground sm:text-[54px]">
-              {L('Know your teams before you roll out AI.', 'Connaissez vos équipes avant de déployer l’IA.')}
+              {L('Know your customer’s teams before you deploy.', 'Connaissez les équipes du client avant de déployer.')}
             </h1>
             <p className="mt-5 max-w-[580px] text-[16px] leading-relaxed text-muted-foreground sm:text-[17px]">
               {L(
-                'A five-minute survey for your employees. You get a clear picture of where each team stands, who can carry the rollout and what to build first.',
-                'Un questionnaire de cinq minutes pour vos collaborateurs. Vous obtenez une vue claire : où en est chaque équipe, qui peut porter le déploiement, et quoi construire en premier.'
+                'A five-minute survey you send to a customer’s teams. Before the kickoff, you know where each team stands, who can carry the rollout and what to build first.',
+                'Un questionnaire de cinq minutes à envoyer aux équipes d’un client. Avant le kickoff, vous savez où en est chaque équipe, qui peut porter le déploiement et quoi construire en premier.'
               )}
             </p>
             <div className="mt-8 flex flex-wrap gap-2">
@@ -192,7 +192,7 @@ const Home = () => {
           <div className="mx-auto max-w-[1080px] px-4 py-16">
             <Reveal>
               <p className="eyebrow">{L('What you get', 'Ce que vous obtenez')}</p>
-              <h2 className="mt-2 max-w-[720px] text-[28px] font-semibold tracking-[-0.01em] text-foreground">{L('One clear picture of your company, in three parts.', 'Une vue claire de votre entreprise, en trois parties.')}</h2>
+              <h2 className="mt-2 max-w-[720px] text-[28px] font-semibold tracking-[-0.01em] text-foreground">{L('One clear picture of each account, in three parts.', 'Une vue claire de chaque compte, en trois parties.')}</h2>
             </Reveal>
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               {blocks.map((b, i) => (
@@ -211,8 +211,8 @@ const Home = () => {
         {/* Why it helps you */}
         <section className="mx-auto max-w-[1080px] px-4 py-16">
           <Reveal>
-            <p className="eyebrow">{L('Why it helps you', 'Ce que ça change pour vous')}</p>
-            <h2 className="mt-2 max-w-[720px] text-[28px] font-semibold tracking-[-0.01em] text-foreground">{L('A rollout built on your data, not on guesswork.', 'Un déploiement construit sur vos données, pas à l’intuition.')}</h2>
+            <p className="eyebrow">{L('Why it helps us', 'Ce que ça nous apporte')}</p>
+            <h2 className="mt-2 max-w-[720px] text-[28px] font-semibold tracking-[-0.01em] text-foreground">{L('Deploy with data, not guesswork.', 'Déployer avec la donnée, pas à l’intuition.')}</h2>
           </Reveal>
           <div className="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-2">
             {gains.map((g, i) => (
@@ -235,7 +235,7 @@ const Home = () => {
         <section className="border-y border-border bg-card">
           <div className="mx-auto grid max-w-[1080px] gap-12 px-4 py-16 lg:grid-cols-[320px_minmax(0,1fr)]">
             <Reveal>
-              <p className="eyebrow">{L('What it asks of you', 'Ce que ça vous demande')}</p>
+              <p className="eyebrow">{L('What it asks of the customer', 'Ce que ça demande au client')}</p>
               <h2 className="mt-2 text-[24px] font-semibold tracking-[-0.01em] text-foreground">{L('Very little.', 'Très peu.')}</h2>
               <ul className="mt-5 space-y-3">
                 {asks.map((a) => (
@@ -265,7 +265,7 @@ const Home = () => {
         <section className="mx-auto max-w-[780px] px-4 pt-16">
           <Reveal>
             <p className="eyebrow">{L('Questions', 'Questions')}</p>
-            <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.01em] text-foreground">{L('What managers usually ask.', 'Ce que les managers demandent souvent.')}</h2>
+            <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.01em] text-foreground">{L('What customers usually ask.', 'Ce que les clients demandent souvent.')}</h2>
           </Reveal>
           <div className="mt-6 divide-y divide-border rounded-xl bg-card ring-1 ring-border">
             {faq.map((f) => (
@@ -285,12 +285,12 @@ const Home = () => {
           <Reveal>
             <div className="grid gap-6 rounded-2xl bg-ink p-7 text-white sm:p-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
-                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-sky">{L('Your people’s answers', 'Les réponses de vos équipes')}</p>
+                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-sky">{L('Customer answers', 'Les réponses des clients')}</p>
                 <h2 className="mt-2 text-[24px] font-semibold leading-snug">{L('Only used to plan the rollout. Never to evaluate anyone.', 'Utilisées pour préparer le déploiement. Jamais pour évaluer qui que ce soit.')}</h2>
                 <p className="mt-3 max-w-[620px] text-[14px] leading-relaxed text-white/75">
                   {L(
-                    'Only the Dust team and your project lead see the results, through a private link. Anyone can ask for their answers to be deleted.',
-                    'Seuls l’équipe Dust et votre chef de projet voient les résultats, via un lien privé. Chacun peut demander la suppression de ses réponses.'
+                    'Only the Dust team and the customer’s project lead see the results, through a private link. Anyone can ask for their answers to be deleted.',
+                    'Seuls l’équipe Dust et le chef de projet du client voient les résultats, via un lien privé. Chacun peut demander la suppression de ses réponses.'
                   )}
                 </p>
               </div>
@@ -308,10 +308,16 @@ const Home = () => {
         <section className="mx-auto grid max-w-[1080px] gap-6 px-4 pb-20 md:grid-cols-2">
           <Reveal>
             <div className="h-full rounded-2xl bg-brand-strong p-7 text-white sm:p-8">
-              <h2 className="text-[22px] font-semibold leading-snug">{L('Want it for your teams?', 'Vous le voulez pour vos équipes ?')}</h2>
+              <h2 className="text-[22px] font-semibold leading-snug">{L('Running a kickoff or a pre-pilot?', 'Un kickoff ou un pré-pilote en vue ?')}</h2>
               <p className="mt-2 text-[14px] leading-relaxed text-white/90">
-                {L('Ask your Dust contact: we set up your survey link and a ready-to-send message for your teams.', 'Demandez à votre contact Dust : on prépare votre lien et un message prêt à envoyer à vos équipes.')}
+                {L('Sign in with your Dust email and create a campaign in 2 minutes. Questions: ping Yassine.', 'Connectez-vous avec votre email Dust et créez une campagne en 2 minutes. Une question : demandez à Yassine.')}
               </p>
+              <Button asChild variant="secondary" className="mt-5">
+                <a href="/login">
+                  <LogIn className="h-4 w-4" />
+                  {L('Sign in', 'Se connecter')}
+                </a>
+              </Button>
             </div>
           </Reveal>
           <Reveal delay={100}>
@@ -343,7 +349,7 @@ const Home = () => {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-[1080px] flex-wrap items-center justify-between gap-2 px-4 py-6 text-[12px] text-muted-foreground">
-          <span>© {new Date().getFullYear()} Dust · {L('AI Readiness Assessment', 'Évaluation de maturité IA')}</span>
+          <span>© {new Date().getFullYear()} Dust · {L('Deployment scoping', 'Cadrage du déploiement')}</span>
           <a href="https://dust.tt" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">dust.tt</a>
         </div>
       </footer>
