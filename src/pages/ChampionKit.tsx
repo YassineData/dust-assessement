@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { DustMark } from '@/components/DustMark';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { AUDIENCES, AUDIENCE_PARAM, V2_QUESTIONS, type SurveyAudience } from '@/lib/assessment-v2';
+import { AUDIENCE_PARAM, V2_QUESTIONS, type SurveyAudience } from '@/lib/assessment-v2';
 import { cn } from '@/lib/utils';
 
 /**
@@ -31,10 +31,20 @@ const ChampionKit = () => {
   const variant: KitVariant = params.get('variant') === 'sales' ? 'sales' : 'deployment';
   const code = (params.get('code') || 'XXXXXXXX').toUpperCase();
   const company = params.get('company') || L('your company', 'votre entreprise');
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  // Links always point to production, even when the kit is generated from a local copy.
+  const origin = typeof window === 'undefined' || /localhost|127\.0\.0\.1/.test(window.location.hostname) ? 'https://dust-assessment.com' : window.location.origin;
   const linkFor = (a: SurveyAudience) =>
     `${origin}/assessment?lang=${language}&code=${code}${AUDIENCE_PARAM[a] ? `&for=${AUDIENCE_PARAM[a]}` : ''}`;
-  const audiences: SurveyAudience[] = ['general', 'sales', 'success'];
+  const areas = [
+    L('AI use today', 'Usage de l’IA aujourd’hui'),
+    L('Ability to build agents', 'Capacité à construire des agents'),
+    L('Motivation', 'Motivation'),
+    L('Will to train others', 'Envie de former les autres'),
+    L('Reach across teams', 'Rayonnement entre équipes'),
+    L('Governance & trust', 'Gouvernance & confiance'),
+    L('Team habits', 'Habitudes d’équipe'),
+    L('Work to automate', 'Travail à automatiser'),
+  ];
 
   const intro =
     variant === 'sales'
@@ -71,8 +81,8 @@ const ChampionKit = () => {
     {
       title: L('What we need from you', 'Ce qu’on attend de vous'),
       body: L(
-        'Forward the link(s) below to the teams in scope, ideally with a short word from you. Aim for most people to answer within a week; one reminder halfway usually does it. You can follow answers live.',
-        "Transférer le ou les liens ci-dessous aux équipes concernées, idéalement avec un petit mot de votre part. L'objectif : que la majorité réponde en une semaine ; une relance à mi-parcours suffit en général. Vous pouvez suivre les réponses en direct."
+        'Forward the link below to the teams in scope, ideally with a short word from you. Aim for most people to answer within a week; one reminder halfway usually does it. You can follow answers live.',
+        "Transférer le lien ci-dessous aux équipes concernées, idéalement avec un petit mot de votre part. L'objectif : que la majorité réponde en une semaine ; une relance à mi-parcours suffit en général. Vous pouvez suivre les réponses en direct."
       ),
     },
     {
@@ -81,11 +91,11 @@ const ChampionKit = () => {
         variant === 'sales'
           ? L(
               'A readiness snapshot of your organization, by team: where AI is already used, where the quick wins are, and who can lead internally. It shapes the deployment plan we propose to you.',
-              "Une photographie de la maturité IA de votre organisation, par équipe : où l'IA est déjà utilisée, où sont les gains rapides et qui peut porter le sujet en interne. Elle sert de base au plan de déploiement que nous vous proposons."
+              "Une photographie de votre organisation, équipe par équipe : où l'IA est déjà utilisée, où sont les gains rapides et qui peut porter le sujet en interne. Elle sert de base au plan de déploiement que nous vous proposons."
             )
           : L(
-              'A shared view of the results: readiness by team, your builders and champions, and a rollout plan per profile, reviewed together at kickoff. A second pass a few months later measures the progress.',
-              'Une vue partagée des résultats : maturité par équipe, vos builders et champions, et un plan de déploiement par profil, revus ensemble au kickoff. Un second passage quelques mois plus tard mesure la progression.'
+              'A shared view of the results: where each team stands, your future trainers, builders and champions by name, and the first use cases to build, reviewed together at kickoff. A second pass a few months later measures the progress.',
+              'Une vue partagée des résultats : où en est chaque équipe, vos futurs formateurs, builders et champions nommément, et les premiers cas d’usage à construire, revus ensemble au kickoff. Un second passage quelques mois plus tard mesure la progression.'
             ),
     },
   ];
@@ -154,7 +164,7 @@ const ChampionKit = () => {
               <DustMark className="h-6 w-6" />
               <span className="text-[15px] font-semibold text-foreground">Dust</span>
               <span className="h-4 w-px bg-border" aria-hidden />
-              <span className="text-[13px] text-muted-foreground">AI Maturity Assessment</span>
+              <span className="text-[13px] text-muted-foreground">{L('Deployment scoping', 'Cadrage du déploiement')}</span>
             </div>
             <span className="text-[12px] text-muted-foreground">
               {variant === 'sales' ? L('Before the rollout', 'Avant le déploiement') : L('Kickoff preparation', 'Préparation du kickoff')}
@@ -176,24 +186,22 @@ const ChampionKit = () => {
           </div>
 
           <section className="mt-6 print:break-inside-avoid">
-            <h2 className="text-[14px] font-semibold text-foreground">{L('Links to forward', 'Liens à transférer')}</h2>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              {L('Use one link for everyone, or one per team: each has its own short introduction. All answers land in the same place.', 'Un lien pour tout le monde, ou un par équipe : chacun a sa propre introduction. Toutes les réponses arrivent au même endroit.')}
-            </p>
-            <ul className="mt-3 divide-y divide-border rounded-xl ring-1 ring-border">
-              {audiences.map((a) => (
-                <li key={a} className="grid gap-1 px-4 py-3 sm:grid-cols-[170px_1fr] sm:items-center">
-                  <span className="text-[13px] font-medium text-foreground">{fr ? AUDIENCES[a].label.fr : AUDIENCES[a].label.en}</span>
-                  <a href={linkFor(a)} className="break-all font-mono text-[12px] text-brand-ink underline-offset-2 hover:underline">
-                    {linkFor(a)}
-                  </a>
-                </li>
+            <h2 className="text-[14px] font-semibold text-foreground">{L('What we look at', 'Ce qu’on regarde')}</h2>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {areas.map((a) => (
+                <span key={a} className="rounded-full bg-paper px-2.5 py-1 text-[12px] text-foreground ring-1 ring-border">{a}</span>
               ))}
-            </ul>
+            </div>
             <p className="mt-2 text-[12px] text-muted-foreground">
-              {L('Campaign code (if asked): ', 'Code de campagne (si demandé) : ')}
-              <span className="font-mono font-semibold text-foreground">{code}</span>
+              {L('Plus open questions on time sinks, the tasks people would hand over to an agent, and what could block them.', 'Plus des questions ouvertes sur les pertes de temps, les tâches à confier à un agent et ce qui pourrait bloquer.')}
             </p>
+          </section>
+
+          <section className="mt-6 print:break-inside-avoid">
+            <h2 className="text-[14px] font-semibold text-foreground">{L('Link to forward', 'Lien à transférer')}</h2>
+            <a href={linkFor('general')} className="mt-2 block break-all rounded-xl px-4 py-3 font-mono text-[13px] text-brand-ink ring-1 ring-border underline-offset-2 hover:underline">
+              {linkFor('general')}
+            </a>
           </section>
 
           <section className="mt-6 print:break-inside-avoid">
