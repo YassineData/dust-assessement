@@ -82,7 +82,7 @@ export const exportSummaryPDF = (d: SummaryPdfData) => {
   pdf.setFillColor(...INK);
   pdf.rect(0, 0, W, 22, 'F');
   text('Dust', M, 10, { size: 13, bold: true, color: [255, 255, 255] });
-  text('AI Maturity Assessment', M + 13, 10, { size: 10, color: [200, 204, 210] });
+  text('Deployment scoping', M + 13, 10, { size: 10, color: [200, 204, 210] });
   const date = new Date().toLocaleDateString(fr ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   drawBrandShapes(pdf, W - M - 29, 5.5, 5, 1);
   text(d.company, M, 18, { size: 11, bold: true, color: [255, 255, 255] });
@@ -174,7 +174,7 @@ export const exportSummaryPDF = (d: SummaryPdfData) => {
   // Footer
   pdf.setDrawColor(...LINE);
   pdf.line(M, 284, W - M, 284);
-  text(L('Dust · AI Maturity Assessment · confidential, for the rollout team', 'Dust · AI Maturity Assessment · confidentiel, pour l’équipe du déploiement'), M, 289, { size: 7, color: MUTED });
+  text(L('Dust · Deployment scoping · confidential, for the rollout team', 'Dust · Cadrage du déploiement · confidentiel, pour l’équipe du déploiement'), M, 289, { size: 7, color: MUTED });
   text('dust-assessment.com', W - M, 289, { size: 7, color: MUTED, align: 'right' });
 
   const slug = d.company.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();

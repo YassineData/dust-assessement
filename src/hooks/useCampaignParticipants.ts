@@ -43,6 +43,8 @@ export interface CampaignParticipant {
   roleMismatch: boolean;
   context: ContextAnswers;
   open: OpenAnswers;
+  /** Questions from an imported form that are not part of the survey, keyed by the question as asked. */
+  custom: Record<string, string>;
 }
 
 export const useCampaignParticipants = (campaignId: string | null, refreshKey: number = 0) => {
@@ -183,6 +185,7 @@ export const useCampaignParticipants = (campaignId: string | null, refreshKey: n
               roleMismatch: classId ? trainerRoleMismatch(classId, context) : false,
               context,
               open: stored?.open ?? {},
+              custom: stored?.custom ?? {},
             };
           });
 

@@ -11,6 +11,9 @@ import { HeroDiagnostic, KpiCards, DimensionBars, RankedList, PendingBanner, Nex
 import { ParticipantDrawer } from '@/components/console/ParticipantDrawer';
 import { CompareView } from '@/components/console/CompareView';
 import { DeploymentPlan } from '@/components/console/DeploymentPlan';
+import { PartnerServices } from '@/components/console/PartnerServices';
+import { ImportResponses } from '@/components/console/ImportResponses';
+import { CustomQuestionsCard } from '@/components/console/CustomQuestionsCard';
 import { PROFILE_BADGE, profileLabel } from '@/lib/profile-style';
 import {
   CLASS_PROFILES,
@@ -1244,13 +1247,19 @@ const Dashboard = () => {
                 onSelectParticipant={(id) => { setDrawerId(id); setActiveTab('participants'); }}
               />
             )}
+            {hasParticipants && !isClientView && (
+              <PartnerServices participants={participants} companyName={campaignAccess.companyName} fr={fr} />
+            )}
           </div>
         )}
 
         {activeTab === 'signIns' && !isClientView && <SignInLog fr={fr} />}
 
         {activeTab === 'openAnswers' && (
-          <OpenAnswersCard participants={participants} fr={fr} showEmpty />
+          <div className="space-y-5">
+            <OpenAnswersCard participants={participants} fr={fr} showEmpty />
+            <CustomQuestionsCard participants={participants} fr={fr} />
+          </div>
         )}
 
         {activeTab === 'detailed' && (
@@ -1284,6 +1293,17 @@ const Dashboard = () => {
             onCampaignCreated={isAdmin ? handleCampaignCreated : undefined}
             key={activeTab === 'campaignSettings' ? `settings-${createRequested}` : activeTab}
           />
+        )}
+
+        {activeTab === 'share' && isAdmin && campaignAccess.campaignId && !isGlobalCampaignId(campaignAccess.campaignId) && (
+          <div className="mt-5">
+            <ImportResponses
+              campaignId={campaignAccess.campaignId}
+              companyName={campaignAccess.companyName}
+              fr={fr}
+              onImported={() => setRefreshKey((k) => k + 1)}
+            />
+          </div>
         )}
 
         {/* Download Options Modal */}

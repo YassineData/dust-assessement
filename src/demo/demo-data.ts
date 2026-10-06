@@ -349,7 +349,23 @@ export const installDemoInterceptor = () => {
       return json(rows);
     }
 
-    // Writes are accepted and ignored: demo mode never touches the database.
+    // Imported participants are kept in this page's memory so the import can be tried; nothing reaches the database.
+    if (method === 'POST' && path === 'participants') {
+      const body = JSON.parse(String(init?.body ?? '[]'));
+      const list: Row[] = Array.isArray(body) ? body : [body];
+      const ignore = (new Headers(init?.headers).get('Prefer') || '').includes('ignore-duplicates');
+      const added: Row[] = [];
+      list.forEach((r) => {
+        const i = data.participants.findIndex((p) => p.campaign_id === r.campaign_id && String(p.email).toLowerCase() === String(r.email).toLowerCase());
+        if (i >= 0 && ignore) return;
+        const row = { ...(i >= 0 ? data.participants[i] : {}), ...r, id: i >= 0 ? data.participants[i].id : `demo-imp-${Math.random().toString(36).slice(2, 10)}` };
+        if (i >= 0) data.participants[i] = row;
+        else data.participants.push(row);
+        added.push(row);
+      });
+      return json(single ? added[0] ?? null : added, 201);
+    }
+    // Other writes are accepted and ignored: demo mode never touches the database.
     if (method === 'POST') return json(single ? { id: 'demo-new' } : [{ id: 'demo-new' }], 201);
     if (method !== 'GET' && method !== 'HEAD') return new Response(null, { status: 204 });
 

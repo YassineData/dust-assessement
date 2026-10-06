@@ -261,7 +261,7 @@ export const exportPPT = (
   pptx.author = 'Dust';
   pptx.company = 'Dust';
   pptx.title = `${companyName} · AI Readiness Assessment`;
-  pptx.subject = language === 'fr' ? 'Rapport de Maturité IA' : 'AI Maturity Report';
+  pptx.subject = language === 'fr' ? 'Cadrage du déploiement Dust' : 'Dust deployment scoping';
 
   const date = new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-GB', {
     year: 'numeric', month: 'long', day: 'numeric',

@@ -407,3 +407,34 @@
   .home-shape, .home-shape-spin, .home-rise { animation: none; opacity: 1; transform: none; }
   .lp-pop { opacity: 1; }
 }
+
+/* One-pager PDF capture: desktop layout at a fixed width, whatever the screen size. */
+article[data-capture] {
+  width: 780px;
+  max-width: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+article[data-capture] .kit-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Printing the one-pager: one A4 page, no browser date/URL header or footer, colours kept. */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  html,
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  article[data-kit] {
+    padding: 11mm 13mm !important;
+    zoom: 0.78;
+  }
+  article[data-kit] .kit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -252,7 +252,8 @@ const round = (n: number) => Math.round(n);
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
 /** Step 1–2: flip reverse items (6 − answer), average per dimension, rescale to 0–100. */
-export const computeDimensions = (answers: Record<string, AnswerValue | undefined>): Record<DimensionId, number> => {
+/** `extra` maps answers from an imported form's own questions to the dimension they count toward. */
+export const computeDimensions = (answers: Record<string, AnswerValue | undefined>, extra?: Record<string, DimensionId>): Record<DimensionId, number> => {
   const out = {} as Record<DimensionId, number>;
   DIMENSIONS.forEach((d) => {
     const vals = V2_QUESTIONS.filter((q) => q.dimension === d.id)
@@ -263,13 +264,17 @@ export const computeDimensions = (answers: Record<string, AnswerValue | undefine
         return q.reverse ? 6 - n : n;
       })
       .filter((v): v is number => v !== null);
+    Object.entries(extra ?? {}).forEach(([key, dim]) => {
+      const a = answers[key];
+      if (dim === d.id && a) vals.push(ANSWER_TO_NUMBER[a]);
+    });
     out[d.id] = vals.length ? round(((mean(vals) - 1) / 4) * 100) : 0;
   });
   return out;
 };
 
-export const computeScores = (answers: Record<string, AnswerValue | undefined>, context?: ContextAnswers): V2Scores => {
-  const d = computeDimensions(answers);
+export const computeScores = (answers: Record<string, AnswerValue | undefined>, context?: ContextAnswers, extra?: Record<string, DimensionId>): V2Scores => {
+  const d = computeDimensions(answers, extra);
   const readiness = round(mean(READINESS_DIMENSION_IDS.map((id) => d[id])));
   const fits: RoleFits = {
     trainer: round(0.4 * d.teach + 0.3 * d.will + 0.3 * d.depth),
@@ -282,7 +287,7 @@ export const computeScores = (answers: Record<string, AnswerValue | undefined>, 
 
 /** Scores from the stored answers when available, so every participant is read with the current model. */
 export const rescore = (storedScores: V2Scores, responses: V2Responses | null): V2Scores =>
-  responses && Object.keys(responses.answers || {}).length ? computeScores(responses.answers, responses.context) : { ...storedScores, roles: storedScores.roles ?? [] };
+  responses && Object.keys(responses.answers || {}).length ? computeScores(responses.answers, responses.context, responses.dims) : { ...storedScores, roles: storedScores.roles ?? [] };
 
 /* ------------------------------------------------------------------ */
 /* Result classes (first matching rule wins)                            */
@@ -586,6 +591,9 @@ export interface V2Responses {
   answers: Record<string, AnswerValue>;
   context: ContextAnswers;
   open: OpenAnswers;
+  /** Imported forms only: the form's own questions, as asked, and which ones count toward a dimension. */
+  custom?: Record<string, string>;
+  dims?: Record<string, DimensionId>;
 }
 
 export const isV2Responses = (r: unknown): r is V2Responses =>

@@ -457,10 +457,10 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
   const resultsEmail = (accessKey: string) => {
     const company = companyShort || (fr ? 'votre entreprise' : 'your company');
     const link = resultsLink(accessKey);
-    const subject = fr ? `Vos résultats AI Maturity Assessment · ${company}` : `Your AI Maturity Assessment results · ${company}`;
+    const subject = fr ? `Vos résultats du cadrage Dust · ${company}` : `Your Dust deployment scoping results · ${company}`;
     const body = fr
-      ? `Bonjour,\n\nVoici votre accès aux résultats de l'AI Maturity Assessment de ${company} :\n${link}\n\nVous y verrez en direct la participation, la maturité IA par équipe, vos builders et champions, et le plan de déploiement proposé. Le lien est personnel : merci de ne pas le transférer aux répondants.\n\nÀ bientôt,`
-      : `Hello,\n\nHere is your access to the AI Maturity Assessment results for ${company}:\n${link}\n\nYou will see participation live, AI readiness by team, your builders and champions, and the proposed rollout plan. The link is personal: please don't forward it to respondents.\n\nBest,`;
+      ? `Bonjour,\n\nVoici votre accès aux résultats du questionnaire de ${company} :\n${link}\n\nVous y verrez en direct la participation, le point de départ de chaque équipe, vos builders et champions, et le plan de déploiement proposé. Le lien est réservé à vous et à l'équipe projet : merci de ne pas le transférer aux collaborateurs.\n\nÀ bientôt,`
+      : `Hello,\n\nHere is your access to the survey results for ${company}:\n${link}\n\nYou will see participation live, where each team starts, your builders and champions, and the proposed rollout plan. The link is for you and the project team only: please don't forward it to employees.\n\nBest,`;
     return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
   const audienceSuffix = AUDIENCE_PARAM[shareAudience] ? `&for=${AUDIENCE_PARAM[shareAudience]}` : '';

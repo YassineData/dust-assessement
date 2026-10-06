@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Check, Copy, Printer } from 'lucide-react';
+import { ArrowLeft, Check, Copy, Download, Loader2, Lock, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { DustMark } from '@/components/DustMark';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AUDIENCE_PARAM, V2_QUESTIONS, type SurveyAudience } from '@/lib/assessment-v2';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { getAdminKey } from '@/lib/access';
+import { isDemoMode } from '@/demo/demo-data';
 
 /**
  * One-pager sent to the client's champion before the survey links:
@@ -14,6 +17,9 @@ import { cn } from '@/lib/utils';
  * `variant=deployment` (default) is sent by Deployment / CS at kickoff; `variant=sales` by Sales before the rollout.
  */
 type KitVariant = 'deployment' | 'sales';
+
+/** Loaded on click only: renders the page faithfully (fonts, rounded cards) for the PDF. */
+const HTML_TO_IMAGE = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm';
 
 const ChampionKit = () => {
   const [params] = useSearchParams();
@@ -105,6 +111,65 @@ const ChampionKit = () => {
     `Bonjour à tous,\n\nDust est notre nouvelle plateforme d'IA. L'équipe Dust veut en savoir plus sur vous et sur ce que vous faites, pour que le déploiement colle à notre façon de travailler.\n\nCela prend moins de 5 minutes : ${linkFor('general')}\n\nMerci !`
   );
 
+  // Private results link for the client's project lead. Only the Dust team (admin key) can read it,
+  // and it sits apart from everything meant to be forwarded.
+  const [resultsKey, setResultsKey] = useState<string | null>(null);
+  const [showResults, setShowResults] = useState(true);
+  useEffect(() => {
+    if ((!getAdminKey() && !isDemoMode()) || code === 'XXXXXXXX') return;
+    supabase
+      .from('campaigns')
+      .select('access_key' as never)
+      .eq('code', code)
+      .maybeSingle()
+      .then(({ data }) => setResultsKey((data as { access_key?: string } | null)?.access_key ?? null));
+  }, [code]);
+  const resultsUrl = resultsKey ? `${origin}/results?key=${resultsKey}` : null;
+
+  // Clean one-page A4 PDF of the one-pager, with the links still clickable.
+  const articleRef = useRef<HTMLElement>(null);
+  const [downloading, setDownloading] = useState(false);
+  const downloadPdf = async () => {
+    const art = articleRef.current;
+    if (!art) return;
+    setDownloading(true);
+    try {
+      await document.fonts.ready;
+      const [{ toJpeg }, { default: jsPDF }] = await Promise.all([
+        import(/* @vite-ignore */ HTML_TO_IMAGE) as Promise<{
+          toJpeg: (n: HTMLElement, o: Record<string, unknown>) => Promise<string>;
+        }>,
+        import('jspdf'),
+      ]);
+      const hide = (n: HTMLElement) => !(n.classList && n.classList.contains('print:hidden'));
+      // Same desktop layout whatever the screen: fixed width, cards two by two.
+      art.dataset.capture = 'true';
+      await new Promise((r) => setTimeout(r, 60));
+      const img = await toJpeg(art, { pixelRatio: 2, quality: 0.92, backgroundColor: '#FFFFFF', filter: hide });
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+      const margin = 10;
+      const box = art.getBoundingClientRect();
+      const maxW = 210 - 2 * margin;
+      const maxH = 297 - 2 * margin;
+      const scale = Math.min(maxW / box.width, maxH / box.height);
+      const w = box.width * scale;
+      const x0 = (210 - w) / 2;
+      pdf.addImage(img, 'JPEG', x0, margin, w, box.height * scale);
+      art.querySelectorAll('a[href]').forEach((a) => {
+        const r = a.getBoundingClientRect();
+        pdf.link(x0 + (r.left - box.left) * scale, margin + (r.top - box.top) * scale, r.width * scale, r.height * scale, { url: (a as HTMLAnchorElement).href });
+      });
+      delete art.dataset.capture;
+      pdf.setProperties({ title: `Dust · ${company}`, subject: L('Deployment scoping', 'Cadrage du déploiement') });
+      pdf.save(`Dust one-pager - ${company}.pdf`);
+    } catch {
+      window.print();
+    } finally {
+      delete art.dataset.capture;
+      setDownloading(false);
+    }
+  };
+
   const copyMessage = async () => {
     try {
       await navigator.clipboard.writeText(forwardMessage);
@@ -147,10 +212,19 @@ const ChampionKit = () => {
                 );
               })}
             </div>
+            {resultsUrl && (
+              <label className="hidden items-center gap-1.5 text-[12px] text-muted-foreground sm:flex">
+                <input type="checkbox" checked={showResults} onChange={(e) => setShowResults(e.target.checked)} />
+                {L('Private results link', 'Lien privé des résultats')}
+              </label>
+            )}
             <LanguageSwitcher />
-            <Button size="sm" onClick={() => window.print()}>
+            <Button size="sm" variant="outline" onClick={() => window.print()} aria-label={L('Print', 'Imprimer')}>
               <Printer className="h-4 w-4" />
-              {L('Print / Save as PDF', 'Imprimer / PDF')}
+            </Button>
+            <Button size="sm" onClick={downloadPdf} disabled={downloading}>
+              {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {L('Download PDF', 'Télécharger le PDF')}
             </Button>
           </div>
         </div>
@@ -158,7 +232,7 @@ const ChampionKit = () => {
 
       {/* The one-pager */}
       <main className="mx-auto max-w-[820px] px-4 py-8 print:max-w-none print:p-0">
-        <article className="rounded-2xl bg-card p-8 shadow-sm ring-1 ring-border print:rounded-none print:p-0 print:shadow-none print:ring-0">
+        <article ref={articleRef} data-kit className="rounded-2xl bg-card p-8 shadow-sm ring-1 ring-border print:rounded-none print:p-0 print:shadow-none print:ring-0">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <DustMark className="h-6 w-6" />
@@ -176,7 +250,7 @@ const ChampionKit = () => {
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-slate">{intro}</p>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 print:grid-cols-2">
+          <div className="kit-grid mt-6 grid gap-4 sm:grid-cols-2 print:grid-cols-2">
             {sections.map((s) => (
               <section key={s.title} className="rounded-xl bg-paper p-4 ring-1 ring-border print:break-inside-avoid">
                 <h2 className="text-[14px] font-semibold text-foreground">{s.title}</h2>
@@ -196,6 +270,24 @@ const ChampionKit = () => {
               {L('Plus open questions on time sinks, the tasks people would hand over to an agent, and what could block them.', 'Plus des questions ouvertes sur les pertes de temps, les tâches à confier à un agent et ce qui pourrait bloquer.')}
             </p>
           </section>
+
+          {resultsUrl && showResults && (
+            <section className="mt-6 rounded-xl bg-warn-soft p-4 ring-1 ring-warn/30 print:break-inside-avoid">
+              <h2 className="flex items-center gap-1.5 text-[14px] font-semibold text-foreground">
+                <Lock className="h-4 w-4" />
+                {L('Your private results link · for you only', 'Votre lien privé des résultats · pour vous uniquement')}
+              </h2>
+              <p className="mt-1 text-[12px] leading-relaxed text-foreground/80">
+                {L(
+                  'Live results with everyone’s individual answers, for you and the project team. Do not forward it to employees, and do not share this page with them: send them only the link below.',
+                  'Les résultats en direct, avec les réponses individuelles de chacun, pour vous et l’équipe projet. Ne le transférez pas aux collaborateurs et ne leur partagez pas cette page : envoyez-leur seulement le lien ci-dessous.'
+                )}
+              </p>
+              <a href={resultsUrl} className="mt-2 block break-all font-mono text-[12px] text-foreground underline-offset-2 hover:underline">
+                {resultsUrl}
+              </a>
+            </section>
+          )}
 
           <section className="mt-6 print:break-inside-avoid">
             <h2 className="text-[14px] font-semibold text-foreground">{L('Link to forward', 'Lien à transférer')}</h2>
