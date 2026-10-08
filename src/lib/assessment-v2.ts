@@ -529,7 +529,8 @@ export const CONTEXT_FIELDS: ChoiceField[] = [
 ];
 
 export interface OpenField {
-  id: 'timeSink' | 'useCase' | 'valueOwner' | 'success' | 'blocker';
+  /** The last four only exist in the pre-sales diagnostic (src/lib/presales.ts). */
+  id: 'timeSink' | 'useCase' | 'valueOwner' | 'success' | 'blocker' | 'toolsGap' | 'repetitiveTasks' | 'taskToHandOver' | 'otherGain';
   label: L;
 }
 
@@ -606,13 +607,14 @@ export const isV2ItemScores = (s: unknown): s is V2Scores =>
 /* Survey audiences: one link per team, each with its own header        */
 /* ------------------------------------------------------------------ */
 
-export type SurveyAudience = 'general' | 'sales' | 'success' | 'builders';
+/** `presales` is the pre-sales diagnostic (src/lib/presales.ts), only shown as a demo for now. */
+export type SurveyAudience = 'general' | 'sales' | 'success' | 'builders' | 'presales';
 
 /** `?for=sales` or `?for=cs` on the survey link. */
 export const audienceFromParam = (v: string | null): SurveyAudience =>
-  v === 'sales' ? 'sales' : v === 'cs' || v === 'success' ? 'success' : v === 'builders' ? 'builders' : 'general';
+  v === 'sales' ? 'sales' : v === 'cs' || v === 'success' ? 'success' : v === 'builders' ? 'builders' : v === 'presales' ? 'presales' : 'general';
 
-export const AUDIENCE_PARAM: Record<SurveyAudience, string | null> = { general: null, sales: 'sales', success: 'cs', builders: 'builders' };
+export const AUDIENCE_PARAM: Record<SurveyAudience, string | null> = { general: null, sales: 'sales', success: 'cs', builders: 'builders', presales: 'presales' };
 
 /** Audiences offered when creating or sharing a link, in display order. */
 export const AUDIENCE_ORDER: SurveyAudience[] = ['general', 'sales', 'success', 'builders'];
@@ -684,5 +686,19 @@ export const AUDIENCES: Record<SurveyAudience, AudienceInfo> = {
     output: { en: 'A session and use-case tracks built around the work you described, not a generic training.', fr: 'Une session et des parcours de cas d’usage construits autour du travail que vous avez décrit, pas une formation générique.' },
     useCaseExamples: { en: 'e.g. a weekly report, answering recurring questions, preparing a meeting', fr: 'ex. un reporting hebdo, répondre aux questions récurrentes, préparer une réunion' },
     note: { en: 'This survey should take less than 5 minutes and is not an evaluation. Only the Dust team and {company}’s Dust project team will see your answers. Thank you!', fr: 'Ce questionnaire prend moins de 5 minutes et n’est pas une évaluation. Seules l’équipe Dust et l’équipe projet Dust de {company} verront vos réponses. Merci !' },
+  },
+  presales: {
+    id: 'presales',
+    label: { en: 'Pre-sales diagnostic', fr: 'Diagnostic avant-vente' },
+    title: { en: 'A 4-minute AI diagnostic', fr: 'Un diagnostic IA de 4 minutes' },
+    about: {
+      en: 'We are looking at how AI could help the teams at {company}. Before choosing anything, we want to hear from the people doing the work.',
+      fr: "Nous étudions comment l'IA pourrait aider les équipes de {company}. Avant de choisir quoi que ce soit, nous voulons entendre les personnes qui font le travail.",
+    },
+    whatFor: { en: 'Where you lose time, what you already use, and what gets in the way.', fr: 'Où vous perdez du temps, ce que vous utilisez déjà, et ce qui vous freine.' },
+    whyItMatters: { en: 'Your answers show which problems are worth solving first, whatever tools are chosen in the end.', fr: 'Vos réponses montrent quels problèmes valent la peine d’être réglés en premier, quels que soient les outils choisis au final.' },
+    output: { en: 'A clear picture of the pains across teams and the first places where AI would help.', fr: "Une vision claire des irritants dans les équipes et des premiers endroits où l'IA aiderait." },
+    useCaseExamples: { en: 'e.g. finding the right document, weekly reporting, preparing meetings', fr: 'ex. retrouver le bon document, le reporting hebdo, préparer les réunions' },
+    note: { en: 'This is not an evaluation and takes about 4 minutes. Your answers are only used to understand your team’s needs.', fr: 'Ce n’est pas une évaluation et cela prend environ 4 minutes. Vos réponses servent uniquement à comprendre les besoins de votre équipe.' },
   },
 };

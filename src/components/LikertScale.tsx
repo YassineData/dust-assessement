@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -14,12 +14,14 @@ interface LikertScaleProps {
   onAutoAdvance?: () => void;
   isActive?: boolean;
   questionNumber?: number;
+  /** Shown under the scale, e.g. an optional "Which one?" field. */
+  footer?: ReactNode;
 }
 
 const SCALE: AnswerValue[] = ['disagree', 'somewhatDisagree', 'neutral', 'somewhatAgree', 'agree'];
 
 export const LikertScale = forwardRef<HTMLDivElement, LikertScaleProps>(
-  ({ questionId, text, value, onChange, onAutoAdvance, isActive = true, questionNumber }, ref) => {
+  ({ questionId, text, value, onChange, onAutoAdvance, isActive = true, questionNumber, footer }, ref) => {
     const { language } = useLanguage();
 
     // Une question est "active" seulement si elle n'a pas de réponse ET qu'elle est la question courante
@@ -139,6 +141,7 @@ export const LikertScale = forwardRef<HTMLDivElement, LikertScaleProps>(
               <span className="font-medium">{bubbleLabels[value]}</span>
             </p>
           )}
+          {footer && <div className="mt-3 sm:max-w-[520px]">{footer}</div>}
         </div>
       </div>
     );

@@ -23,6 +23,7 @@ import {
 } from '@/lib/assessment-v2';
 import { LikertScale } from '@/components/LikertScale';
 import { SurveyIntro } from '@/components/SurveyIntro';
+import { PRESALES_CONTEXT_FIELDS, PRESALES_OPEN_FIELDS, PRESALES_QUESTIONS, PRESALES_SECTIONS, type PresalesQuestion } from '@/lib/presales';
 import { AssessmentProgress } from '@/components/AssessmentProgress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -103,6 +104,11 @@ const Assessment = () => {
   const forParam = searchParams.get('for');
   const [storedAudience, setStoredAudience] = useState<SurveyAudience | null>(null);
   const audience: SurveyAudience = forParam ? audienceFromParam(forParam) : storedAudience ?? 'general';
+  // The pre-sales diagnostic has its own, shorter question set.
+  const presales = audience === 'presales';
+  const surveyQuestions: PresalesQuestion[] = presales ? PRESALES_QUESTIONS : V2_QUESTIONS;
+  const contextFields = presales ? PRESALES_CONTEXT_FIELDS : CONTEXT_FIELDS;
+  const openFields = presales ? PRESALES_OPEN_FIELDS : OPEN_FIELDS;
   const [participantInfo, setParticipantInfo] = useState<ParticipantInfo | null>(() =>
     isPreview
       ? {
@@ -226,14 +232,15 @@ const Assessment = () => {
   const lang: 'fr' | 'en' = language === 'en' ? 'en' : 'fr';
 
   // v2: one questionnaire for every campaign, grouped by dimension in spec order.
-  const thematicOrder = DIMENSION_IDS as string[];
+  const thematicOrder = useMemo(() => (presales ? PRESALES_SECTIONS.map((x) => x.id) : (DIMENSION_IDS as string[])), [presales]);
   const questionsByThematic = useMemo(() => {
-    const grouped: Record<string, V2Question[]> = {};
-    V2_QUESTIONS.forEach(q => {
+    const grouped: Record<string, PresalesQuestion[]> = {};
+    if (presales) PRESALES_SECTIONS.forEach((x) => { grouped[x.id] = x.questions; });
+    else V2_QUESTIONS.forEach(q => {
       (grouped[q.dimension] ||= []).push(q);
     });
     return grouped;
-  }, []);
+  }, [presales]);
 
   const currentThematic = thematicOrder[currentThematicIndex];
   const questionsInCurrentThematic = questionsByThematic[currentThematic] || [];
@@ -258,7 +265,7 @@ const Assessment = () => {
     return questionsInCurrentThematic.every(q => answers[q.id] !== undefined);
   }, [questionsInCurrentThematic, answers]);
 
-  const contextComplete = CONTEXT_FIELDS.every(f => {
+  const contextComplete = contextFields.every(f => {
     const v = context[f.id];
     return Array.isArray(v) ? v.length > 0 : !!v;
   });
@@ -407,7 +414,7 @@ const Assessment = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const allStatementsAnswered = V2_QUESTIONS.every((q) => answers[q.id] !== undefined);
+  const allStatementsAnswered = surveyQuestions.every((q) => answers[q.id] !== undefined);
   const submitRef = useRef<HTMLDivElement>(null);
   const handleFinalSubmit = async () => {
     if (!allStatementsAnswered) return;
@@ -515,11 +522,11 @@ const Assessment = () => {
           setAnswers(saved.answers || {});
           setContext(saved.context || {});
           setOpen(saved.open || {});
-          const ctxDone = CONTEXT_FIELDS.every(f => {
+          const ctxDone = contextFields.every(f => {
             const v = saved.context?.[f.id];
             return Array.isArray(v) ? v.length > 0 : !!v;
           });
-          const anyAnswered = V2_QUESTIONS.some(q => saved.answers?.[q.id]);
+          const anyAnswered = surveyQuestions.some(q => saved.answers?.[q.id]);
           setPhase(!ctxDone ? 'context' : anyAnswered ? 'questions' : 'open');
         }
 
@@ -781,13 +788,15 @@ const Assessment = () => {
           <p className="eyebrow">{fr ? 'Étape 1 sur 3' : 'Step 1 of 3'}</p>
           <h1 className="page-title mt-1">{fr ? 'À propos de vous' : 'About you'}</h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            {fr ? 'Ces informations ne sont pas notées. Elles servent à organiser le déploiement.' : 'These answers are not scored. They help organise the rollout.'}
+            {presales
+              ? (fr ? 'Ces informations ne sont pas notées. Elles servent à comprendre les besoins de chaque équipe.' : 'These answers are not scored. They help us understand what each team needs.')
+              : (fr ? 'Ces informations ne sont pas notées. Elles servent à organiser le déploiement.' : 'These answers are not scored. They help organise the rollout.')}
           </p>
 
           {glossary}
 
           <form onSubmit={handleSubmitContext} className="mt-3 space-y-3">
-            {CONTEXT_FIELDS.map((field) => {
+            {contextFields.map((field) => {
               const value = context[field.id];
               const list = Array.isArray(value) ? value : value ? [value] : [];
               const atMax = !!field.max && list.length >= field.max;
@@ -882,7 +891,7 @@ const Assessment = () => {
             {fr ? 'Facultatif, mais très utile pour choisir les premiers cas d’usage.' : 'Optional, but very useful to pick the first use cases.'}
           </p>
           <form onSubmit={handleSubmitOpen} className="mt-5 space-y-3">
-            {OPEN_FIELDS.map((field) => (
+            {openFields.map((field) => (
               <div key={field.id} className="card-elevated p-5">
                 <Label htmlFor={`open-${field.id}`} className="text-[15px] font-medium leading-relaxed">
                   {fr ? field.label.fr : field.label.en}
@@ -933,8 +942,12 @@ const Assessment = () => {
             completedThematics={completedThematics}
             maxReachableIndex={maxReachableIndex}
             onSelectThematic={handleSelectThematic}
-            labelFor={(id) => dimensionLabel(id, lang)}
+            labelFor={(id) => {
+              const section = PRESALES_SECTIONS.find((x) => x.id === id);
+              return section ? section.label[lang] : dimensionLabel(id, lang);
+            }}
             stepLabel={fr ? 'Étape 3 sur 3' : 'Step 3 of 3'}
+            unitLabel={presales ? (fr ? 'Partie' : 'Part') : undefined}
           />
         </div>
       )}
@@ -953,6 +966,21 @@ const Assessment = () => {
               onAutoAdvance={() => handleAutoAdvance(question.id)}
               isActive={question.id === currentActiveQuestionId || answers[question.id] !== undefined}
               questionNumber={index + 1}
+              footer={
+                question.followUp && answers[question.id] !== undefined ? (
+                  <Input
+                    aria-label={question.followUp.label[lang]}
+                    placeholder={question.followUp.placeholder ? `${question.followUp.label[lang]} · ${question.followUp.placeholder[lang]}` : question.followUp.label[lang]}
+                    maxLength={300}
+                    value={open[question.followUp.id] ?? ''}
+                    onChange={(e) => {
+                      const text = e.target.value;
+                      const key = question.followUp!.id;
+                      setOpen((prev) => ({ ...prev, [key]: text }));
+                    }}
+                  />
+                ) : undefined
+              }
             />
           ))}
           {currentThematicIndex === thematicOrder.length - 1 && (

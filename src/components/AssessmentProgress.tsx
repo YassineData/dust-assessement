@@ -13,6 +13,8 @@ interface AssessmentProgressProps {
   onSelectThematic: (index: number) => void;
   labelFor?: (thematic: string) => string;
   stepLabel?: string;
+  /** Name of one section in the header ("Dimension" by default). */
+  unitLabel?: string;
 }
 
 export const AssessmentProgress = ({
@@ -25,6 +27,7 @@ export const AssessmentProgress = ({
   onSelectThematic,
   labelFor,
   stepLabel,
+  unitLabel = 'Dimension',
 }: AssessmentProgressProps) => {
   const { t, language } = useLanguage();
   const fr = language === 'fr';
@@ -37,7 +40,7 @@ export const AssessmentProgress = ({
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="eyebrow">
-            {stepLabel ? `${stepLabel} · ` : ''}Dimension {currentIndex + 1}/{thematics.length}
+            {stepLabel ? `${stepLabel} · ` : ''}{unitLabel} {currentIndex + 1}/{thematics.length}
           </p>
           <h1 className="mt-0.5 flex items-center gap-2 truncate text-[15px] font-semibold text-foreground">
             <span className="h-2 w-2 shrink-0 rounded-full bg-brand" aria-hidden />

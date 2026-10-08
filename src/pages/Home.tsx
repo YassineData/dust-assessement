@@ -151,6 +151,12 @@ const Home = () => {
                   <ArrowRight className="h-4 w-4" />
                 </a>
               </Button>
+              <Button asChild size="lg" variant="outline">
+                <a href={`/assessment?preview=1&for=presales&lang=${language}`}>
+                  {L('Pre-sales diagnostic', 'Diagnostic avant-vente')}
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              </Button>
             </div>
             <p className="mt-3 text-[12px] text-muted-foreground">{L('The sample uses a fictional company. Nothing is saved.', 'L’exemple utilise une entreprise fictive. Rien n’est enregistré.')}</p>
           </div>

@@ -35,6 +35,7 @@ const App = () => (
             <Route path="/exemple/sales" element={<Navigate to="/assessment?preview=1&for=sales" replace />} />
             <Route path="/exemple/cs" element={<Navigate to="/assessment?preview=1&for=cs" replace />} />
             <Route path="/exemple/builders" element={<Navigate to="/assessment?preview=1&for=builders" replace />} />
+            <Route path="/exemple/presales" element={<Navigate to="/assessment?preview=1&for=presales" replace />} />
             <Route path="/create-campaign" element={<CreateCampaign />} />
             <Route path="/kit" element={<ChampionKit />} />
             {/* The legacy admin panel belonged to the previous app: the console is the only admin now. */}
