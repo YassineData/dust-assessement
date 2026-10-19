@@ -565,7 +565,7 @@ const Dashboard = () => {
         <header className="border-b border-border/70">
           <div className="mx-auto flex h-14 max-w-[1080px] items-center justify-between px-4">
             <Link to="/" className="rounded-md" aria-label="Dust">
-              <DustWordmark subtitle={language === 'fr' ? 'Évaluation de maturité IA' : 'AI Readiness Assessment'} />
+              <DustWordmark subtitle={language === 'fr' ? 'Cadrage du déploiement' : 'Deployment scoping'} />
             </Link>
             <LanguageSwitcher />
           </div>
@@ -862,7 +862,7 @@ const Dashboard = () => {
                   eyebrow={fr ? 'Diagnostic' : 'Diagnosis'}
                   benchmarkDelta={hasBenchmark ? { value: averageScore - globalBenchmark.averageScore, label: fr ? 'pts vs benchmark' : 'pts vs benchmark' } : undefined}
                   title={scoreMessage.title}
-                  subtitle={fr ? `Indice de maturité IA · ${READINESS_DIMENSION_IDS.length} dimensions` : `AI readiness index · ${READINESS_DIMENSION_IDS.length} dimensions`}
+                  subtitle={fr ? `Indice de préparation IA · ${READINESS_DIMENSION_IDS.length} dimensions` : `AI readiness index · ${READINESS_DIMENSION_IDS.length} dimensions`}
                   synthesisTitle={fr ? 'Synthèse' : 'Synthesis'}
                   synthesis={scoreMessage.description}
                   strongest={strongest ? {
@@ -900,7 +900,7 @@ const Dashboard = () => {
                   </SectionCard>
                   <SectionCard
                     className="lg:col-span-5"
-                    title={fr ? 'Maturité par équipe' : 'Readiness by team'}
+                    title={fr ? 'Préparation par équipe' : 'Readiness by team'}
                     description={fr ? "Indice moyen par équipe déclarée (nombre de répondants)" : 'Average index per declared team (respondents)'}
                   >
                     <DimensionBars animationKey="team-bars" rows={teamRows} vsLabel="vs" />
@@ -1120,7 +1120,7 @@ const Dashboard = () => {
                     },
                     {
                       icon: Gauge,
-                      label: fr ? 'Indice de maturité' : 'Readiness index',
+                      label: fr ? 'Indice de préparation' : 'Readiness index',
                       value: averageScore,
                       suffix: '/ 100',
                       chip: fr ? `Médiane ${medianScore} · Max ${highScore}` : `Median ${medianScore} · High ${highScore}`,

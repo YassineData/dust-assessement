@@ -12,7 +12,7 @@ const NotFound = () => {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-14 max-w-[780px] items-center px-4">
-          <DustWordmark subtitle={fr ? 'Évaluation de maturité IA' : 'AI maturity assessment'} />
+          <DustWordmark subtitle={fr ? 'Cadrage du déploiement' : 'Deployment scoping'} />
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-[520px] flex-1 flex-col justify-center px-4 py-16">

@@ -88,7 +88,7 @@ const Home = () => {
   ];
 
   const gains = [
-    { icon: Zap, title: L('Sales: map the account before signature', 'Sales : cartographier le compte avant la signature'), body: L('Readiness, sponsors and use cases in the customer’s words, to support closing and size the deal.', 'Maturité, sponsors et cas d’usage dans les mots du client, pour appuyer le closing et dimensionner le deal.') },
+    { icon: Zap, title: L('Sales: map the account before signature', 'Sales : cartographier le compte avant la signature'), body: L('Readiness, sponsors and use cases in the customer’s words, to support closing and size the deal.', 'Niveau de préparation, sponsors et cas d’usage dans les mots du client, pour appuyer le closing et dimensionner le deal.') },
     { icon: GraduationCap, title: L('ADS: a kickoff built on data', 'ADS : un kickoff construit sur des données'), body: L('Train-the-trainer staffed with the right people from day one, and the first agents teams asked for.', 'Un train-the-trainer avec les bonnes personnes dès le premier jour, et les premiers agents demandés par les équipes.') },
     { icon: BarChart3, title: L('CS: a baseline for renewals', 'CS : une baseline pour les renouvellements'), body: L('Run it again a few months later to show progress at QBRs and spot expansion signals.', 'Relancez-le quelques mois plus tard pour montrer les progrès en QBR et repérer les opportunités d’expansion.') },
     { icon: Users, title: L('Everyone: data across accounts', 'Tout le monde : des données sur tous les comptes'), body: L('Compare accounts and rollouts, and see the pain points that come up again and again.', 'Comparez les comptes et les déploiements, et voyez les irritants qui reviennent.') },

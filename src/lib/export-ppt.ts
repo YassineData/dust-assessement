@@ -142,7 +142,7 @@ const addBlockSlides = (pptx: PptxGenJS, d: SummaryPdfData) => {
   s1.addShape(pptx.ShapeType.roundRect, { x: 0.7, y: 1.55, w: 3.2, h: 2.3, fill: { color: C.bgAlt }, rectRadius: 0.15 });
   s1.addText(String(d.readiness), { x: 0.7, y: 1.7, w: 3.2, h: 1.2, fontSize: 60, bold: true, color: C.dark, align: 'center', fontFace: FT });
   s1.addText('/100', { x: 0.7, y: 2.85, w: 3.2, h: 0.35, fontSize: 12, color: C.muted, align: 'center', fontFace: FB });
-  s1.addText(L('AI readiness index', 'Indice de maturité IA'), { x: 0.7, y: 3.25, w: 3.2, h: 0.35, fontSize: 11, color: C.muted, align: 'center', fontFace: FB });
+  s1.addText(L('AI readiness index', 'Indice de préparation IA'), { x: 0.7, y: 3.25, w: 3.2, h: 0.35, fontSize: 11, color: C.muted, align: 'center', fontFace: FB });
   s1.addText(d.bandTitle, { x: 4.3, y: 1.55, w: 6.2, h: 0.5, fontSize: 20, bold: true, color: C.dark, fontFace: FT });
   if (typeof d.benchmarkDelta === 'number') {
     const pos = d.benchmarkDelta >= 0;
@@ -380,7 +380,7 @@ export const exportPPT = (
   s3.background = { fill: C.bg };
   addSlideHeader(s3, pptx,
     language === 'fr' ? 'Répartition des Profils' : 'Profile Distribution',
-    language === 'fr' ? 'Classification des participants selon leur niveau de maturité IA' : 'Participant classification by AI maturity level'
+    language === 'fr' ? 'Classification des participants selon leur profil' : 'Participant classification by profile'
   );
 
   const profileData = CLASS_PROFILES.map(profile => ({
@@ -464,7 +464,7 @@ export const exportPPT = (
   s5.background = { fill: C.bg };
   addSlideHeader(s5, pptx,
     language === 'fr' ? 'Vue Radar des Compétences' : 'Skills Radar View',
-    language === 'fr' ? 'Visualisation multi-axes de la maturité IA' : 'Multi-axis visualization of AI maturity'
+    language === 'fr' ? 'Visualisation multi-axes du niveau de préparation IA' : 'Multi-axis view of AI readiness'
   );
 
   const radarData = [{
@@ -492,7 +492,7 @@ export const exportPPT = (
     const highText = def
       ? (language === 'en'
         ? `${def.inReadiness ? 'Counts in the readiness index.' : 'Opportunity signal, not in the readiness index.'} Colour code: 70–100 strength, 50–69 fragile, 0–49 blocker.`
-        : `${def.inReadiness ? "Compte dans l'indice de maturité." : "Signal d'opportunité, hors indice de maturité."} Code couleur : 70–100 point fort, 50–69 fragile, 0–49 bloquant.`)
+        : `${def.inReadiness ? "Compte dans l'indice de préparation." : "Signal d'opportunité, hors indice de préparation."} Code couleur : 70–100 point fort, 50–69 fragile, 0–49 bloquant.`)
       : '';
     const lowText = def ? (language === 'en' ? def.lowAction.en : def.lowAction.fr) : '';
 

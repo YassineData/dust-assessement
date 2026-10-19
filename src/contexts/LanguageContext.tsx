@@ -143,7 +143,7 @@ const fr = {
     scoreMessages: {
       excellent: {
         title: "Excellents résultats !",
-        description: "Votre équipe démontre une maturité IA remarquable. Les bases sont solides et les pratiques bien ancrées.",
+        description: "Votre équipe est très bien préparée à l'IA. Les bases sont solides et les pratiques bien ancrées.",
       },
       good: {
         title: "De bons fondamentaux",
@@ -357,7 +357,7 @@ const en = {
     scoreMessages: {
       excellent: {
         title: "Excellent results!",
-        description: "Your team demonstrates remarkable AI maturity. The foundations are solid and practices are well established.",
+        description: "Your team is very well prepared for AI. The foundations are solid and practices are well established.",
       },
       good: {
         title: "Good foundations",

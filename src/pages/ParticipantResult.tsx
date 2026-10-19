@@ -231,7 +231,7 @@ const ParticipantResult = () => {
     benchmarkLabel:
       data.language === 'fr' ? 'Moyenne globale' : 'Overall average',
     completedOn: data.language === 'fr' ? 'Test passé le' : 'Test completed on',
-    globalScore: data.language === 'fr' ? 'Indice de maturité IA' : 'AI readiness index',
+    globalScore: data.language === 'fr' ? 'Indice de préparation IA' : 'AI readiness index',
     advice: data.language === 'fr' ? 'Action recommandée' : 'Recommended action',
     nextLevel: data.language === 'fr' ? 'Adéquation aux rôles' : 'Role fit',
     thematics: data.language === 'fr' ? 'Détail par dimension' : 'Detail by dimension',

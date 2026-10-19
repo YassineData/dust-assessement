@@ -31,7 +31,7 @@ export const exportCSV = (participants: CampaignParticipant[], companyName: stri
     language === 'fr' ? 'Nom' : 'Last Name',
     'Email',
     language === 'fr' ? 'Équipe' : 'Team',
-    language === 'fr' ? 'Indice de maturité' : 'Readiness index',
+    language === 'fr' ? 'Indice de préparation' : 'Readiness index',
     language === 'fr' ? 'Profil' : 'Profile',
     ...activeThematics.map(t => dimensionLabel(t, lang)),
     'Fit trainer',
@@ -104,7 +104,7 @@ export const exportItemScoresCSV = (
     isFr ? 'Date de début' : 'Started At',
     isFr ? 'Date de complétion' : 'Completed At',
     isFr ? 'Profil' : 'Profile',
-    isFr ? 'Indice de maturité' : 'Readiness index',
+    isFr ? 'Indice de préparation' : 'Readiness index',
     ...activeThematics.map(t => dimensionLabel(t, isFr ? 'fr' : 'en')),
   ];
 

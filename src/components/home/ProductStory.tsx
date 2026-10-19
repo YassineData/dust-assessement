@@ -95,7 +95,7 @@ const StartScene = ({ lang }: { lang: Lang }) => {
     <div className="flex h-full flex-col">
       <div className="ps-in flex items-end gap-4" style={d(0)}>
         <div>
-          <p className="text-[11px] font-medium text-muted-foreground">{fr ? 'Indice de maturité IA' : 'AI readiness index'}</p>
+          <p className="text-[11px] font-medium text-muted-foreground">{fr ? 'Indice de préparation IA' : 'AI readiness index'}</p>
           <p className="text-[52px] font-semibold tabular-nums leading-none tracking-[-0.02em] text-foreground">
             {score}
             <span className="text-[16px] font-medium text-muted-foreground">/100</span>

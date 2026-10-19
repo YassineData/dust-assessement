@@ -98,7 +98,7 @@ export const exportSummaryPDF = (d: SummaryPdfData) => {
   pdf.roundedRect(M, y, 46, 30, 2, 2, 'F');
   text(String(d.readiness), M + 23, y + 15, { size: 26, bold: true, align: 'center' });
   text('/100', M + 23, y + 21, { size: 8, color: MUTED, align: 'center' });
-  text(L('AI readiness index', 'Indice de maturité IA'), M + 23, y + 26.5, { size: 7, color: MUTED, align: 'center' });
+  text(L('AI readiness index', 'Indice de préparation IA'), M + 23, y + 26.5, { size: 7, color: MUTED, align: 'center' });
   text(d.bandTitle, M + 52, y + 6, { size: 13, bold: true });
   if (typeof d.benchmarkDelta === 'number') {
     const pos = d.benchmarkDelta >= 0;
