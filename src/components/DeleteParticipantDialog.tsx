@@ -30,12 +30,12 @@ export const DeleteParticipantDialog = ({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {language === 'fr' ? 'Supprimer le résultat ?' : 'Delete result?'}
+            {language === 'fr' ? `Supprimer les réponses de ${participantName} ?` : `Delete ${participantName}'s answers?`}
           </AlertDialogTitle>
           <AlertDialogDescription>
             {language === 'fr'
-              ? `Êtes-vous sûr de vouloir supprimer définitivement le résultat de ${participantName} ? Cette action est irréversible.`
-              : `Are you sure you want to permanently delete the result of ${participantName}? This action cannot be undone.`}
+              ? `Ses réponses et son score seront supprimés définitivement, sans retour possible. Les réponses des autres personnes ne changent pas, et les résultats se recalculent sans les siennes.`
+              : `Their answers and score will be permanently deleted and cannot be restored. Other people's answers are not affected, and the results are recalculated without theirs.`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -46,7 +46,7 @@ export const DeleteParticipantDialog = ({
             onClick={onConfirm}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {language === 'fr' ? 'Supprimer' : 'Delete'}
+            {language === 'fr' ? 'Supprimer définitivement' : 'Delete permanently'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

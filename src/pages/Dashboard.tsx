@@ -1151,9 +1151,10 @@ const Dashboard = () => {
                       thematics={activeThematics}
                       translateThematic={translateThematic}
                       onClose={() => setDrawerId(null)}
-                      onDelete={isClientView ? undefined : async () => {
-                        const { error } = await supabase.from('participants').delete().eq('id', drawerParticipant.id);
-                        if (error) {
+                      onDelete={async () => {
+                        // .select() returns the deleted row: an empty result means the database refused it.
+                        const { data: deleted, error } = await supabase.from('participants').delete().eq('id', drawerParticipant.id).select('id');
+                        if (error || !deleted?.length) {
                           toast.error(fr ? 'Suppression impossible' : 'Could not delete');
                           return;
                         }
