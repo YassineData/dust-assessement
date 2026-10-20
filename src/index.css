@@ -5,7 +5,9 @@
 @tailwind utilities;
 
 /*
- * Dust Assessment design tokens — source: "Lignes directrices de l'identité de marque Dust" (PDF).
+ * Dust Assessment design tokens, aligned on Sparkle, Dust's design system (dust-tt/dust, sparkle/src/styles/tokens.css):
+ * warm "stone" neutrals, stone-800 primary actions, blue highlight, green success, golden info, rose warning.
+ * Brand colours below are the same in Sparkle.
  * Brand palette: blue #1C91FF · sky #9FDBFF · pink #FFC3DF · lime #E2F78C · orange #FE9C1A
  *                green #418B5C · red #E14322 · sun #FFE262
  * Neutrals: #111418 · #1C222D · #2A3241 · #364153 · #545D6C · #7B818D · #D3D5D9 · #DFE0E2 · #EEEEEF · #F7F7F7
@@ -15,17 +17,17 @@
  */
 @layer base {
   :root {
-    --ink: 219 23% 14%;          /* #1C222D */
-    --ink-deep: 216 17% 8%;      /* #111418 */
-    --slate: 217 21% 27%;        /* #364153 */
-    --muted-ink: 218 12% 38%;    /* #545D6C */
-    --line: 220 5% 88%;          /* #DFE0E2 */
-    --paper: 0 0% 97%;           /* #F7F7F7 */
+    --ink: 30 9% 9%;             /* stone-900 #191715 */
+    --ink-deep: 12 7% 14%;       /* stone-800 #262221 (Sparkle primary) */
+    --slate: 33 7% 25%;          /* stone-700 #44403B */
+    --muted-ink: 36 6% 32%;      /* stone-600 #57534D */
+    --line: 60 6% 91%;           /* stone-150, a touch firmer #E9E9E6 */
+    --paper: 30 20% 98%;         /* Sparkle app background #FBFAF9 */
     --surface: 0 0% 100%;
 
     --brand: 209 100% 55%;       /* #1C91FF — fills, bars, rings, icons */
-    --brand-strong: 211 87% 45%; /* #0F6FD6 — fills carrying white text */
-    --brand-hover: 211 87% 40%;
+    --brand-strong: 209 90% 41%; /* blue-700 #0A6CC6, fills carrying white text */
+    --brand-hover: 209 90% 36%;
     --brand-ink: 210 84% 37%;    /* #0F5EAE — blue text on white */
     --brand-soft: 201 100% 96%;  /* #E9F7FF */
     --sky: 202 100% 81%;         /* #9FDBFF */
@@ -37,14 +39,14 @@
     --sun: 49 100% 69%;          /* #FFE262 */
 
     --green: 142 36% 40%;        /* #418B5C */
-    --green-ink: 142 38% 30%;
-    --green-soft: 72 90% 95%;
+    --green-ink: 142 50% 28%;    /* green-700 */
+    --green-soft: 64 100% 95%;   /* green-50 */
     --amber: 34 99% 55%;         /* #FE9C1A */
-    --amber-ink: 28 90% 32%;
-    --amber-soft: 36 100% 95%;
+    --amber-ink: 26 82% 34%;     /* golden-800 */
+    --amber-soft: 50 100% 94%;   /* golden-50 */
     --red: 10 76% 51%;           /* #E14322 */
-    --red-ink: 10 72% 40%;
-    --red-soft: 333 100% 97%;
+    --red-ink: 11 95% 33%;       /* rose-700 */
+    --red-soft: 0 85% 97%;       /* rose-50 */
     --blue: 209 100% 55%;
     --blue-ink: 210 84% 37%;
     --blue-soft: 201 100% 96%;
@@ -52,7 +54,7 @@
     --lav-50: 204 100% 98%;      /* #F5FBFF */
     --lav-100: 201 100% 96%;     /* #E9F7FF */
     --lav-200: 202 100% 90%;     /* #CCEBFF */
-    --outline-ink: 219 9% 42%;
+    --outline-ink: 26 6% 45%;    /* stone-500 */
 
     /* shadcn semantic mapping */
     --background: var(--paper);
@@ -66,7 +68,7 @@
 
     /* Primary actions are near-black (Dust style); blue is the accent */
     --primary: var(--ink-deep);
-    --primary-hover: 219 21% 21%;
+    --primary-hover: 33 7% 25%;  /* stone-700 */
     --primary-foreground: 0 0% 100%;
     --primary-muted: var(--brand-soft);
 
@@ -74,7 +76,7 @@
     --secondary: 0 0% 100%;
     --secondary-foreground: var(--ink);
 
-    --muted: 240 2% 94%;
+    --muted: 60 4% 96%;          /* stone-100 */
     --muted-foreground: var(--muted-ink);
 
     --accent: var(--brand-soft);
@@ -115,10 +117,10 @@
     --chart-5: var(--amber);
     --chart-6: var(--red);
     --chart-7: 331 70% 64%;      /* pink, strong enough for thin bars */
-    --chart-8: 219 9% 52%;       /* #7B818D */
+    --chart-8: 27 6% 63%;        /* stone-400 */
     --chart-9: 202 85% 62%;      /* sky, strong */
-    --chart-benchmark: 220 7% 84%; /* #D3D5D9 */
-    --chart-grid: 240 2% 94%;    /* #EEEEEF */
+    --chart-benchmark: 24 5% 83%; /* stone-300 */
+    --chart-grid: 60 4% 96%;     /* stone-100 */
 
     --border: var(--line);
     --input: var(--line);
@@ -127,13 +129,13 @@
     --radius: 10px;
 
     /* Sidebar stays dark */
-    --sidebar-background: 219 23% 14%;   /* #1C222D */
-    --sidebar-foreground: 220 9% 72%;
-    --sidebar-primary: var(--brand);      /* active item: Dust blue with dark text (AA) */
-    --sidebar-primary-foreground: var(--ink-deep);
-    --sidebar-accent: 219 21% 21%;       /* #2A3241 */
+    --sidebar-background: 12 7% 15%;     /* Sparkle sidebar #292524 */
+    --sidebar-foreground: 30 6% 72%;
+    --sidebar-primary: 30 6% 28%;         /* active item: a lighter row, as in the Dust app sidebar */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 33 7% 22%;          /* stone-725 */
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 217 21% 27%;       /* #364153 */
+    --sidebar-border: 33 7% 25%;          /* stone-700 */
     --sidebar-ring: var(--brand);
   }
 
