@@ -82,7 +82,10 @@ const SERVICES: Service[] = [
     partners: 'WeZype, Argon',
     assess: (s) => {
       const target = Math.max(2, Math.round(s.n / 30));
-      const t = s.dims.teach ?? 0;
+      if (s.dims.teach === undefined) {
+        return { need: 'medium', why: { en: 'Not measured by this questionnaire: to check at kickoff.', fr: 'Pas mesuré par ce questionnaire : à vérifier au kickoff.' } };
+      }
+      const t = s.dims.teach;
       const need: Need = s.trainers < target / 2 || t < 50 ? 'high' : s.trainers < target || t < 65 ? 'medium' : 'covered';
       return {
         need,
@@ -150,7 +153,8 @@ export const PartnerServices = ({ participants, companyName, fr }: { participant
     const dims: Record<string, number> = {};
     ['usage', 'depth', 'will', 'teach', 'reach', 'gov', 'team', 'pain', 'value'].forEach((id) => {
       const vals = done.map((p) => p.thematicScores?.[id]).filter((v): v is number => typeof v === 'number');
-      dims[id] = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+      // A dimension the questionnaire did not measure stays undefined (pre-sales diagnostic).
+      if (vals.length) dims[id] = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
     });
     const has = (p: CampaignParticipant, r: 'sponsor' | 'trainer' | 'builder') => p.roles?.includes(r) || p.classId === r;
     const s: Signals = {

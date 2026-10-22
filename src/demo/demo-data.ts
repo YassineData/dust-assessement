@@ -2,6 +2,7 @@
 // Nothing is read from or written to the real database while demo mode is on.
 
 import { V2_QUESTIONS, computeScores, type AnswerValue, type DimensionId } from '@/lib/assessment-v2';
+import { PRESALES_QUESTIONS } from '@/lib/presales';
 
 export const DEMO_FLAG = 'dust_demo';
 
@@ -26,6 +27,8 @@ interface DemoCompany {
   teams: string[];
   createdAt: string;
   label?: string;
+  /** Pre-sales diagnostic: shorter, tool-agnostic questionnaire. */
+  presales?: boolean;
 }
 
 // Four companies from 234 to 1,192 employees, one per readiness band.
@@ -60,6 +63,13 @@ const COMPANIES: DemoCompany[] = [
     employees: 1192, registered: 96, completedShare: 0.9, level: 59, label: 'Dust pilot · spring 2026',
     offsets: { depth: -6, reach: -4, gov: -12, pain: 10, value: 2 },
     teams: ['engineering', 'data', 'product'], createdAt: '2026-04-14T08:00:00Z',
+  },
+  {
+    // A prospect before signature: the pre-sales diagnostic sent to 48 people.
+    id: 'demo-halden', code: 'HALDEN48', name: 'Halden Industries', domain: 'halden-industries.com',
+    employees: 640, registered: 48, completedShare: 0.86, level: 46, label: 'Diagnostic avant-vente', presales: true,
+    offsets: { gov: -14, team: -8, pain: 24, value: -4 },
+    teams: ['operations', 'finance', 'sales', 'support'], createdAt: '2026-10-12T08:00:00Z',
   },
 ];
 
@@ -107,6 +117,18 @@ const OPEN_POOL = {
   ],
 };
 
+// Pre-sales answers: pain points, tools that fall short, what holds people back.
+const PRESALES_POOL = {
+  timeSink: ['Rebuilding the same Excel report every week', 'Looking for the latest version of a contract', 'Re-typing data between the ERP and our spreadsheets', 'Answering the same supplier questions by email'],
+  useCase: ['Pulling the numbers from three tools into one weekly summary', 'Finding the right procedure without asking a colleague', 'Drafting the first version of supplier emails', 'Summarising long email threads before a meeting'],
+  toolsGap: ['ChatGPT does not know our documents', 'Copilot only works inside Outlook', 'Not allowed to paste client data', 'Each person uses a different tool'],
+  blocker: ['Not knowing what is allowed with our data', 'No time to test', 'Not connected to our systems', 'Answers not reliable enough'],
+  success: ['Monthly closing done a day earlier', 'Less time chasing information', 'Everyone using the same tool with the same rules'],
+  repetitiveTasks: ['Weekly reporting and data entry', 'Copying data from the ERP', 'Meeting notes'],
+  taskToHandOver: ['The Monday KPI summary', 'Answering recurring supplier questions', 'First draft of quotes'],
+  otherGain: ['Better collaboration between sites', 'Quality and consistency of documents', 'Faster answers to customers'],
+};
+
 const BASE_OFFSET: Partial<Record<DimensionId, number>> = { teach: -38, reach: -12, depth: -6, will: 0 };
 
 const A: AnswerValue[] = ['disagree', 'somewhatDisagree', 'neutral', 'somewhatAgree', 'agree'];
@@ -148,6 +170,7 @@ export const getDemoData = () => {
     access_key: `demo-${c.code.toLowerCase()}`,
     company_name: c.name,
     campaign_name: c.label ?? `Dust rollout · ${c.employees.toLocaleString('en-US')} employees`,
+    audience: c.presales ? 'presales' : 'general',
     creator_email: 'demo@dust.tt',
     creator_first_name: DEMO_OWNERS[ci % DEMO_OWNERS.length][0],
     creator_last_name: DEMO_OWNERS[ci % DEMO_OWNERS.length][1],
@@ -191,7 +214,7 @@ export const getDemoData = () => {
         target[q.dimension] = Math.max(2, Math.min(98, t));
       });
       const answers: Record<string, AnswerValue> = {};
-      V2_QUESTIONS.forEach((q) => {
+      (c.presales ? PRESALES_QUESTIONS : V2_QUESTIONS).forEach((q) => {
         let v = 1 + target[q.dimension] / 25 + gauss(rnd) * 0.55;
         if (q.reverse) v = 6 - v;
         answers[q.id] = A[Math.max(0, Math.min(4, Math.round(v) - 1))];
@@ -203,7 +226,7 @@ export const getDemoData = () => {
         team,
         // Realistic pyramid: mostly individual contributors, few managers and above.
         level: pickOne(rnd, ['ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'ic', 'lead', 'lead', 'lead', 'lead', 'manager', 'manager', 'manager', 'director']),
-        bandwidth: target.teach > 60 ? pickOne(rnd, ['1to3h', 'halfday', 'lt1h']) : pickOne(rnd, ['none', 'lt1h', 'lt1h', '1to3h']),
+        ...(c.presales ? {} : { bandwidth: target.teach > 60 ? pickOne(rnd, ['1to3h', 'halfday', 'lt1h']) : pickOne(rnd, ['none', 'lt1h', 'lt1h', '1to3h']) }),
         tools: pickSome(rnd, ['chatgpt', 'claude', 'copilot', 'gemini', 'dust', 'inhouse', 'personal'], 1 + Math.floor(rnd() * 3)),
         rolloutRole: [
           'use',
@@ -211,9 +234,24 @@ export const getDemoData = () => {
           ...(wantsToTrain ? ['train'] : []),
           ...((target.gov > 65 ? rnd() : 1) < 0.15 && target.gov > 75 ? ['govern'] : []),
         ],
-        expectedValue: pickSome(rnd, ['time', 'workflow', 'quality', 'knowledge', 'crossteam', 'govern'], 1 + Math.floor(rnd() * 3)),
+        expectedValue: c.presales
+          ? pickSome(rnd, ['info', 'automate', 'collab', 'itfree', 'knowledge'], 1 + Math.floor(rnd() * 3))
+          : pickSome(rnd, ['time', 'workflow', 'quality', 'knowledge', 'crossteam', 'govern'], 1 + Math.floor(rnd() * 3)),
       };
-      const open = rnd() < 0.7
+      const open = c.presales
+        ? (rnd() < 0.8
+            ? {
+                timeSink: pickOne(rnd, PRESALES_POOL.timeSink),
+                useCase: pickOne(rnd, PRESALES_POOL.useCase),
+                toolsGap: pickOne(rnd, PRESALES_POOL.toolsGap),
+                blocker: pickOne(rnd, PRESALES_POOL.blocker),
+                success: pickOne(rnd, PRESALES_POOL.success),
+                ...(rnd() < 0.5 ? { repetitiveTasks: pickOne(rnd, PRESALES_POOL.repetitiveTasks) } : {}),
+                ...(rnd() < 0.5 ? { taskToHandOver: pickOne(rnd, PRESALES_POOL.taskToHandOver) } : {}),
+                ...(rnd() < 0.4 ? { otherGain: pickOne(rnd, PRESALES_POOL.otherGain) } : {}),
+              }
+            : {})
+        : rnd() < 0.7
         ? {
             timeSink: pickOne(rnd, OPEN_POOL.timeSink),
             useCase: pickOne(rnd, OPEN_POOL.useCase),

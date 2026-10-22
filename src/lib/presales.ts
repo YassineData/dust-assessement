@@ -1,4 +1,4 @@
-import { CONTEXT_FIELDS, ChoiceField, OpenField, V2_QUESTIONS, V2Question } from '@/lib/assessment-v2';
+import { CONTEXT_FIELDS, ChoiceField, OpenField, PRESALES_TOPIC_OPTIONS, V2_QUESTIONS, V2Question } from '@/lib/assessment-v2';
 
 /**
  * Pre-sales diagnostic: the survey a Sales team sends before a pilot.
@@ -93,7 +93,6 @@ export const PRESALES_SECTIONS: { id: string; label: L; questions: PresalesQuest
 export const PRESALES_QUESTIONS: PresalesQuestion[] = PRESALES_SECTIONS.flatMap((s) => s.questions);
 
 const field = (id: ChoiceField['id']) => CONTEXT_FIELDS.find((f) => f.id === id)!;
-const o = (id: string, en: string, fr: string) => ({ id, label: { en, fr } });
 
 /** "About you": no bandwidth question; "would like to play" instead of "could realistically play"; pains instead of expected outcomes. */
 export const PRESALES_CONTEXT_FIELDS: ChoiceField[] = [
@@ -107,14 +106,7 @@ export const PRESALES_CONTEXT_FIELDS: ChoiceField[] = [
   {
     ...field('expectedValue'),
     label: { en: 'Which of these topics matter most to you today?', fr: "Quels sujets sont les plus importants à résoudre pour vous aujourd'hui ?" },
-    options: [
-      o('info', 'Finding and summarising information across our tools', "Accéder à l'information et la synthétiser à travers nos différents outils"),
-      o('automate', 'Automating complex, time-consuming processes', 'Automatiser des processus complexes qui prennent du temps'),
-      o('collab', 'Working better across teams', 'Mieux collaborer entre équipes'),
-      o('itfree', 'Building business tools without waiting for IT', "Créer des outils métier sans dépendre de l'IT"),
-      o('knowledge', 'Sharing and reusing what the team knows', "Partager et réutiliser le savoir de l'équipe"),
-      o('other', 'Other', 'Autre'),
-    ],
+    options: PRESALES_TOPIC_OPTIONS,
   },
 ];
 
@@ -135,3 +127,12 @@ export const PRESALES_OPEN_FIELDS: OpenField[] = [
     label: { en: 'In six months, what would make you say AI was worth it for your team?', fr: "Dans six mois, qu'est-ce qui vous ferait dire que l'IA a vraiment servi à votre équipe ?" },
   },
 ];
+
+/** Optional free-text answers attached to a statement, with the label shown in the console. */
+export const PRESALES_FOLLOW_UPS: OpenField[] = PRESALES_QUESTIONS.filter((q) => q.followUp).map((q) => ({
+  id: q.followUp!.id as OpenField['id'],
+  label: { en: `${q.text.en} ${q.followUp!.label.en}`, fr: `${q.text.fr} ${q.followUp!.label.fr}` },
+}));
+
+/** Open fields that only exist in the pre-sales diagnostic. */
+export const PRESALES_ONLY_OPEN_FIELDS: OpenField[] = [...PRESALES_OPEN_FIELDS.filter((f) => f.id === 'toolsGap'), ...PRESALES_FOLLOW_UPS];

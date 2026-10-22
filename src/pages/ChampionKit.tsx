@@ -6,6 +6,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { DustMark } from '@/components/DustMark';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AUDIENCE_PARAM, V2_QUESTIONS, type SurveyAudience } from '@/lib/assessment-v2';
+import { PRESALES_QUESTIONS } from '@/lib/presales';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { getAdminKey } from '@/lib/access';
@@ -41,7 +42,23 @@ const ChampionKit = () => {
   const origin = typeof window === 'undefined' || /localhost|127\.0\.0\.1/.test(window.location.hostname) ? 'https://dust-assessment.com' : window.location.origin;
   const linkFor = (a: SurveyAudience) =>
     `${origin}/assessment?lang=${language}&code=${code}${AUDIENCE_PARAM[a] ? `&for=${AUDIENCE_PARAM[a]}` : ''}`;
-  const areas = [
+  // Pre-sales campaigns get a neutral diagnostic one-pager (no Dust rollout wording).
+  const [presales, setPresales] = useState(params.get('for') === 'presales');
+  useEffect(() => {
+    if (code === 'XXXXXXXX') return;
+    supabase.rpc('get_campaign_by_code' as never, { p_code: code } as never).then(({ data }) => {
+      const row = (data as unknown as { audience?: string }[] | null)?.[0];
+      if (row?.audience === 'presales') setPresales(true);
+    });
+  }, [code]);
+  const areas = presales ? [
+    L('AI use today', 'Usage de l’IA aujourd’hui'),
+    L('Tools already used', 'Outils déjà utilisés'),
+    L('Data and rules', 'Données et règles'),
+    L('Working together', 'Travail entre équipes'),
+    L('Where time goes', 'Temps perdu'),
+    L('What holds back', 'Ce qui freine'),
+  ] : [
     L('AI use today', 'Usage de l’IA aujourd’hui'),
     L('Ability to build agents', 'Capacité à construire des agents'),
     L('Motivation', 'Motivation'),
@@ -52,8 +69,12 @@ const ChampionKit = () => {
     L('Work to automate', 'Travail à automatiser'),
   ];
 
-  const intro =
-    variant === 'sales'
+  const intro = presales
+    ? L(
+        `Before choosing anything, we'd like to understand how ${company}'s teams work today and where AI would really help. This short diagnostic gives a clear picture of the pain points, team by team.`,
+        `Avant de choisir quoi que ce soit, nous aimerions comprendre comment travaillent les équipes de ${company} aujourd'hui et où l'IA les aiderait vraiment. Ce court diagnostic donne une image claire des irritants, équipe par équipe.`
+      )
+    : variant === 'sales'
       ? L(
           `Before ${company}'s rollout starts, we'd like to understand how your teams work with AI today. This short survey helps us scope the deployment around the teams and use cases that will bring the most value.`,
           `Avant le démarrage du déploiement chez ${company}, nous aimerions comprendre comment vos équipes utilisent l'IA aujourd'hui. Ce court questionnaire nous aide à cadrer le déploiement autour des équipes et des cas d'usage qui apporteront le plus de valeur.`
@@ -63,7 +84,38 @@ const ChampionKit = () => {
           `Pour préparer le kickoff de ${company}, nous aimerions comprendre comment vos équipes utilisent l'IA aujourd'hui. Ce court questionnaire nous permet de démarrer le déploiement avec un plan clair plutôt qu'une page blanche.`
         );
 
-  const sections = [
+  const presalesSections = [
+    {
+      title: L('What it is', 'De quoi il s’agit'),
+      body: L(
+        `A short online diagnostic, about 4 minutes: ${PRESALES_QUESTIONS.length} short statements plus a few questions on the tools people use, where they lose time and what holds them back. No account needed, English or French, answers saved as people go.`,
+        `Un court diagnostic en ligne, environ 4 minutes : ${PRESALES_QUESTIONS.length} affirmations courtes et quelques questions sur les outils utilisés, le temps perdu et ce qui freine. Sans compte, en français ou en anglais, réponses enregistrées au fil de l'eau.`
+      ),
+    },
+    {
+      title: L('Why we run it', 'Pourquoi on le fait'),
+      body: L(
+        'To know where AI would help most before choosing a solution: the pain points that come up, the tools already used, and what stands in the way.',
+        "Pour savoir où l'IA aiderait le plus avant de choisir une solution : les irritants qui reviennent, les outils déjà utilisés et ce qui bloque."
+      ),
+    },
+    {
+      title: L('What we need from you', 'Ce qu’on attend de vous'),
+      body: L(
+        'Forward the link below to the teams you want to include, ideally with a short word from you. A group of 30 to 50 people is enough to see the main topics.',
+        "Transférer le lien ci-dessous aux équipes que vous voulez inclure, idéalement avec un petit mot de votre part. Un groupe de 30 à 50 personnes suffit pour voir les grands sujets."
+      ),
+    },
+    {
+      title: L('What you get back', 'Ce que vous obtenez'),
+      body: L(
+        'A shared summary: the pain points by team, how AI is already used (including outside approved tools), and the first use cases worth exploring together.',
+        "Une synthèse partagée : les irritants par équipe, la façon dont l'IA est déjà utilisée (y compris hors des outils validés), et les premiers cas d'usage à étudier ensemble."
+      ),
+    },
+  ];
+
+  const sections = presales ? presalesSections : [
     {
       title: L('What it is', 'De quoi il s’agit'),
       body: L(
@@ -106,9 +158,12 @@ const ChampionKit = () => {
     },
   ];
 
-  const forwardMessage = L(
-    `Hi all,\n\nDust is our new AI platform. The Dust team wants to learn more about you and what you do, so the rollout fits the way we work.\n\nIt takes less than 5 minutes: ${linkFor('general')}\n\nThanks!`,
-    `Bonjour à tous,\n\nDust est notre nouvelle plateforme d'IA. L'équipe Dust veut en savoir plus sur vous et sur ce que vous faites, pour que le déploiement colle à notre façon de travailler.\n\nCela prend moins de 5 minutes : ${linkFor('general')}\n\nMerci !`
+  const forwardMessage = presales ? L(
+    `Hi all,\n\nWe are looking at how AI could help us day to day. Before deciding anything, we'd like your view: where you lose time, what you already use, what gets in the way.\n\nIt takes about 4 minutes: ${linkFor(presales ? 'presales' : 'general')}\n\nThanks!`,
+    `Bonjour à tous,\n\nNous étudions comment l'IA pourrait nous aider au quotidien. Avant de décider quoi que ce soit, nous aimerions votre avis : où vous perdez du temps, ce que vous utilisez déjà, ce qui vous freine.\n\nCela prend environ 4 minutes : ${linkFor(presales ? 'presales' : 'general')}\n\nMerci !`
+  ) : L(
+    `Hi all,\n\nDust is our new AI platform. The Dust team wants to learn more about you and what you do, so the rollout fits the way we work.\n\nIt takes less than 5 minutes: ${linkFor(presales ? 'presales' : 'general')}\n\nThanks!`,
+    `Bonjour à tous,\n\nDust est notre nouvelle plateforme d'IA. L'équipe Dust veut en savoir plus sur vous et sur ce que vous faites, pour que le déploiement colle à notre façon de travailler.\n\nCela prend moins de 5 minutes : ${linkFor(presales ? 'presales' : 'general')}\n\nMerci !`
   );
 
   // Private results link for the client's project lead. Only the Dust team (admin key) can read it,
@@ -241,12 +296,14 @@ const ChampionKit = () => {
               <span className="text-[13px] text-muted-foreground">{L('Deployment scoping', 'Cadrage du déploiement')}</span>
             </div>
             <span className="text-[12px] text-muted-foreground">
-              {variant === 'sales' ? L('Before the rollout', 'Avant le déploiement') : L('Kickoff preparation', 'Préparation du kickoff')}
+              {presales ? L('AI diagnostic', 'Diagnostic IA') : variant === 'sales' ? L('Before the rollout', 'Avant le déploiement') : L('Kickoff preparation', 'Préparation du kickoff')}
             </span>
           </div>
 
           <h1 className="mt-6 text-[28px] font-semibold leading-tight tracking-tight text-foreground">
-            {L(`A short survey to prepare ${company}'s AI rollout`, `Un court questionnaire pour préparer le déploiement IA de ${company}`)}
+            {presales
+              ? L(`A short AI diagnostic for ${company}'s teams`, `Un court diagnostic IA pour les équipes de ${company}`)
+              : L(`A short survey to prepare ${company}'s AI rollout`, `Un court questionnaire pour préparer le déploiement IA de ${company}`)}
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-slate">{intro}</p>
 
@@ -291,8 +348,8 @@ const ChampionKit = () => {
 
           <section className="mt-6 print:break-inside-avoid">
             <h2 className="text-[14px] font-semibold text-foreground">{L('Link to forward', 'Lien à transférer')}</h2>
-            <a href={linkFor('general')} className="mt-2 block break-all rounded-xl px-4 py-3 font-mono text-[13px] text-brand-ink ring-1 ring-border underline-offset-2 hover:underline">
-              {linkFor('general')}
+            <a href={linkFor(presales ? 'presales' : 'general')} className="mt-2 block break-all rounded-xl px-4 py-3 font-mono text-[13px] text-brand-ink ring-1 ring-border underline-offset-2 hover:underline">
+              {linkFor(presales ? 'presales' : 'general')}
             </a>
           </section>
 

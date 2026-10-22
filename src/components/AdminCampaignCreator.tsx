@@ -112,6 +112,11 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
       const COLS = 'id, code, company_name, campaign_name, creator_email, creator_first_name, creator_last_name, created_at, access_key';
       let { data: inserted, error } = await supabase.from('campaigns').insert({ ...base, audience, intro } as any).select(COLS).maybeSingle();
       // Columns not installed yet (supabase/004-campaign-audience.sql): create without them; the link still carries the type.
+      // The pre-sales type needs supabase/006-presales-audience.sql: say so instead of creating another type.
+      if (error && /audience_check/i.test(error.message || '')) {
+        toast({ title: fr ? 'Type pas encore activé' : 'Type not enabled yet', description: fr ? 'Lancez supabase/006-presales-audience.sql dans Supabase, puis recréez la campagne.' : 'Run supabase/006-presales-audience.sql in Supabase, then create the campaign again.', variant: 'destructive' });
+        return;
+      }
       if (error && /audience|intro|column/i.test(error.message || '')) {
         ({ data: inserted, error } = await supabase.from('campaigns').insert(base as any).select(COLS).maybeSingle());
       }
@@ -288,7 +293,9 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
           ))}
         </div>
         <p className="text-[12px] text-muted-foreground">
-          {fr ? 'Change l’en-tête du questionnaire (à quoi ça sert, pourquoi, ce qui en ressort). Les questions restent les mêmes.' : 'Changes the survey header (what it’s for, why it matters, what comes out). The questions stay the same.'}
+          {audience === 'presales'
+            ? (fr ? 'Diagnostic avant-vente : 16 affirmations, neutre (ne parle pas de Dust), centré sur les irritants. Pour un pré-pilote.' : 'Pre-sales diagnostic: 16 statements, tool-agnostic (does not mention Dust), focused on pain points. For a pre-pilot.')
+            : fr ? 'Change l’en-tête du questionnaire (à quoi ça sert, pourquoi, ce qui en ressort). Les questions restent les mêmes.' : 'Changes the survey header (what it’s for, why it matters, what comes out). The questions stay the same.'}
         </p>
         {!introOpen ? (
           <button type="button" className="text-[12px] font-medium text-brand-ink hover:underline" onClick={() => setIntroOpen(true)}>

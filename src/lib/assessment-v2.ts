@@ -273,9 +273,19 @@ export const computeDimensions = (answers: Record<string, AnswerValue | undefine
   return out;
 };
 
+/** Dimensions that received at least one answer (the pre-sales diagnostic and imported forms measure only some). */
+export const measuredDimensions = (answers: Record<string, AnswerValue | undefined>, extra?: Record<string, DimensionId>): DimensionId[] => {
+  const set = new Set<DimensionId>();
+  V2_QUESTIONS.forEach((q) => answers[q.id] && set.add(q.dimension));
+  Object.entries(extra ?? {}).forEach(([key, dim]) => answers[key] && set.add(dim));
+  return DIMENSIONS.map((d) => d.id).filter((id) => set.has(id));
+};
+
 export const computeScores = (answers: Record<string, AnswerValue | undefined>, context?: ContextAnswers, extra?: Record<string, DimensionId>): V2Scores => {
   const d = computeDimensions(answers, extra);
-  const readiness = round(mean(READINESS_DIMENSION_IDS.map((id) => d[id])));
+  const measured = new Set(measuredDimensions(answers, extra));
+  const readinessIds = READINESS_DIMENSION_IDS.filter((id) => measured.has(id));
+  const readiness = round(mean((readinessIds.length ? readinessIds : READINESS_DIMENSION_IDS).map((id) => d[id])));
   const fits: RoleFits = {
     trainer: round(0.4 * d.teach + 0.3 * d.will + 0.3 * d.depth),
     builder: round(0.5 * d.depth + 0.25 * d.usage + 0.25 * d.will),
@@ -564,9 +574,19 @@ export const GLOSSARY: { term: L; definition: L }[] = [
 ];
 export type OpenAnswers = Partial<Record<OpenField['id'], string>>;
 
+/** Topics offered by the pre-sales diagnostic instead of "expected outcomes" (stored in the same field). */
+export const PRESALES_TOPIC_OPTIONS = [
+  o('info', 'Finding and summarising information across our tools', "Accéder à l'information et la synthétiser à travers nos différents outils"),
+  o('automate', 'Automating complex, time-consuming processes', 'Automatiser des processus complexes qui prennent du temps'),
+  o('collab', 'Working better across teams', 'Mieux collaborer entre équipes'),
+  o('itfree', 'Building business tools without waiting for IT', "Créer des outils métier sans dépendre de l'IT"),
+  o('knowledge', 'Sharing and reusing what the team knows', "Partager et réutiliser le savoir de l'équipe"),
+  o('other', 'Other', 'Autre'),
+];
+
 export const optionLabel = (fieldId: ChoiceField['id'], optionId: string, lang: Lang) => {
   const f = CONTEXT_FIELDS.find((x) => x.id === fieldId);
-  const opt = f?.options.find((x) => x.id === optionId);
+  const opt = f?.options.find((x) => x.id === optionId) ?? (fieldId === 'expectedValue' ? PRESALES_TOPIC_OPTIONS.find((x) => x.id === optionId) : undefined);
   return opt ? pick(opt.label, lang) : optionId;
 };
 
@@ -617,7 +637,7 @@ export const audienceFromParam = (v: string | null): SurveyAudience =>
 export const AUDIENCE_PARAM: Record<SurveyAudience, string | null> = { general: null, sales: 'sales', success: 'cs', builders: 'builders', presales: 'presales' };
 
 /** Audiences offered when creating or sharing a link, in display order. */
-export const AUDIENCE_ORDER: SurveyAudience[] = ['general', 'sales', 'success', 'builders'];
+export const AUDIENCE_ORDER: SurveyAudience[] = ['general', 'sales', 'success', 'builders', 'presales'];
 
 /** `{company}` in audience texts becomes the client's name (or "your company" before it is known). */
 export const withCompany = (text: string, company: string | null | undefined, fr: boolean) =>

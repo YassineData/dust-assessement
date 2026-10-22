@@ -1,7 +1,14 @@
 import { Fragment, useState } from 'react';
 import { X, BadgeCheck, Target, FileText, AlertTriangle, Trash2 } from 'lucide-react';
 import { DeleteParticipantDialog } from '@/components/DeleteParticipantDialog';
-import { CONTEXT_FIELDS, OPEN_FIELDS, V2_QUESTIONS, contextLabels, READINESS_DIMENSION_IDS } from '@/lib/assessment-v2';
+import { CONTEXT_FIELDS, OPEN_FIELDS as SURVEY_OPEN_FIELDS, V2_QUESTIONS, contextLabels, READINESS_DIMENSION_IDS } from '@/lib/assessment-v2';
+import { PRESALES_FOLLOW_UPS, PRESALES_ONLY_OPEN_FIELDS, PRESALES_OPEN_FIELDS } from '@/lib/presales';
+
+// Labels as the person saw them: the pre-sales diagnostic words some open questions differently.
+const PRESALES_LABELS = [...PRESALES_OPEN_FIELDS, ...PRESALES_FOLLOW_UPS];
+const OPEN_FIELDS = [...SURVEY_OPEN_FIELDS.filter((f) => !PRESALES_LABELS.some((x) => x.id === f.id)), ...PRESALES_LABELS];
+const openFieldsFor = (open: Record<string, string | undefined>) =>
+  PRESALES_ONLY_OPEN_FIELDS.some((f) => open[f.id]) ? PRESALES_LABELS : SURVEY_OPEN_FIELDS;
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CampaignParticipant } from '@/hooks/useCampaignParticipants';
@@ -63,7 +70,7 @@ export const ParticipantDrawer = ({ participant: p, thematics, translateThematic
           <div>
             <p className="eyebrow mb-2">{fr ? 'Réponses ouvertes' : 'Open answers'}</p>
             <div className="space-y-2">
-              {OPEN_FIELDS.filter((f) => p.open[f.id]).map((f) => (
+              {openFieldsFor(p.open as Record<string, string | undefined>).filter((f) => p.open[f.id]).map((f) => (
                 <div key={f.id} className="rounded-md p-3 ring-1 ring-border">
                   <p className="text-[11px] text-muted-foreground">{fr ? f.label.fr : f.label.en}</p>
                   <p className="mt-0.5 text-[13px] leading-relaxed text-foreground">« {p.open[f.id]} »</p>

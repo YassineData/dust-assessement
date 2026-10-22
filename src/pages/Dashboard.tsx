@@ -243,8 +243,6 @@ const Dashboard = () => {
   
   // Active assessment type for the selected campaign (drives thematic filtering)
   const [assessmentType, setAssessmentType] = useState<AssessmentType>('sales');
-  // v2: every campaign is scored on the 9 Dust readiness dimensions
-  const activeThematics = DIMENSION_IDS as string[];
 
   useEffect(() => {
     if (!campaignAccess?.campaignId) return;
@@ -327,6 +325,13 @@ const Dashboard = () => {
     [participants]
   );
   const hasParticipants = completedParticipants.length > 0;
+  // The 9 Dust dimensions, minus those this campaign's questionnaire does not measure (pre-sales diagnostic).
+  const activeThematics = useMemo(() => {
+    const all = DIMENSION_IDS as string[];
+    if (!completedParticipants.length) return all;
+    const measured = all.filter((id) => completedParticipants.some((p) => id in p.thematicScores));
+    return measured.length ? measured : all;
+  }, [completedParticipants]);
 
   // Calculate profile distribution - only completed participants
   const profileDistribution = useMemo(() => {
@@ -862,7 +867,7 @@ const Dashboard = () => {
                   eyebrow={fr ? 'Diagnostic' : 'Diagnosis'}
                   benchmarkDelta={hasBenchmark ? { value: averageScore - globalBenchmark.averageScore, label: fr ? 'pts vs benchmark' : 'pts vs benchmark' } : undefined}
                   title={scoreMessage.title}
-                  subtitle={fr ? `Indice de préparation IA · ${READINESS_DIMENSION_IDS.length} dimensions` : `AI readiness index · ${READINESS_DIMENSION_IDS.length} dimensions`}
+                  subtitle={fr ? `Indice de préparation IA · ${READINESS_DIMENSION_IDS.filter((id) => activeThematics.includes(id)).length} dimensions` : `AI readiness index · ${READINESS_DIMENSION_IDS.filter((id) => activeThematics.includes(id)).length} dimensions`}
                   synthesisTitle={fr ? 'Synthèse' : 'Synthesis'}
                   synthesis={scoreMessage.description}
                   strongest={strongest ? {

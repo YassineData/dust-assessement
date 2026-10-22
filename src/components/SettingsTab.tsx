@@ -143,7 +143,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
     const { error } = await supabase.from('campaigns').update({ audience: typeDraft, intro, ...(client ? { company_name: client } : {}) } as any).eq('id', campaignId);
     setSavingType(false);
     if (error) {
-      toast({ title: fr ? 'Enregistrement impossible' : 'Could not save', description: fr ? 'Lancez supabase/004-campaign-audience.sql dans Supabase.' : 'Run supabase/004-campaign-audience.sql in Supabase.', variant: 'destructive' });
+      toast({ title: fr ? 'Enregistrement impossible' : 'Could not save', description: /audience_check/i.test(error.message || '') ? (fr ? 'Lancez supabase/006-presales-audience.sql dans Supabase.' : 'Run supabase/006-presales-audience.sql in Supabase.') : (fr ? 'Lancez supabase/004-campaign-audience.sql dans Supabase.' : 'Run supabase/004-campaign-audience.sql in Supabase.'), variant: 'destructive' });
       return;
     }
     setShareAudience(typeDraft);
@@ -662,7 +662,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
           ] as const).map(([v, label]) => (
             <Button key={v} variant="outline" asChild>
               <a
-                href={`/kit?variant=${v}&code=${encodeURIComponent(campaignCode || '')}&company=${encodeURIComponent(companyShort || '')}&lang=${language}`}
+                href={`/kit?variant=${v}&code=${encodeURIComponent(campaignCode || '')}&company=${encodeURIComponent(companyShort || '')}&lang=${language}${shareAudience === 'presales' ? '&for=presales' : ''}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -818,7 +818,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
       {isAdmin && current && (
         <SectionCard
           title={fr ? 'Type de questionnaire' : 'Survey type'}
-          description={fr ? 'L’en-tête que voient les répondants. Les questions restent les mêmes ; le lien ne change pas.' : 'The header respondents see. Questions stay the same; the link does not change.'}
+          description={fr ? 'L’en-tête que voient les répondants ; le lien ne change pas. Les questions restent les mêmes, sauf pour le diagnostic avant-vente (questionnaire plus court et neutre).' : 'The header respondents see; the link does not change. Questions stay the same, except for the pre-sales diagnostic (shorter, tool-agnostic questionnaire).'}
         >
           {!typeAvailable ? (
             <p className="text-[13px] text-muted-foreground">

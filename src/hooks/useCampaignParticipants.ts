@@ -6,6 +6,7 @@ import {
   classAsProfile,
   isV2ItemScores,
   isV2Responses,
+  measuredDimensions,
   rescore,
   type RoleFits,
   type RoleId,
@@ -171,7 +172,12 @@ export const useCampaignParticipants = (campaignId: string | null, refreshKey: n
               team: p.team,
               score: scores?.readiness ?? 0,
               profile,
-              thematicScores: scores ? { ...scores.dimensions } : {},
+              // Only the dimensions this person's questionnaire measured (the pre-sales diagnostic skips some).
+              thematicScores: scores
+                ? Object.fromEntries(
+                    (stored ? measuredDimensions(stored.answers, stored.dims) : (Object.keys(scores.dimensions) as (keyof typeof scores.dimensions)[])).map((id) => [id, scores.dimensions[id]])
+                  )
+                : {},
               completedAt: new Date(p.completed_at || p.created_at),
               startedAt: p.started_at ? new Date(p.started_at) : null,
               status: p.status as 'not_started' | 'in_progress' | 'completed',
