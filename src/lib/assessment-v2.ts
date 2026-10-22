@@ -678,7 +678,7 @@ export const AUDIENCES: Record<SurveyAudience, AudienceInfo> = {
   },
   sales: {
     id: 'sales',
-    label: { en: 'Sales team', fr: 'Équipe Sales' },
+    label: { en: "Client's sales team", fr: 'Équipe commerciale du client' },
     team: 'sales',
     title: { en: 'AI for the Sales team', fr: "L'IA pour l'équipe Sales" },
     whatFor: { en: 'Understand how the Sales team uses AI today: account research, call prep, follow-ups, CRM updates.', fr: "Comprendre comment l'équipe Sales utilise l'IA aujourd'hui : recherche de comptes, préparation d'appels, relances, mises à jour du CRM." },
@@ -688,7 +688,7 @@ export const AUDIENCES: Record<SurveyAudience, AudienceInfo> = {
   },
   success: {
     id: 'success',
-    label: { en: 'Customer Success team', fr: 'Équipe Customer Success' },
+    label: { en: "Client's customer success team", fr: 'Service client du client' },
     team: 'success',
     title: { en: 'AI for the Customer Success team', fr: "L'IA pour l'équipe Customer Success" },
     whatFor: { en: 'Understand how Customer Success uses AI today: account health, QBR prep, renewal risk, recurring questions.', fr: "Comprendre comment le Customer Success utilise l'IA aujourd'hui : santé des comptes, préparation des QBR, risque de renouvellement, questions récurrentes." },
@@ -709,7 +709,7 @@ export const AUDIENCES: Record<SurveyAudience, AudienceInfo> = {
   },
   presales: {
     id: 'presales',
-    label: { en: 'Pre-sales diagnostic', fr: 'Diagnostic avant-vente' },
+    label: { en: 'AI diagnostic', fr: 'Diagnostic IA' },
     title: { en: 'A 4-minute AI diagnostic', fr: 'Un diagnostic IA de 4 minutes' },
     about: {
       en: 'We are looking at how AI could help the teams at {company}. Before choosing anything, we want to hear from the people doing the work.',

@@ -153,7 +153,7 @@ const Home = () => {
               </Button>
               <Button asChild size="lg" variant="outline">
                 <a href={`/assessment?preview=1&for=presales&lang=${language}`}>
-                  {L('Pre-sales diagnostic', 'Diagnostic avant-vente')}
+                  {L('AI diagnostic (pre-sales)', 'Diagnostic IA (avant-vente)')}
                   <ArrowRight className="h-4 w-4" />
                 </a>
               </Button>

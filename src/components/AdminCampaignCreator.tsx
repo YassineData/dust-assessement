@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Check, Copy, Download, ExternalLink, FileText, Link2, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AUDIENCES, AUDIENCE_ORDER, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
+import { AUDIENCES, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
+import { AudiencePicker } from '@/components/AudiencePicker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
@@ -150,8 +151,12 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
         </div>
 
         <p className="text-[13px] text-muted-foreground">
-          {fr ? 'Questionnaire : ' : 'Survey: '}
-          <span className="font-medium text-foreground">{fr ? AUDIENCES[audience].label.fr : AUDIENCES[audience].label.en}</span>
+          {fr ? 'Type : ' : 'Type: '}
+          <span className="font-medium text-foreground">
+            {audience === 'presales'
+              ? (fr ? 'Diagnostic IA' : 'AI diagnostic')
+              : `${fr ? 'Déploiement' : 'Deployment'} · ${fr ? AUDIENCES[audience].label.fr : AUDIENCES[audience].label.en}`}
+          </span>
           {(introTitle.trim() || introBody.trim()) && (fr ? ' · intro personnalisée' : ' · custom intro')}
         </p>
 
@@ -299,29 +304,8 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
       </div>
 
       <div className="space-y-1.5">
-        <Label>{fr ? 'Type de questionnaire' : 'Survey type'}</Label>
-        <div role="radiogroup" className="flex flex-wrap gap-2">
-          {AUDIENCE_ORDER.map((a) => (
-            <button
-              key={a}
-              type="button"
-              role="radio"
-              aria-checked={audience === a}
-              onClick={() => setAudience(a)}
-              className={cn(
-                'rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors duration-150',
-                audience === a ? 'bg-ink text-white ring-ink' : 'bg-card text-foreground ring-border hover:bg-paper'
-              )}
-            >
-              {fr ? AUDIENCES[a].label.fr : AUDIENCES[a].label.en}
-            </button>
-          ))}
-        </div>
-        <p className="text-[12px] text-muted-foreground">
-          {audience === 'presales'
-            ? (fr ? 'Diagnostic avant-vente : 16 affirmations, neutre (ne parle pas de Dust), centré sur les irritants. Pour un pré-pilote.' : 'Pre-sales diagnostic: 16 statements, tool-agnostic (does not mention Dust), focused on pain points. For a pre-pilot.')
-            : fr ? 'Change l’en-tête du questionnaire (à quoi ça sert, pourquoi, ce qui en ressort). Les questions restent les mêmes.' : 'Changes the survey header (what it’s for, why it matters, what comes out). The questions stay the same.'}
-        </p>
+        <Label>{fr ? 'Type de campagne' : 'Campaign type'}</Label>
+        <AudiencePicker value={audience} onChange={setAudience} fr={fr} />
         {!introOpen ? (
           <button type="button" className="text-[12px] font-medium text-brand-ink hover:underline" onClick={() => setIntroOpen(true)}>
             {fr ? '+ Écrire une intro personnalisée (facultatif)' : '+ Write a custom intro (optional)'}

@@ -67,7 +67,7 @@ const COMPANIES: DemoCompany[] = [
   {
     // A prospect before signature: the pre-sales diagnostic sent to 48 people.
     id: 'demo-halden', code: 'HALDEN48', name: 'Halden Industries', domain: 'halden-industries.com',
-    employees: 640, registered: 48, completedShare: 0.86, level: 46, label: 'Diagnostic avant-vente', presales: true,
+    employees: 640, registered: 48, completedShare: 0.86, level: 46, label: 'Diagnostic IA', presales: true,
     offsets: { gov: -14, team: -8, pain: 24, value: -4 },
     teams: ['operations', 'finance', 'sales', 'support'], createdAt: '2026-10-12T08:00:00Z',
   },

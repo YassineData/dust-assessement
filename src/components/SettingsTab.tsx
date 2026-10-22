@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Loader2, Users, Clock, CheckCircle2, CircleDashed, Copy, Check, Mail, Trash2, Plus, Info, Upload, Search, Link2, ExternalLink, KeyRound, Timer, Save, MessageSquare, ArrowRight, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AUDIENCES, AUDIENCE_ORDER, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
+import { AUDIENCES, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
+import { AudiencePicker } from '@/components/AudiencePicker';
 import { resultsLink } from '@/lib/access';
 import { useIsDustTeam } from '@/hooks/useIsDustTeam';
 import { SectionCard } from '@/components/console/SectionCard';
@@ -553,8 +554,12 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
         description={fr ? 'Le lien à envoyer aux répondants. Le code de campagne est déjà inclus.' : 'The link to send to respondents. The campaign code is already included.'}
       >
         <p className="mb-3 text-[13px] text-muted-foreground">
-          {fr ? 'Questionnaire : ' : 'Survey: '}
-          <span className="font-medium text-foreground">{fr ? AUDIENCES[shareAudience].label.fr : AUDIENCES[shareAudience].label.en}</span>
+          {fr ? 'Type : ' : 'Type: '}
+          <span className="font-medium text-foreground">
+            {shareAudience === 'presales'
+              ? (fr ? 'Diagnostic IA' : 'AI diagnostic')
+              : `${fr ? 'Déploiement' : 'Deployment'} · ${fr ? AUDIENCES[shareAudience].label.fr : AUDIENCES[shareAudience].label.en}`}
+          </span>
           {isAdmin && onNavigate && (
             <>
               {' · '}
@@ -652,26 +657,19 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
       <SectionCard
         title={fr ? 'Kit client (PDF)' : 'Client kit (PDF)'}
         description={fr
-          ? 'Un one-pager à envoyer au contact client avant les liens : ce qu’est le questionnaire, pourquoi, ce qu’on attend, ce qu’il obtient, et les liens par équipe. Ouvrez une version, puis « Télécharger le PDF ».'
-          : 'A one-pager to send to the client contact before the links: what the survey is, why, what we need, what they get back, and the links per team. Open a version, then « Download PDF ».'}
+          ? 'Un one-pager à envoyer au contact client avant les liens : ce qu’est le questionnaire, pourquoi, ce qu’on attend, ce qu’il obtient, et les liens par équipe. Il s’adapte au type de campagne (diagnostic IA ou déploiement). Ouvrez-le, puis « Télécharger le PDF ».'
+          : 'A one-pager to send to the client contact before the links: what the survey is, why, what we need, what they get back, and the links per team. It follows the campaign type (AI diagnostic or deployment). Open it, then « Download PDF ».'}
       >
-        <div className="flex flex-wrap gap-2">
-          {([
-            ['deployment', fr ? 'Kit kickoff (PDF)' : 'Kickoff kit (PDF)'],
-            ['sales', fr ? 'Kit Sales, avant le déploiement (PDF)' : 'Sales kit, before the rollout (PDF)'],
-          ] as const).map(([v, label]) => (
-            <Button key={v} variant="outline" asChild>
-              <a
-                href={`/kit?variant=${v}&code=${encodeURIComponent(campaignCode || '')}&company=${encodeURIComponent(companyShort || '')}&lang=${language}${shareAudience === 'presales' ? '&for=presales' : ''}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <FileText className="h-4 w-4" />
-                {label}
-              </a>
-            </Button>
-          ))}
-        </div>
+        <Button variant="outline" asChild>
+          <a
+            href={`/kit?variant=deployment&code=${encodeURIComponent(campaignCode || '')}&company=${encodeURIComponent(companyShort || '')}&lang=${language}${shareAudience === 'presales' ? '&for=presales' : ''}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <FileText className="h-4 w-4" />
+            {fr ? 'Ouvrir le kit client (PDF)' : 'Open the client kit (PDF)'}
+          </a>
+        </Button>
       </SectionCard>
 
       {/* 2. Who has / hasn't answered */}
@@ -817,8 +815,8 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
 
       {isAdmin && current && (
         <SectionCard
-          title={fr ? 'Type de questionnaire' : 'Survey type'}
-          description={fr ? 'L’en-tête que voient les répondants ; le lien ne change pas. Les questions restent les mêmes, sauf pour le diagnostic avant-vente (questionnaire plus court et neutre).' : 'The header respondents see; the link does not change. Questions stay the same, except for the pre-sales diagnostic (shorter, tool-agnostic questionnaire).'}
+          title={fr ? 'Type de campagne' : 'Campaign type'}
+          description={fr ? 'Diagnostic IA avant la signature, ou déploiement pour un client signé. Le lien ne change pas.' : 'AI diagnostic before signature, or deployment for a signed customer. The link does not change.'}
         >
           {!typeAvailable ? (
             <p className="text-[13px] text-muted-foreground">
@@ -826,23 +824,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
             </p>
           ) : (
             <div className="space-y-3">
-              <div role="radiogroup" className="flex flex-wrap gap-2">
-                {AUDIENCE_ORDER.map((a) => (
-                  <button
-                    key={a}
-                    type="button"
-                    role="radio"
-                    aria-checked={typeDraft === a}
-                    onClick={() => setTypeDraft(a)}
-                    className={cn(
-                      'rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors duration-150',
-                      typeDraft === a ? 'bg-ink text-white ring-ink' : 'bg-card text-foreground ring-border hover:bg-paper'
-                    )}
-                  >
-                    {fr ? AUDIENCES[a].label.fr : AUDIENCES[a].label.en}
-                  </button>
-                ))}
-              </div>
+              <AudiencePicker value={typeDraft} onChange={setTypeDraft} fr={fr} />
               <div className="grid gap-2">
                 <label className="text-[12px] font-medium text-foreground" htmlFor="client-name">{fr ? 'Nom du client (affiché aux répondants)' : 'Client name (shown to respondents)'}</label>
                 <Input id="client-name" value={clientDraft} onChange={(e) => setClientDraft(e.target.value)} />

@@ -247,26 +247,10 @@ const ChampionKit = () => {
             </Link>
           </Button>
           <div className="flex items-center gap-2">
-            <div role="radiogroup" className="hidden gap-1 rounded-full bg-paper p-1 ring-1 ring-border sm:flex">
-              {(['deployment', 'sales'] as KitVariant[]).map((v) => {
-                const next = new URLSearchParams(params);
-                next.set('variant', v);
-                return (
-                  <Link
-                    key={v}
-                    to={`/kit?${next.toString()}`}
-                    role="radio"
-                    aria-checked={variant === v}
-                    className={cn(
-                      'rounded-full px-3 py-1 text-[12px] font-medium transition-colors',
-                      variant === v ? 'bg-ink text-white' : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    {v === 'sales' ? L('Sales version', 'Version Sales') : L('Deployment / CS version', 'Version Deployment / CS')}
-                  </Link>
-                );
-              })}
-            </div>
+            {/* The kit follows the campaign type: no version to pick. */}
+            <span className="hidden rounded-full bg-paper px-3 py-1 text-[12px] font-medium text-muted-foreground ring-1 ring-border sm:inline">
+              {presales ? L('AI diagnostic', 'Diagnostic IA') : L('Deployment', 'Déploiement')}
+            </span>
             {resultsUrl && (
               <label className="hidden items-center gap-1.5 text-[12px] text-muted-foreground sm:flex">
                 <input type="checkbox" checked={showResults} onChange={(e) => setShowResults(e.target.checked)} />
