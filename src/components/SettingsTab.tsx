@@ -548,6 +548,25 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
   // ===== Share & invite =====
   const renderShare = () => (
     <div className="space-y-4">
+      {/* Kit for the client champion: one-pager to send before the links */}
+      <SectionCard
+        title={fr ? 'Kit client (PDF) · à envoyer en premier' : 'Client kit (PDF) · send this first'}
+        description={fr
+          ? 'Un one-pager à envoyer au contact client avant les liens : ce qu’est le questionnaire, pourquoi, ce qu’on attend, ce qu’il obtient, et les liens par équipe. Il s’adapte au type de campagne (diagnostic IA ou déploiement). Ouvrez-le, puis « Télécharger le PDF ».'
+          : 'A one-pager to send to the client contact before the links: what the survey is, why, what we need, what they get back, and the links per team. It follows the campaign type (AI diagnostic or deployment). Open it, then « Download PDF ».'}
+      >
+        <Button asChild>
+          <a
+            href={`/kit?variant=deployment&code=${encodeURIComponent(campaignCode || '')}&company=${encodeURIComponent(companyShort || '')}&lang=${language}${shareAudience === 'presales' ? '&for=presales' : ''}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <FileText className="h-4 w-4" />
+            {fr ? 'Ouvrir le kit client (PDF)' : 'Open the client kit (PDF)'}
+          </a>
+        </Button>
+      </SectionCard>
+
       {/* 1. The link to share: primary element of the page */}
       <SectionCard
         title={fr ? 'Lien du questionnaire' : 'Assessment link'}
@@ -653,24 +672,6 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
         </SectionCard>
       )}
 
-      {/* Kit for the client champion: one-pager to send before the links */}
-      <SectionCard
-        title={fr ? 'Kit client (PDF)' : 'Client kit (PDF)'}
-        description={fr
-          ? 'Un one-pager à envoyer au contact client avant les liens : ce qu’est le questionnaire, pourquoi, ce qu’on attend, ce qu’il obtient, et les liens par équipe. Il s’adapte au type de campagne (diagnostic IA ou déploiement). Ouvrez-le, puis « Télécharger le PDF ».'
-          : 'A one-pager to send to the client contact before the links: what the survey is, why, what we need, what they get back, and the links per team. It follows the campaign type (AI diagnostic or deployment). Open it, then « Download PDF ».'}
-      >
-        <Button variant="outline" asChild>
-          <a
-            href={`/kit?variant=deployment&code=${encodeURIComponent(campaignCode || '')}&company=${encodeURIComponent(companyShort || '')}&lang=${language}${shareAudience === 'presales' ? '&for=presales' : ''}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <FileText className="h-4 w-4" />
-            {fr ? 'Ouvrir le kit client (PDF)' : 'Open the client kit (PDF)'}
-          </a>
-        </Button>
-      </SectionCard>
 
       {/* 2. Who has / hasn't answered */}
       {pendingCount > 0 && (

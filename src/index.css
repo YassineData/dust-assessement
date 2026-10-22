@@ -440,3 +440,15 @@ article[data-capture] .kit-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Draws the eye to the next step once (3 pulses), then stays still. */
+@keyframes attn-halo {
+  0% { box-shadow: 0 0 0 0 hsl(var(--brand) / 0.5); }
+  100% { box-shadow: 0 0 0 12px hsl(var(--brand) / 0); }
+}
+.attn-pulse {
+  animation: attn-halo 1.4s ease-out 0.4s 3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .attn-pulse { animation: none; }
+}

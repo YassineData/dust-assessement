@@ -165,7 +165,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
           <div className="flex gap-3">
             <FileText className="mt-0.5 h-5 w-5 shrink-0 text-brand-ink" />
             <div>
-              <p className="text-[14px] font-semibold text-foreground">{fr ? 'Étape suivante : le kit pour le client' : 'Next step: the client kit'}</p>
+              <p className="text-[14px] font-semibold text-foreground">{fr ? 'À envoyer maintenant : le kit PDF pour le client' : 'Send now: the client PDF kit'}</p>
               <p className="text-[12px] leading-relaxed text-muted-foreground">
                 {fr
                   ? 'Un PDF d’une page avec le lien, le message pour ses équipes et le lien privé des résultats. À envoyer à la personne qui pilote le projet.'
@@ -173,7 +173,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
               </p>
             </div>
           </div>
-          <Button asChild className="shrink-0">
+          <Button asChild className="attn-pulse shrink-0">
             <a href={kitLink} target="_blank" rel="noopener noreferrer">
               <Download className="h-4 w-4" />
               {fr ? 'Ouvrir le kit PDF' : 'Open the PDF kit'}
@@ -186,7 +186,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input readOnly value={link} onFocus={(e) => e.currentTarget.select()} className="font-mono text-[12px]" />
             <div className="flex gap-2">
-              <Button type="button" onClick={() => copy('link')} className="flex-1 sm:flex-none">
+              <Button type="button" variant="outline" onClick={() => copy('link')} className="flex-1 sm:flex-none">
                 {copied === 'link' ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
                 {copied === 'link' ? (fr ? 'Copié' : 'Copied') : (fr ? 'Copier' : 'Copy')}
               </Button>
