@@ -101,6 +101,8 @@ const SESSION_KEY = 'dashboard_session_v2';
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes en millisecondes
 const SIDEBAR_KEY = 'console_sidebar_collapsed';
 
+const KIT_PENDING_KEY = 'dust_kit_pending';
+
 const Dashboard = () => {
   const { t, language, setLanguage } = useLanguage();
   const navigate = useNavigate();
@@ -502,6 +504,13 @@ const Dashboard = () => {
 
   // A campaign was just created from the console: list it right away (it opens when the dialog closes).
   const handleCampaignCreated = (campaign: Campaign) => {
+    // Point at Share & invite until the client kit page is opened for this campaign.
+    setKitPending(campaign.id ?? null);
+    try {
+      if (campaign.id) localStorage.setItem(KIT_PENDING_KEY, campaign.id);
+    } catch {
+      /* per-browser reminder only */
+    }
     const list = [campaign, ...allCampaigns.filter((c) => c.id !== campaign.id)];
     setAllCampaigns(list);
     try {
@@ -538,6 +547,23 @@ const Dashboard = () => {
   // Attendre l'initialisation avant d'afficher quoi que ce soit
   // Client manager (private results link): their campaign only, without Dust settings and admin tools.
   const isClientView = !!campaignAccess && !isAdmin;
+  // Campaign just created whose client kit has not been opened yet (per browser).
+  const [kitPending, setKitPending] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(KIT_PENDING_KEY);
+    } catch {
+      return null;
+    }
+  });
+  useEffect(() => {
+    if (activeTab !== 'share' || !kitPending || kitPending !== campaignAccess?.campaignId) return;
+    setKitPending(null);
+    try {
+      localStorage.removeItem(KIT_PENDING_KEY);
+    } catch {
+      /* nothing to clear */
+    }
+  }, [activeTab, kitPending, campaignAccess?.campaignId]);
   // The signed-in Dust person (from the sign-in form), shown in the header.
   const adminEmail = (() => {
     try {
@@ -802,6 +828,7 @@ const Dashboard = () => {
         mobileOpen={mobileNavOpen}
         onMobileClose={closeMobileNav}
         clientView={isClientView}
+        highlight={kitPending && kitPending === campaignAccess?.campaignId ? { tab: 'share', badge: fr ? 'Kit PDF' : 'PDF kit' } : undefined}
       />
 
       <div className={cn('min-h-screen transition-[margin] duration-150', sidebarCollapsed ? 'lg:ml-14' : 'lg:ml-64')}>

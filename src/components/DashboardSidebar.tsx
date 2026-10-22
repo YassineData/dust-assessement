@@ -128,6 +128,8 @@ interface DashboardSidebarProps {
   onMobileClose: () => void;
   /** Client manager view: their campaign only, without the Dust team's settings and admin tools. */
   clientView?: boolean;
+  /** A menu item to point at (e.g. Share & invite right after a campaign is created), with a short badge. */
+  highlight?: { tab: TabId; badge: string };
 }
 
 export const DashboardSidebar = ({
@@ -144,6 +146,7 @@ export const DashboardSidebar = ({
   mobileOpen,
   onMobileClose,
   clientView = false,
+  highlight,
 }: DashboardSidebarProps) => {
   const { language } = useLanguage();
   const fr = language === 'fr';
@@ -254,6 +257,7 @@ export const DashboardSidebar = ({
                   }
 
                   const isActive = activeTab === item.id;
+                  const flagged = highlight?.tab === item.id && !isActive;
                   return (
                     <li key={item.id}>
                       <button
@@ -266,8 +270,16 @@ export const DashboardSidebar = ({
                         aria-current={isActive ? 'page' : undefined}
                         title={collapsed ? label : undefined}
                       >
-                        <Icon className="h-4 w-4 shrink-0" />
+                        <span className="relative shrink-0">
+                          <Icon className="h-4 w-4" />
+                          {flagged && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-brand ring-2 ring-sidebar" aria-hidden />}
+                        </span>
                         <span className={cn('truncate', hideWhenCollapsed)}>{label}</span>
+                        {flagged && (
+                          <span className={cn('attn-pulse ml-auto shrink-0 rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold text-white', hideWhenCollapsed)}>
+                            {highlight!.badge}
+                          </span>
+                        )}
                       </button>
                     </li>
                   );
