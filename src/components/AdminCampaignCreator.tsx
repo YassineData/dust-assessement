@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Copy, ExternalLink, Link2, Loader2, Plus } from 'lucide-react';
+import { Check, Copy, Download, ExternalLink, FileText, Link2, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AUDIENCES, AUDIENCE_ORDER, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
 import { Input } from '@/components/ui/input';
@@ -60,6 +60,10 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
 
   const audienceParam = AUDIENCE_PARAM[audience];
   const link = created ? `${window.location.origin}/assessment?lang=${campaignLanguage}&code=${created.code}${audienceParam ? `&for=${audienceParam}` : ''}` : '';
+  // The client kit (one-pager, downloadable as PDF) for the campaign just created.
+  const kitLink = created
+    ? `/kit?variant=deployment&code=${created.code}&company=${encodeURIComponent(created.company)}&lang=${campaignLanguage}${audience === 'presales' ? '&for=presales' : ''}`
+    : '';
   const teamFr = audience === 'general' ? '' : ` (${AUDIENCES[audience].label.fr})`;
   const teamEn = audience === 'general' ? '' : ` (${AUDIENCES[audience].label.en})`;
 
@@ -151,6 +155,27 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
           {(introTitle.trim() || introBody.trim()) && (fr ? ' · intro personnalisée' : ' · custom intro')}
         </p>
 
+        {/* Next step first: the one-pager to send to the client contact, ready as a PDF. */}
+        <div className="flex flex-col gap-3 rounded-md bg-brand-soft p-4 ring-1 ring-brand/20 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-3">
+            <FileText className="mt-0.5 h-5 w-5 shrink-0 text-brand-ink" />
+            <div>
+              <p className="text-[14px] font-semibold text-foreground">{fr ? 'Étape suivante : le kit pour le client' : 'Next step: the client kit'}</p>
+              <p className="text-[12px] leading-relaxed text-muted-foreground">
+                {fr
+                  ? 'Un PDF d’une page avec le lien, le message pour ses équipes et le lien privé des résultats. À envoyer à la personne qui pilote le projet.'
+                  : 'A one-page PDF with the link, the message for their teams and the private results link. Send it to the person running the project.'}
+              </p>
+            </div>
+          </div>
+          <Button asChild className="shrink-0">
+            <a href={kitLink} target="_blank" rel="noopener noreferrer">
+              <Download className="h-4 w-4" />
+              {fr ? 'Ouvrir le kit PDF' : 'Open the PDF kit'}
+            </a>
+          </Button>
+        </div>
+
         <div className="space-y-1.5">
           <Label>{fr ? 'Lien à envoyer au client' : 'Link to send to the client'}</Label>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -199,19 +224,19 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
           </Button>
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
-          <Button
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+          <button
             type="button"
-            variant="ghost"
+            className="inline-flex items-center gap-1 text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             onClick={() => {
               setCreated(null);
               setCompany(defaultCompany ?? '');
               setCampaignName('');
             }}
           >
-            <Plus className="h-4 w-4" />
-            {fr ? 'Créer un autre lien' : 'Create another link'}
-          </Button>
+            <Plus className="h-3.5 w-3.5" />
+            {fr ? 'Créer une autre campagne' : 'Create another campaign'}
+          </button>
           {onCreated && (
             <Button type="button" onClick={onCreated}>
               {fr ? 'Terminé' : 'Done'}

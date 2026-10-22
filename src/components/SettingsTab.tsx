@@ -650,15 +650,15 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
 
       {/* Kit for the client champion: one-pager to send before the links */}
       <SectionCard
-        title={fr ? 'Kit pour le champion côté client' : 'Kit for the client champion'}
+        title={fr ? 'Kit client (PDF)' : 'Client kit (PDF)'}
         description={fr
-          ? 'Un one-pager à envoyer au contact client avant les liens : ce qu’est le questionnaire, pourquoi, ce qu’on attend, ce qu’il obtient, et les liens par équipe. Imprimable en PDF.'
-          : 'A one-pager to send to the client contact before the links: what the survey is, why, what we need, what they get back, and the links per team. Prints to PDF.'}
+          ? 'Un one-pager à envoyer au contact client avant les liens : ce qu’est le questionnaire, pourquoi, ce qu’on attend, ce qu’il obtient, et les liens par équipe. Ouvrez une version, puis « Télécharger le PDF ».'
+          : 'A one-pager to send to the client contact before the links: what the survey is, why, what we need, what they get back, and the links per team. Open a version, then « Download PDF ».'}
       >
         <div className="flex flex-wrap gap-2">
           {([
-            ['deployment', fr ? 'Version Deployment / CS (kickoff)' : 'Deployment / CS version (kickoff)'],
-            ['sales', fr ? 'Version Sales (avant le déploiement)' : 'Sales version (before the rollout)'],
+            ['deployment', fr ? 'Kit kickoff (PDF)' : 'Kickoff kit (PDF)'],
+            ['sales', fr ? 'Kit Sales, avant le déploiement (PDF)' : 'Sales kit, before the rollout (PDF)'],
           ] as const).map(([v, label]) => (
             <Button key={v} variant="outline" asChild>
               <a
