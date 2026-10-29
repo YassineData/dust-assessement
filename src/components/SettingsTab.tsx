@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Loader2, Users, Clock, CheckCircle2, CircleDashed, Copy, Check, Mail, Trash2, Plus, Info, Upload, Search, Link2, ExternalLink, KeyRound, Timer, Save, MessageSquare, ArrowRight, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AUDIENCES, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
+import { WAVES, isWave, type Wave } from '@/lib/waves';
 import { AudiencePicker } from '@/components/AudiencePicker';
 import { resultsLink } from '@/lib/access';
 import { useIsDustTeam } from '@/hooks/useIsDustTeam';
@@ -68,11 +69,13 @@ interface SettingsTabProps {
   openCreate?: boolean;
   /** A campaign was just created: the console lists it and opens it. */
   onCampaignCreated?: (campaign: Campaign) => void;
+  /** Prefills for the creation dialog (a follow-up wave started from the « Suivi » tab). */
+  createPreset?: { company: string; name: string; audience: SurveyAudience; wave: Wave };
   /** A campaign was deleted (Dust team only): the console drops it and moves on. */
   onCampaignDeleted?: (campaignId: string) => void;
 }
 
-export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, campaignParticipants, averageScore, thematicAverages, view, allCampaigns = [], creatorEmail, onSelectCampaign, onNavigate, openCreate, onCampaignDeleted, onCampaignCreated }: SettingsTabProps) => {
+export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, campaignParticipants, averageScore, thematicAverages, view, allCampaigns = [], creatorEmail, onSelectCampaign, onNavigate, openCreate, onCampaignDeleted, onCampaignCreated, createPreset }: SettingsTabProps) => {
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
   const [justCreated, setJustCreated] = useState<Campaign | null>(null);
   const { language } = useLanguage();
@@ -149,6 +152,30 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
     }
     setShareAudience(typeDraft);
     toast({ title: fr ? 'Questionnaire mis à jour' : 'Survey updated', description: fr ? 'Le lien existant affiche déjà le nouvel en-tête.' : 'The existing link already shows the new header.' });
+  };
+
+  // Where this campaign sits in the client's follow-up (supabase/007). null = inferred from the order.
+  const [waveState, setWaveState] = useState<Wave | null | 'missing'>(null);
+  useEffect(() => {
+    if (!campaignId) return;
+    supabase.from('campaigns').select('wave' as never).eq('id', campaignId).maybeSingle().then(({ data, error }) => {
+      if (error) setWaveState('missing');
+      else {
+        const w = (data as unknown as { wave?: string } | null)?.wave;
+        setWaveState(isWave(w) ? w : null);
+      }
+    });
+  }, [campaignId]);
+  const handleSaveWave = async (w: Wave) => {
+    const prev = waveState;
+    setWaveState(w);
+    const { error } = await supabase.from('campaigns').update({ wave: w } as any).eq('id', campaignId);
+    if (error) {
+      setWaveState(prev);
+      toast({ title: fr ? 'Enregistrement impossible' : 'Could not save', description: fr ? 'Lancez supabase/007-campaign-wave.sql dans Supabase.' : 'Run supabase/007-campaign-wave.sql in Supabase.', variant: 'destructive' });
+      return;
+    }
+    toast({ title: fr ? 'Étape du suivi enregistrée' : 'Follow-up step saved' });
   };
 
   const handleChangeCampaignLanguage = async (newLang: 'fr' | 'en') => {
@@ -531,6 +558,10 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
         </DialogHeader>
         <AdminCampaignCreator
           defaultCreatorEmail={creatorEmail}
+          defaultCompany={createPreset?.company}
+          defaultCampaignName={createPreset?.name}
+          defaultAudience={createPreset?.audience}
+          defaultWave={createPreset?.wave}
           onCreated={() => {
             setCreateDialogOpen(false);
             if (justCreated) onSelectCampaign?.(justCreated);
@@ -849,6 +880,38 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
                   </a>
                 )}
               </div>
+            </div>
+          )}
+        </SectionCard>
+      )}
+
+      {isAdmin && current && (
+        <SectionCard
+          title={fr ? 'Étape du suivi' : 'Follow-up step'}
+          description={fr ? 'Place de cette campagne dans le suivi du client (onglet « Suivi »). Sans choix, la première campagne du client est le point de départ et les suivantes des re-mesures.' : 'Where this campaign sits in the client follow-up (« Progress » tab). Without a choice, the client’s first campaign is the baseline and later ones are re-measures.'}
+        >
+          {waveState === 'missing' ? (
+            <p className="text-[13px] text-muted-foreground">
+              {fr ? 'Pour choisir l’étape, lancez supabase/007-campaign-wave.sql dans l’éditeur SQL de Supabase. En attendant, l’ordre des campagnes est utilisé.' : 'To pick the step, run supabase/007-campaign-wave.sql in the Supabase SQL editor. Until then, the campaign order is used.'}
+            </p>
+          ) : (
+            <div role="radiogroup" aria-label={fr ? 'Étape du suivi' : 'Follow-up step'} className="flex flex-wrap gap-2">
+              {WAVES.map((w) => (
+                <button
+                  key={w.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={waveState === w.id}
+                  title={fr ? w.hint.fr : w.hint.en}
+                  onClick={() => handleSaveWave(w.id)}
+                  className={cn(
+                    'rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors duration-150',
+                    waveState === w.id ? 'bg-ink text-white ring-ink' : 'bg-card text-foreground ring-border hover:bg-paper'
+                  )}
+                >
+                  {fr ? w.label.fr : w.label.en}
+                </button>
+              ))}
             </div>
           )}
         </SectionCard>

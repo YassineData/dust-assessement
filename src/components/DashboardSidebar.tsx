@@ -7,6 +7,7 @@ import {
   BarChart3,
   ListChecks,
   GitCompare,
+  TrendingUp,
   ListTodo,
   Send,
   ClipboardList,
@@ -32,6 +33,7 @@ export type TabId =
   | 'itemScores'
   | 'detailed'
   | 'compare'
+  | 'progress'
   | 'actions'
   | 'share'
   | 'campaignSettings'
@@ -69,6 +71,7 @@ const NAV_GROUPS: NavGroup[] = [
     fr: 'Analyse',
     en: 'Analysis',
     items: [
+      { id: 'progress', fr: 'Suivi', en: 'Progress', icon: TrendingUp },
       { id: 'compare', fr: 'Comparer', en: 'Compare', icon: GitCompare },
       { id: 'actions', fr: 'Actions recommandées', en: 'Recommended actions', icon: ListTodo },
     ],

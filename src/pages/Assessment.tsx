@@ -24,6 +24,8 @@ import {
 import { LikertScale } from '@/components/LikertScale';
 import { SurveyIntro } from '@/components/SurveyIntro';
 import { PRESALES_CONTEXT_FIELDS, PRESALES_OPEN_FIELDS, PRESALES_QUESTIONS, PRESALES_SECTIONS, type PresalesQuestion } from '@/lib/presales';
+import { PULSE_CONTEXT_FIELDS, PULSE_OPEN_FIELDS, PULSE_QUESTIONS, PULSE_SECTIONS, REVIEW_OPEN_FIELDS } from '@/lib/followup';
+import { isWave, type Wave } from '@/lib/waves';
 import { AssessmentProgress } from '@/components/AssessmentProgress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,11 +106,21 @@ const Assessment = () => {
   const forParam = searchParams.get('for');
   const [storedAudience, setStoredAudience] = useState<SurveyAudience | null>(null);
   const audience: SurveyAudience = forParam ? audienceFromParam(forParam) : storedAudience ?? 'general';
+  // Follow-up waves change the survey: a short check during the rollout (pulse), the full survey plus impact questions at the end (review).
+  // In a preview, ?wave=pulse or ?wave=review shows that survey.
+  const [wave, setWave] = useState<Wave | null>(() => {
+    const w = searchParams.get('wave');
+    return isPreview && isWave(w) ? w : null;
+  });
   // The pre-sales diagnostic has its own, shorter question set.
   const presales = audience === 'presales';
-  const surveyQuestions: PresalesQuestion[] = presales ? PRESALES_QUESTIONS : V2_QUESTIONS;
-  const contextFields = presales ? PRESALES_CONTEXT_FIELDS : CONTEXT_FIELDS;
-  const openFields = presales ? PRESALES_OPEN_FIELDS : OPEN_FIELDS;
+  const pulse = !presales && wave === 'pulse';
+  const review = !presales && wave === 'review';
+  // Surveys grouped in named parts instead of dimensions.
+  const sections = presales ? PRESALES_SECTIONS : pulse ? PULSE_SECTIONS : null;
+  const surveyQuestions: PresalesQuestion[] = presales ? PRESALES_QUESTIONS : pulse ? PULSE_QUESTIONS : V2_QUESTIONS;
+  const contextFields = presales ? PRESALES_CONTEXT_FIELDS : pulse ? PULSE_CONTEXT_FIELDS : CONTEXT_FIELDS;
+  const openFields = presales ? PRESALES_OPEN_FIELDS : pulse ? PULSE_OPEN_FIELDS : review ? REVIEW_OPEN_FIELDS : OPEN_FIELDS;
   const [participantInfo, setParticipantInfo] = useState<ParticipantInfo | null>(() =>
     isPreview
       ? {
@@ -132,8 +144,9 @@ const Assessment = () => {
     if (!code || isPreview) return;
     (async () => {
       const { data } = await supabase.rpc('get_campaign_by_code' as never, { p_code: code } as never);
-      const row = (data as unknown as { company_name: string; audience?: string; intro?: { title?: string; body?: string } | null }[] | null)?.[0];
+      const row = (data as unknown as { company_name: string; audience?: string; wave?: string | null; intro?: { title?: string; body?: string } | null }[] | null)?.[0];
       if (!row) return;
+      if (isWave(row.wave)) setWave(row.wave);
       if (row.company_name) setIntroCompany(row.company_name);
       if (row.audience && row.audience in AUDIENCES) setStoredAudience(row.audience as SurveyAudience);
       if (row.intro && (row.intro.title || row.intro.body)) setCustomIntro(row.intro);
@@ -232,15 +245,15 @@ const Assessment = () => {
   const lang: 'fr' | 'en' = language === 'en' ? 'en' : 'fr';
 
   // v2: one questionnaire for every campaign, grouped by dimension in spec order.
-  const thematicOrder = useMemo(() => (presales ? PRESALES_SECTIONS.map((x) => x.id) : (DIMENSION_IDS as string[])), [presales]);
+  const thematicOrder = useMemo(() => (sections ? sections.map((x) => x.id) : (DIMENSION_IDS as string[])), [sections]);
   const questionsByThematic = useMemo(() => {
     const grouped: Record<string, PresalesQuestion[]> = {};
-    if (presales) PRESALES_SECTIONS.forEach((x) => { grouped[x.id] = x.questions; });
+    if (sections) sections.forEach((x) => { grouped[x.id] = x.questions; });
     else V2_QUESTIONS.forEach(q => {
       (grouped[q.dimension] ||= []).push(q);
     });
     return grouped;
-  }, [presales]);
+  }, [sections]);
 
   const currentThematic = thematicOrder[currentThematicIndex];
   const questionsInCurrentThematic = questionsByThematic[currentThematic] || [];
@@ -605,7 +618,7 @@ const Assessment = () => {
 
         <main className="mx-auto max-w-[720px] px-4 py-10">
           <div className="mb-5">
-            <SurveyIntro audience={audience} fr={language === 'fr'} company={introCompany} custom={customIntro} />
+            <SurveyIntro audience={audience} fr={language === 'fr'} company={introCompany} custom={customIntro} wave={presales ? null : wave} />
           </div>
           <h2 className="card-title mb-1">{t.title}</h2>
           <p className="mb-3 text-[13px] text-muted-foreground">{t.description}</p>
@@ -699,7 +712,10 @@ const Assessment = () => {
         <DustWordmark subtitle={participantInfo.companyName} />
         <div className="flex items-center gap-2">
           {isPreview && (
-            <span className="pill pill-amber">{fr ? 'Exemple · rien n’est enregistré' : 'Preview · nothing is saved'}</span>
+            <span className="pill pill-amber shrink-0">
+              <span className="sm:hidden">{fr ? 'Exemple' : 'Preview'}</span>
+              <span className="hidden sm:inline">{fr ? 'Exemple · rien n’est enregistré' : 'Preview · nothing is saved'}</span>
+            </span>
           )}
           <LanguageSwitcher />
         </div>
@@ -769,7 +785,7 @@ const Assessment = () => {
 
   const choiceClass = (selected: boolean) =>
     cn(
-      'flex min-h-9 items-center gap-2 rounded-md border px-3 py-1.5 text-left text-[13px] transition-colors duration-150',
+      'flex min-h-11 items-center gap-2 rounded-md border px-3 py-1.5 text-left text-[13px] transition-colors duration-150 sm:min-h-9',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1',
       selected ? 'border-brand bg-brand-soft font-medium text-foreground' : 'border-border bg-card text-foreground hover:border-brand/50'
     );
@@ -782,7 +798,7 @@ const Assessment = () => {
         <main className="mx-auto max-w-[780px] px-4 py-8">
           {isPreview && (
             <div className="mb-6">
-              <SurveyIntro audience={audience} fr={fr} />
+              <SurveyIntro audience={audience} fr={fr} wave={presales ? null : wave} />
             </div>
           )}
           <p className="eyebrow">{fr ? 'Étape 1 sur 3' : 'Step 1 of 3'}</p>
@@ -800,6 +816,8 @@ const Assessment = () => {
               const value = context[field.id];
               const list = Array.isArray(value) ? value : value ? [value] : [];
               const atMax = !!field.max && list.length >= field.max;
+              // Short labels (teams, levels, tools) fit two per row even on a phone.
+              const twoUp = field.options.every((o) => Math.max(o.label.fr.length, o.label.en.length) <= 18);
               return (
                 <fieldset key={field.id} className="card-elevated p-5">
                   <legend className="sr-only">{fr ? field.label.fr : field.label.en}</legend>
@@ -813,7 +831,7 @@ const Assessment = () => {
                         : (fr ? 'Plusieurs choix possibles' : 'Select all that apply')}
                     </p>
                   )}
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className={cn('mt-3 grid gap-2 sm:grid-cols-2', twoUp && 'grid-cols-2')}>
                     {field.options.map((opt) => {
                       const selected = list.includes(opt.id);
                       const blocked = field.multiple && atMax && !selected;
@@ -888,7 +906,9 @@ const Assessment = () => {
           <p className="eyebrow">{fr ? 'Étape 2 sur 3' : 'Step 2 of 3'}</p>
           <h1 className="page-title mt-1">{fr ? 'En quelques mots' : 'In a few words'}</h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            {fr ? 'Facultatif, mais très utile pour choisir les premiers cas d’usage.' : 'Optional, but very useful to pick the first use cases.'}
+            {pulse || review
+              ? (fr ? 'Facultatif, mais très utile pour ajuster le déploiement.' : 'Optional, but very useful to adjust the rollout.')
+              : (fr ? 'Facultatif, mais très utile pour choisir les premiers cas d’usage.' : 'Optional, but very useful to pick the first use cases.')}
           </p>
           <form onSubmit={handleSubmitOpen} className="mt-5 space-y-3">
             {openFields.map((field) => (
@@ -943,11 +963,11 @@ const Assessment = () => {
             maxReachableIndex={maxReachableIndex}
             onSelectThematic={handleSelectThematic}
             labelFor={(id) => {
-              const section = PRESALES_SECTIONS.find((x) => x.id === id);
+              const section = sections?.find((x) => x.id === id);
               return section ? section.label[lang] : dimensionLabel(id, lang);
             }}
             stepLabel={fr ? 'Étape 3 sur 3' : 'Step 3 of 3'}
-            unitLabel={presales ? (fr ? 'Partie' : 'Part') : undefined}
+            unitLabel={sections ? (fr ? 'Partie' : 'Part') : undefined}
           />
         </div>
       )}

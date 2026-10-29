@@ -29,7 +29,19 @@ interface DemoCompany {
   label?: string;
   /** Pre-sales diagnostic: shorter, tool-agnostic questionnaire. */
   presales?: boolean;
+  /** Follow-up step (« Suivi » tab); empty = inferred from the order of the client's campaigns. */
+  wave?: 'baseline' | 'remeasure' | 'pulse' | 'review';
+  /** Workflows agreed at the kickoff, as they stood at this wave. */
+  workflows?: { id: string; title: string; team?: string; status: 'planned' | 'building' | 'live' | 'dropped' }[];
 }
+
+const NW_WORKFLOWS = [
+  { id: 'nw1', title: 'Suivi des retards de livraison', team: 'Opérations' },
+  { id: 'nw2', title: 'Préparation des rendez-vous clients', team: 'Sales' },
+  { id: 'nw3', title: 'Réponses aux questions transporteurs', team: 'Support' },
+  { id: 'nw4', title: 'Rapprochement des factures', team: 'Finance' },
+  { id: 'nw5', title: 'Onboarding des nouveaux arrivants', team: 'RH' },
+];
 
 // Four companies from 234 to 1,192 employees, one per readiness band.
 const COMPANIES: DemoCompany[] = [
@@ -37,7 +49,8 @@ const COMPANIES: DemoCompany[] = [
     id: 'demo-northwind', code: 'NWLOG234', name: 'Northwind Logistique', domain: 'northwind-logistique.fr',
     employees: 234, registered: 71, completedShare: 0.82, level: 42,
     offsets: { usage: -6, depth: -10, gov: -8, pain: 22, value: -6, team: -4 },
-    teams: ['operations', 'sales', 'support', 'finance', 'hr'], createdAt: '2026-08-28T08:00:00Z',
+    teams: ['operations', 'sales', 'support', 'finance', 'hr'], createdAt: '2026-08-28T08:00:00Z', wave: 'baseline',
+    workflows: NW_WORKFLOWS.map((w) => ({ ...w, status: 'planned' as const })),
   },
   {
     id: 'demo-bellmont', code: 'BELLM518', name: 'Bellmont Assurances', domain: 'bellmont-assurances.fr',
@@ -70,6 +83,14 @@ const COMPANIES: DemoCompany[] = [
     employees: 640, registered: 48, completedShare: 0.86, level: 46, label: 'Diagnostic IA', presales: true,
     offsets: { gov: -14, team: -8, pain: 24, value: -4 },
     teams: ['operations', 'finance', 'sales', 'support'], createdAt: '2026-10-12T08:00:00Z',
+  },
+  {
+    // Same client re-surveyed after the first weeks of the rollout: the « Suivi » tab shows the change.
+    id: 'demo-northwind-t1', code: 'NWLOG3MO', name: 'Northwind Logistique', domain: 'northwind-logistique.fr',
+    employees: 234, registered: 76, completedShare: 0.87, level: 55, label: 'Re-mesure · 6 semaines', wave: 'remeasure',
+    offsets: { usage: 4, depth: -2, gov: 6, pain: 14, value: 4, team: 4, reach: 2 },
+    teams: ['operations', 'sales', 'support', 'finance', 'hr'], createdAt: '2026-10-09T08:00:00Z',
+    workflows: NW_WORKFLOWS.map((w, i) => ({ ...w, status: (['live', 'live', 'building', 'planned', 'dropped'] as const)[i] })),
   },
 ];
 
@@ -171,6 +192,8 @@ export const getDemoData = () => {
     company_name: c.name,
     campaign_name: c.label ?? `Dust rollout · ${c.employees.toLocaleString('en-US')} employees`,
     audience: c.presales ? 'presales' : 'general',
+    wave: c.wave ?? null,
+    workflows: c.workflows ?? null,
     creator_email: 'demo@dust.tt',
     creator_first_name: DEMO_OWNERS[ci % DEMO_OWNERS.length][0],
     creator_last_name: DEMO_OWNERS[ci % DEMO_OWNERS.length][1],
@@ -363,6 +386,24 @@ export const installDemoInterceptor = () => {
     const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =>
       new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...extra } });
 
+    // Client view of the « Suivi » tab: the campaigns of the company behind the private link, scores only.
+    if (path === 'rpc/get_client_timeline') {
+      const { campaigns, participants } = getDemoData();
+      const key = new Headers(init?.headers).get('x-access-key') || '';
+      const mine = campaigns.find((c) => c.access_key === key);
+      if (!mine) return json([]);
+      const company = String(mine.company_name).toLowerCase();
+      return json(
+        campaigns
+          .filter((c) => String(c.company_name).toLowerCase() === company)
+          .map((c) => ({
+            ...c,
+            results: participants
+              .filter((p) => p.campaign_id === c.id && p.status === 'completed')
+              .map((p) => ({ item_scores: p.item_scores, answers: (p.responses as { answers?: unknown } | null)?.answers ?? null })),
+          }))
+      );
+    }
     if (path.startsWith('rpc/')) return json('DEMO' + Math.random().toString(36).slice(2, 6).toUpperCase());
 
     const data = getDemoData();

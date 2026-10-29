@@ -1,12 +1,17 @@
 import { useMemo, useState } from 'react';
 import { CONTEXT_FIELDS, OPEN_FIELDS } from '@/lib/assessment-v2';
 import { PRESALES_FOLLOW_UPS, PRESALES_ONLY_OPEN_FIELDS, PRESALES_OPEN_FIELDS } from '@/lib/presales';
+import { FOLLOWUP_LABELS, FOLLOWUP_ONLY_OPEN_FIELDS } from '@/lib/followup';
 
-const ALL_OPEN_FIELDS = [...OPEN_FIELDS, ...PRESALES_ONLY_OPEN_FIELDS];
+const ALL_OPEN_FIELDS = [...OPEN_FIELDS, ...PRESALES_ONLY_OPEN_FIELDS, ...FOLLOWUP_ONLY_OPEN_FIELDS];
 
 /** Pre-sales campaigns show the diagnostic's own questions, worded as respondents saw them. */
 export const isPresalesCohort = (participants: CampaignParticipant[]) =>
   participants.some((p) => PRESALES_ONLY_OPEN_FIELDS.some((f) => (p.open?.[f.id] ?? '').trim()));
+
+/** Pulse and review campaigns ask what changed instead of the baseline's questions. */
+const isFollowupCohort = (participants: CampaignParticipant[]) =>
+  participants.some((p) => FOLLOWUP_ONLY_OPEN_FIELDS.some((f) => (p.open?.[f.id] ?? '').trim()));
 import type { CampaignParticipant } from '@/hooks/useCampaignParticipants';
 import { SectionCard } from '@/components/console/SectionCard';
 import { cn } from '@/lib/utils';
@@ -18,7 +23,7 @@ const OTHER_TAB = 'other';
 export const OpenAnswersCard = ({ participants, fr, showEmpty = false }: { participants: CampaignParticipant[]; fr: boolean; showEmpty?: boolean }) => {
   // The open questions, plus one tab for the "Other: ..." notes typed in the first step.
   const tabs = useMemo(() => {
-    const fields = isPresalesCohort(participants) ? [...PRESALES_OPEN_FIELDS, ...PRESALES_FOLLOW_UPS] : OPEN_FIELDS;
+    const fields = isPresalesCohort(participants) ? [...PRESALES_OPEN_FIELDS, ...PRESALES_FOLLOW_UPS] : isFollowupCohort(participants) ? FOLLOWUP_LABELS : OPEN_FIELDS;
     return [...fields.map((f) => ({ id: f.id as string, label: f.label })), { id: OTHER_TAB, label: { en: '"Other" notes', fr: 'Précisions « Autre »' } }];
   }, [participants]);
   const byField = useMemo(() => {

@@ -101,7 +101,7 @@ export const TopBar = ({
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
-          <LanguageSwitcher />
+          <LanguageSwitcher compact />
           {onRefresh && (
             <Button
               variant="ghost"

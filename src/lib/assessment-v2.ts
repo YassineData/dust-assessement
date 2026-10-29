@@ -539,8 +539,8 @@ export const CONTEXT_FIELDS: ChoiceField[] = [
 ];
 
 export interface OpenField {
-  /** The last four only exist in the pre-sales diagnostic (src/lib/presales.ts). */
-  id: 'timeSink' | 'useCase' | 'valueOwner' | 'success' | 'blocker' | 'toolsGap' | 'repetitiveTasks' | 'taskToHandOver' | 'otherGain';
+  /** toolsGap to otherGain only exist in the pre-sales diagnostic (src/lib/presales.ts), the last three in follow-up surveys (src/lib/followup.ts). */
+  id: 'timeSink' | 'useCase' | 'valueOwner' | 'success' | 'blocker' | 'toolsGap' | 'repetitiveTasks' | 'taskToHandOver' | 'otherGain' | 'workflowLive' | 'needNext' | 'impact';
   label: L;
 }
 

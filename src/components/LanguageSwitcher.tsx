@@ -1,41 +1,52 @@
-import { Check, Languages } from 'lucide-react';
+import { Languages } from 'lucide-react';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
-const labels: Record<Language, string> = {
-  fr: 'Français',
-  en: 'English',
-};
+const OPTIONS: { id: Language; label: string; short: string }[] = [
+  { id: 'fr', label: 'Français', short: 'FR' },
+  { id: 'en', label: 'English', short: 'EN' },
+];
 
-export const LanguageSwitcher = () => {
+/**
+ * Both languages always visible, so respondents see at a glance they can switch.
+ * `compact` shows FR / EN only, for crowded toolbars (console, kit).
+ */
+export const LanguageSwitcher = ({ compact = false }: { compact?: boolean }) => {
   const { language, setLanguage } = useLanguage();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-1.5 px-2" aria-label={labels[language]}>
-          <Languages className="h-4 w-4" />
-          <span className="text-xs font-medium uppercase">{language}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[140px]">
-        {(Object.keys(labels) as Language[]).map((lang) => (
-          <DropdownMenuItem
-            key={lang}
-            onClick={() => setLanguage(lang)}
-            className="cursor-pointer justify-between gap-2 text-[13px]"
+    <div
+      role="radiogroup"
+      aria-label={language === 'fr' ? 'Langue' : 'Language'}
+      className="inline-flex items-center gap-1 rounded-full bg-brand-soft p-1 ring-1 ring-sky"
+    >
+      <Languages className="ml-1.5 h-4 w-4 text-brand-ink" aria-hidden="true" />
+      {OPTIONS.map((o) => {
+        const on = language === o.id;
+        return (
+          <button
+            key={o.id}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            lang={o.id}
+            onClick={() => setLanguage(o.id)}
+            className={cn(
+              'rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 sm:px-2.5 sm:py-1',
+              on ? 'bg-brand-strong text-white shadow-sm' : 'text-brand-ink hover:bg-white/70'
+            )}
           >
-            <span>{labels[lang]}</span>
-            {language === lang && <Check className="h-3.5 w-3.5 text-primary" />}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            {compact ? (
+              <span title={o.label}>{o.short}</span>
+            ) : (
+              <>
+                <span className="hidden sm:inline">{o.label}</span>
+                <span className="sm:hidden">{o.short}</span>
+              </>
+            )}
+          </button>
+        );
+      })}
+    </div>
   );
 };

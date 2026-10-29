@@ -257,7 +257,7 @@ const ChampionKit = () => {
                 {L('Private results link', 'Lien privé des résultats')}
               </label>
             )}
-            <LanguageSwitcher />
+            <LanguageSwitcher compact />
             <Button size="sm" variant="outline" onClick={() => window.print()} aria-label={L('Print', 'Imprimer')}>
               <Printer className="h-4 w-4" />
             </Button>

@@ -46,6 +46,10 @@ import { Loader2, Info, Users, Send, Download, Share2, UserPlus, UserCheck, Badg
 import { Button } from '@/components/ui/button';
 import { useCampaignParticipants } from '@/hooks/useCampaignParticipants';
 import { useClientCampaigns } from '@/hooks/useClientCampaigns';
+import { useClientTimeline } from '@/hooks/useClientTimeline';
+import { ClientTimeline } from '@/components/console/ClientTimeline';
+import type { SurveyAudience } from '@/lib/assessment-v2';
+import { waveLabel, type Wave, type Workflow } from '@/lib/waves';
 import { useGlobalBenchmark } from '@/hooks/useGlobalBenchmark';
 
 
@@ -121,6 +125,8 @@ const Dashboard = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [createRequested, setCreateRequested] = useState(0);
+  // Prefills for a follow-up wave started from the « Suivi » tab (cleared by the sidebar « New campaign »).
+  const [createPreset, setCreatePreset] = useState<{ company: string; name: string; audience: SurveyAudience; wave: Wave } | undefined>(undefined);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return localStorage.getItem(SIDEBAR_KEY) === '1'; } catch { return false; }
   });
@@ -317,6 +323,25 @@ const Dashboard = () => {
     campaignAccess?.campaignId || null
   );
   const { benchmark: globalBenchmark } = useGlobalBenchmark();
+  // Admins read every campaign of the client; a client (private link) only gets scores through get_client_timeline.
+  const {
+    points: timelinePoints,
+    isLoading: timelineLoading,
+    patchWorkflows,
+  } = useClientTimeline(activeTab === 'progress' ? campaignAccess?.companyName || null : null, refreshKey, !isAdmin);
+  const saveWorkflows = async (campaignId: string, workflows: Workflow[]) => {
+    const { error } = await supabase.from('campaigns').update({ workflows } as never).eq('id', campaignId);
+    if (error) {
+      toast.error(
+        language === 'fr'
+          ? 'Enregistrement impossible. Lancez supabase/007-campaign-wave.sql dans Supabase.'
+          : 'Could not save. Run supabase/007-campaign-wave.sql in Supabase.'
+      );
+      return false;
+    }
+    patchWorkflows(campaignId, workflows);
+    return true;
+  };
 
   
   // A "real" participant for dashboard analytics = someone who actually completed the test.
@@ -598,7 +623,7 @@ const Dashboard = () => {
             <Link to="/" className="rounded-md" aria-label="Dust">
               <DustWordmark subtitle={language === 'fr' ? 'Cadrage du déploiement' : 'Deployment scoping'} />
             </Link>
-            <LanguageSwitcher />
+            <LanguageSwitcher compact />
           </div>
         </header>
         <main className="flex flex-1 items-center justify-center px-4 py-12">
@@ -753,6 +778,7 @@ const Dashboard = () => {
     participants: { fr: `${participants.length} membres inscrits, profils et scores individuels.`, en: `${participants.length} enrolled members, profiles and individual scores.` },
     itemScores: { fr: `Performance de chaque répondant sur les ${activeThematics.length} dimensions.`, en: `Each respondent's performance across all ${activeThematics.length} dimensions.` },
     detailed: { fr: 'Répartition des réponses pour chaque question.', en: 'Answer distribution for every question.' },
+    progress: { fr: 'L’évolution d’un passage à l’autre : point de départ, re-mesures, bilan, et les workflows convenus au kickoff.', en: 'How things evolve from one wave to the next: baseline, re-measures, review, and the workflows agreed at the kickoff.' },
     compare: { fr: 'Comparez la cohorte à des participants, d’autres campagnes ou des secteurs.', en: 'Benchmark the cohort against participants, other campaigns or sectors.' },
     actions: { fr: 'Qui fait quoi dans le déploiement, et par où commencer.', en: 'Who does what in the rollout, and where to start.' },
     share: { fr: 'Le lien, le message et le suivi des réponses.', en: 'The link, the message and response tracking.' },
@@ -822,7 +848,7 @@ const Dashboard = () => {
         companyName={campaignAccess.companyName}
         campaignName={campaignName}
         responses={{ completed: completedParticipants.length, total: participants.length }}
-        onNewCampaign={isAdmin ? () => { setCreateRequested(k => k + 1); setActiveTab('campaignSettings'); } : undefined}
+        onNewCampaign={isAdmin ? () => { setCreatePreset(undefined); setCreateRequested(k => k + 1); setActiveTab('campaignSettings'); } : undefined}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={toggleSidebar}
         mobileOpen={mobileNavOpen}
@@ -1204,6 +1230,29 @@ const Dashboard = () => {
           </>
         )}
 
+        {activeTab === 'progress' && campaignAccess.companyName && (
+          <ClientTimeline
+            companyName={campaignAccess.companyName}
+            points={timelinePoints}
+            isLoading={timelineLoading}
+            fr={fr}
+            client={!isAdmin}
+            onSaveWorkflows={isAdmin ? saveWorkflows : undefined}
+            onCreateCampaign={!isAdmin ? undefined : (wave) => {
+              // Same audience as the last full survey (a pre-sales diagnostic is followed by the deployment survey).
+              const last = [...timelinePoints].reverse().find((p) => p.audience !== 'presales');
+              setCreatePreset({
+                company: campaignAccess.companyName,
+                name: waveLabel(wave, fr),
+                audience: (last?.audience as SurveyAudience) || 'general',
+                wave,
+              });
+              setCreateRequested(k => k + 1);
+              setActiveTab('campaignSettings');
+            }}
+          />
+        )}
+
         {activeTab === 'compare' && (
           <>
             {!hasParticipants ? (
@@ -1322,6 +1371,7 @@ const Dashboard = () => {
             onSelectCampaign={handleCampaignSelect}
             onNavigate={setActiveTab}
             openCreate={createRequested > 0}
+            createPreset={createPreset}
             onCampaignDeleted={isAdmin ? handleCampaignDeleted : undefined}
             onCampaignCreated={isAdmin ? handleCampaignCreated : undefined}
             key={activeTab === 'campaignSettings' ? `settings-${createRequested}` : activeTab}

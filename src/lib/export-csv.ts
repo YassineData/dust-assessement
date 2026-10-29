@@ -2,8 +2,9 @@ import { CampaignParticipant } from '@/hooks/useCampaignParticipants';
 import { getQuestionText } from '@/lib/assessment-data';
 import { CONTEXT_FIELDS, OPEN_FIELDS as SURVEY_OPEN_FIELDS, classLabel, contextLabels, dimensionLabel } from '@/lib/assessment-v2';
 import { PRESALES_ONLY_OPEN_FIELDS } from '@/lib/presales';
+import { FOLLOWUP_ONLY_OPEN_FIELDS } from '@/lib/followup';
 
-const OPEN_FIELDS = [...SURVEY_OPEN_FIELDS, ...PRESALES_ONLY_OPEN_FIELDS];
+const OPEN_FIELDS = [...SURVEY_OPEN_FIELDS, ...PRESALES_ONLY_OPEN_FIELDS, ...FOLLOWUP_ONLY_OPEN_FIELDS];
 import { getActiveThematics, getActiveQuestions } from '@/lib/active-assessment-type';
 
 const RESPONSE_LABELS_FR: Record<string, string> = {

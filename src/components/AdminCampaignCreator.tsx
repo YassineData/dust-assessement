@@ -13,11 +13,16 @@ import { resultsLink } from '@/lib/access';
 import { useIsDustTeam } from '@/hooks/useIsDustTeam';
 import { DUST_TEAM, splitName } from '@/lib/dust-team';
 import type { Campaign } from '@/components/CampaignSelector';
+import type { Wave } from '@/lib/waves';
 
 const TEAM_NAMES = DUST_TEAM.flatMap((g) => g.names);
 
 interface AdminCampaignCreatorProps {
   defaultCompany?: string;
+  /** Prefills for a follow-up wave of an existing client (from the « Suivi » tab). */
+  defaultCampaignName?: string;
+  defaultAudience?: SurveyAudience;
+  defaultWave?: Wave;
   /** Email that will own the results (dashboard login). Asked only when not provided. */
   defaultCreatorEmail?: string;
   onCreated?: () => void;
@@ -31,13 +36,13 @@ const CREATOR_KEY = 'dust_campaign_creator_name';
  * Creates a deployment and hands back a link (+ code) to send to the client.
  * No recipient list: respondents register themselves when they open the link.
  */
-export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCreated, onCampaignCreated }: AdminCampaignCreatorProps) => {
+export const AdminCampaignCreator = ({ defaultCompany, defaultCampaignName, defaultAudience, defaultWave, defaultCreatorEmail, onCreated, onCampaignCreated }: AdminCampaignCreatorProps) => {
   const { language } = useLanguage();
   const fr = language !== 'en';
   const { toast } = useToast();
 
   const [company, setCompany] = useState(defaultCompany ?? '');
-  const [campaignName, setCampaignName] = useState('');
+  const [campaignName, setCampaignName] = useState(defaultCampaignName ?? '');
   // Who is creating it: one field with the Dust team as suggestions, remembered on this browser.
   const [creator, setCreator] = useState(() => {
     try {
@@ -53,7 +58,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
   // Only the Dust team (admin key) can create campaigns; the database enforces it too.
   const canCreate = useIsDustTeam();
   // Survey type, saved with the campaign (own header; Sales and CS pre-select the team). Default: all teams.
-  const [audience, setAudience] = useState<SurveyAudience>('general');
+  const [audience, setAudience] = useState<SurveyAudience>(defaultAudience ?? 'general');
   // Optional intro written for this client, replacing the standard title and first line.
   const [introOpen, setIntroOpen] = useState(false);
   const [introTitle, setIntroTitle] = useState('');
@@ -115,7 +120,11 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCreatorEmail, onCr
       };
       const intro = introTitle.trim() || introBody.trim() ? { title: introTitle.trim(), body: introBody.trim() } : null;
       const COLS = 'id, code, company_name, campaign_name, creator_email, creator_first_name, creator_last_name, created_at, access_key';
-      let { data: inserted, error } = await supabase.from('campaigns').insert({ ...base, audience, intro } as any).select(COLS).maybeSingle();
+      let { data: inserted, error } = await supabase.from('campaigns').insert({ ...base, audience, intro, ...(defaultWave ? { wave: defaultWave } : {}) } as any).select(COLS).maybeSingle();
+      // Follow-up waves need supabase/007-campaign-wave.sql; without it the campaign is still created (its wave is then inferred).
+      if (error && defaultWave && /wave/i.test(error.message || '')) {
+        ({ data: inserted, error } = await supabase.from('campaigns').insert({ ...base, audience, intro } as any).select(COLS).maybeSingle());
+      }
       // Columns not installed yet (supabase/004-campaign-audience.sql): create without them; the link still carries the type.
       // The pre-sales type needs supabase/006-presales-audience.sql: say so instead of creating another type.
       if (error && /audience_check/i.test(error.message || '')) {

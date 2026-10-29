@@ -3,12 +3,13 @@ import { X, BadgeCheck, Target, FileText, AlertTriangle, Trash2 } from 'lucide-r
 import { DeleteParticipantDialog } from '@/components/DeleteParticipantDialog';
 import { CONTEXT_FIELDS, OPEN_FIELDS as SURVEY_OPEN_FIELDS, V2_QUESTIONS, contextLabels, READINESS_DIMENSION_IDS } from '@/lib/assessment-v2';
 import { PRESALES_FOLLOW_UPS, PRESALES_ONLY_OPEN_FIELDS, PRESALES_OPEN_FIELDS } from '@/lib/presales';
+import { FOLLOWUP_LABELS, FOLLOWUP_ONLY_OPEN_FIELDS } from '@/lib/followup';
 
 // Labels as the person saw them: the pre-sales diagnostic words some open questions differently.
 const PRESALES_LABELS = [...PRESALES_OPEN_FIELDS, ...PRESALES_FOLLOW_UPS];
-const OPEN_FIELDS = [...SURVEY_OPEN_FIELDS.filter((f) => !PRESALES_LABELS.some((x) => x.id === f.id)), ...PRESALES_LABELS];
+const OPEN_FIELDS = [...SURVEY_OPEN_FIELDS.filter((f) => !PRESALES_LABELS.some((x) => x.id === f.id)), ...PRESALES_LABELS, ...FOLLOWUP_ONLY_OPEN_FIELDS];
 const openFieldsFor = (open: Record<string, string | undefined>) =>
-  PRESALES_ONLY_OPEN_FIELDS.some((f) => open[f.id]) ? PRESALES_LABELS : SURVEY_OPEN_FIELDS;
+  PRESALES_ONLY_OPEN_FIELDS.some((f) => open[f.id]) ? PRESALES_LABELS : FOLLOWUP_ONLY_OPEN_FIELDS.some((f) => open[f.id]) ? FOLLOWUP_LABELS : SURVEY_OPEN_FIELDS;
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CampaignParticipant } from '@/hooks/useCampaignParticipants';
