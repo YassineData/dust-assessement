@@ -10,6 +10,7 @@ import type { TimelinePoint } from '@/hooks/useClientTimeline';
 import { WorkflowsCard, workflowProgress } from '@/components/console/WorkflowsCard';
 import { UsageCard } from '@/components/console/UsageCard';
 import { PILLAR_COLOR, TrajectoryCard } from '@/components/console/TrajectoryCard';
+import { NextActionsCard } from '@/components/console/NextActionsCard';
 import type { Usage } from '@/lib/usage-import';
 
 const ROLE_LABEL: Record<RoleId, { fr: string; en: string }> = {
@@ -177,6 +178,7 @@ export const ClientTimeline = ({ companyName, points, isLoading, fr, onCreateCam
       <div className="space-y-5">
         {points.length > 0 && timeline}
         {points.length > 0 && <UsageCard point={points[points.length - 1]} fr={fr} onSave={onSaveUsage} />}
+        {!client && <NextActionsCard points={points} fr={fr} />}
         <WorkflowsCard points={points} fr={fr} onSave={onSaveWorkflows} />
         <SectionCard title={fr ? (client ? 'Voir votre évolution' : 'Voir l’évolution de ce client') : client ? 'See how you evolve' : 'See how this client evolves'}>
           <ol className="grid gap-3 sm:grid-cols-3">
@@ -240,6 +242,8 @@ export const ClientTimeline = ({ companyName, points, isLoading, fr, onCreateCam
       {timeline}
 
       <TrajectoryCard points={points} fr={fr} />
+
+      {!client && <NextActionsCard points={points} fr={fr} />}
 
       <SectionCard
         title={fr ? 'Avant / après' : 'Before / after'}

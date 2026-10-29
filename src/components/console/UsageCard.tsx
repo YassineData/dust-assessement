@@ -178,7 +178,10 @@ export const UsageCard = ({ point, previous, fr, onSave }: Props) => {
     >
       {error && <p className="mb-3 text-[12px] text-risk-ink">{error}</p>}
 
-      <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">{fr ? 'Santé d’usage' : 'Usage health'}</p>
+      <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+        {fr ? 'Santé du déploiement' : 'Deployment health'}
+        <span className="ml-2 font-normal normal-case tracking-normal">{fr ? '· ce qui prédit le renouvellement' : '· what predicts renewal'}</span>
+      </p>
       <div className="mt-2 grid gap-2 sm:grid-cols-3">
         {tiles.map((t) => (
           <div key={t.id} className={cn('rounded-lg p-3.5 ring-1', t.tone ? TONE_CLASS[t.tone] : 'bg-paper ring-border')}>
@@ -235,7 +238,11 @@ export const UsageCard = ({ point, previous, fr, onSave }: Props) => {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <p className="mt-5 text-[12px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+        {fr ? 'Leviers' : 'Levers'}
+        <span className="ml-2 font-normal normal-case tracking-normal">{fr ? '· ce sur quoi on peut agir' : '· what we can act on'}</span>
+      </p>
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {facts.map((f) => (
           <div key={f.label} className="rounded-md bg-paper px-3 py-2.5 ring-1 ring-border">
             <p className="text-[12px] text-muted-foreground">{f.label}</p>
