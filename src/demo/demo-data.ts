@@ -33,6 +33,8 @@ interface DemoCompany {
   wave?: 'baseline' | 'remeasure' | 'pulse' | 'review';
   /** Workflows agreed at the kickoff, as they stood at this wave. */
   workflows?: { id: string; title: string; team?: string; status: 'planned' | 'building' | 'live' | 'dropped' }[];
+  /** Imported Dust usage export at this wave (src/lib/usage-import.ts). */
+  usage?: Record<string, unknown>;
 }
 
 const NW_WORKFLOWS = [
@@ -91,6 +93,28 @@ const COMPANIES: DemoCompany[] = [
     offsets: { usage: 4, depth: -2, gov: 6, pain: 14, value: 4, team: 4, reach: 2 },
     teams: ['operations', 'sales', 'support', 'finance', 'hr'], createdAt: '2026-10-09T08:00:00Z',
     workflows: NW_WORKFLOWS.map((w, i) => ({ ...w, status: (['live', 'live', 'building', 'planned', 'dropped'] as const)[i] })),
+    usage: {
+      importedAt: '2026-10-09T09:00:00Z',
+      fileName: 'northwind-usage-sept.csv',
+      period: { from: '2026-09-07', to: '2026-10-04' },
+      weeks: 4,
+      scope: 234,
+      activeUsers: 152,
+      recurringUsers: 118,
+      conversations: 1840,
+      sharedConversations: 312,
+      totalMessages: 9460,
+      agents: [
+        { name: '@RetardsLivraison', messages: 2410, users: 61 },
+        { name: '@PrepaRDV', messages: 1980, users: 38 },
+        { name: '@Transporteurs', messages: 1505, users: 44 },
+        { name: '@dust', messages: 1320, users: 97 },
+        { name: '@CompteRendu', messages: 870, users: 52 },
+        { name: '@Factures', messages: 610, users: 9 },
+        { name: '@Onboarding', messages: 455, users: 21 },
+        { name: '@Traducteur', messages: 310, users: 33 },
+      ],
+    },
   },
 ];
 
@@ -194,6 +218,7 @@ export const getDemoData = () => {
     audience: c.presales ? 'presales' : 'general',
     wave: c.wave ?? null,
     workflows: c.workflows ?? null,
+    usage: c.usage ?? null,
     creator_email: 'demo@dust.tt',
     creator_first_name: DEMO_OWNERS[ci % DEMO_OWNERS.length][0],
     creator_last_name: DEMO_OWNERS[ci % DEMO_OWNERS.length][1],

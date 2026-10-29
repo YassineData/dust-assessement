@@ -8,6 +8,8 @@ import { PILLARS, WAVES, waveLabel, type Wave, type Workflow } from '@/lib/waves
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { TimelinePoint } from '@/hooks/useClientTimeline';
 import { WorkflowsCard, workflowProgress } from '@/components/console/WorkflowsCard';
+import { UsageCard } from '@/components/console/UsageCard';
+import type { Usage } from '@/lib/usage-import';
 
 const ROLE_LABEL: Record<RoleId, { fr: string; en: string }> = {
   champion: { fr: 'Champions', en: 'Champions' },
@@ -50,12 +52,14 @@ interface Props {
   onCreateCampaign?: (wave: Wave) => void;
   /** Admins only: saves the kickoff workflows on a campaign. */
   onSaveWorkflows?: (campaignId: string, workflows: Workflow[]) => Promise<boolean>;
+  /** Admins only: attaches a Dust usage export to a campaign (null removes it). */
+  onSaveUsage?: (campaignId: string, usage: Usage | null) => Promise<boolean>;
   /** Client view (private results link): no internal notes. */
   client?: boolean;
 }
 
 /** One client's follow-up: every wave of the survey, and what changed between two of them. */
-export const ClientTimeline = ({ companyName, points, isLoading, fr, onCreateCampaign, onSaveWorkflows, client = false }: Props) => {
+export const ClientTimeline = ({ companyName, points, isLoading, fr, onCreateCampaign, onSaveWorkflows, onSaveUsage, client = false }: Props) => {
   const withAnswers = points.filter((p) => p.respondents > 0);
   const [fromId, setFromId] = useState<string | null>(null);
   const [toId, setToId] = useState<string | null>(null);
@@ -171,6 +175,7 @@ export const ClientTimeline = ({ companyName, points, isLoading, fr, onCreateCam
     return (
       <div className="space-y-5">
         {points.length > 0 && timeline}
+        {points.length > 0 && <UsageCard point={points[points.length - 1]} fr={fr} onSave={onSaveUsage} />}
         <WorkflowsCard points={points} fr={fr} onSave={onSaveWorkflows} />
         <SectionCard title={fr ? (client ? 'Voir votre évolution' : 'Voir l’évolution de ce client') : client ? 'See how you evolve' : 'See how this client evolves'}>
           <ol className="grid gap-3 sm:grid-cols-3">
@@ -295,6 +300,8 @@ export const ClientTimeline = ({ companyName, points, isLoading, fr, onCreateCam
           </p>
         )}
       </SectionCard>
+
+      <UsageCard point={B} previous={A.usage ? A : null} fr={fr} onSave={onSaveUsage} />
 
       <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
         <SectionCard

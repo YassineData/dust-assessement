@@ -50,6 +50,7 @@ import { useClientTimeline } from '@/hooks/useClientTimeline';
 import { ClientTimeline } from '@/components/console/ClientTimeline';
 import type { SurveyAudience } from '@/lib/assessment-v2';
 import { waveLabel, type Wave, type Workflow } from '@/lib/waves';
+import type { Usage } from '@/lib/usage-import';
 import { useGlobalBenchmark } from '@/hooks/useGlobalBenchmark';
 
 
@@ -327,10 +328,10 @@ const Dashboard = () => {
   const {
     points: timelinePoints,
     isLoading: timelineLoading,
-    patchWorkflows,
+    patchPoint,
   } = useClientTimeline(activeTab === 'progress' ? campaignAccess?.companyName || null : null, refreshKey, !isAdmin);
-  const saveWorkflows = async (campaignId: string, workflows: Workflow[]) => {
-    const { error } = await supabase.from('campaigns').update({ workflows } as never).eq('id', campaignId);
+  const saveCampaignFollowup = async (campaignId: string, patch: { workflows?: Workflow[]; usage?: Usage | null }) => {
+    const { error } = await supabase.from('campaigns').update(patch as never).eq('id', campaignId);
     if (error) {
       toast.error(
         language === 'fr'
@@ -339,7 +340,7 @@ const Dashboard = () => {
       );
       return false;
     }
-    patchWorkflows(campaignId, workflows);
+    patchPoint(campaignId, patch);
     return true;
   };
 
@@ -1237,7 +1238,8 @@ const Dashboard = () => {
             isLoading={timelineLoading}
             fr={fr}
             client={!isAdmin}
-            onSaveWorkflows={isAdmin ? saveWorkflows : undefined}
+            onSaveWorkflows={isAdmin ? (id, workflows) => saveCampaignFollowup(id, { workflows }) : undefined}
+            onSaveUsage={isAdmin ? (id, usage) => saveCampaignFollowup(id, { usage }) : undefined}
             onCreateCampaign={!isAdmin ? undefined : (wave) => {
               // Same audience as the last full survey (a pre-sales diagnostic is followed by the deployment survey).
               const last = [...timelinePoints].reverse().find((p) => p.audience !== 'presales');

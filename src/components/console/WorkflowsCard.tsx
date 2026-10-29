@@ -76,7 +76,7 @@ export const WorkflowsCard = ({ points, fr, onSave }: Props) => {
       description={
         onSave
           ? fr
-            ? 'Ce que le client s’est engagé à mettre en place, et où chaque workflow en est. Mis à jour à chaque passage.'
+            ? 'Les use-case outcomes : ce que le client s’est engagé à mettre en place, et où chaque workflow en est. Mis à jour à chaque passage.'
             : 'What the client committed to put in place, and where each workflow stands. Updated at each wave.'
           : fr
             ? 'Ce que vous avez décidé de mettre en place avec l’équipe Dust, et où chaque workflow en est.'

@@ -3,6 +3,7 @@ import { fetchAllRows } from '@/lib/fetch-all';
 import { supabase } from '@/integrations/supabase/client';
 import { DIMENSION_IDS, isV2ItemScores, isV2Responses, measuredDimensions, rescore, type RoleId } from '@/lib/assessment-v2';
 import { resolveWaves, toWorkflows, type Wave, type Workflow } from '@/lib/waves';
+import { toUsage, type Usage } from '@/lib/usage-import';
 
 export interface TimelinePoint {
   id: string;
@@ -20,6 +21,8 @@ export interface TimelinePoint {
   roles: Record<RoleId, number>;
   /** Workflows agreed at the kickoff, as recorded on this campaign (null when never set). */
   workflows: Workflow[] | null;
+  /** Actual Dust usage imported for this wave (null when no export was added). */
+  usage: Usage | null;
 }
 
 type CampaignRow = {
@@ -31,6 +34,7 @@ type CampaignRow = {
   audience?: string | null;
   wave?: string | null;
   workflows?: unknown;
+  usage?: unknown;
 };
 type ResultRow = { campaign_id: string; item_scores: unknown; responses: unknown };
 /** Row of get_client_timeline (supabase/007): scores and statements only. */
@@ -69,6 +73,7 @@ const buildPoints = (rows: CampaignRow[], parts: ResultRow[]): TimelinePoint[] =
       dimensions,
       roles,
       workflows: toWorkflows(c.workflows),
+      usage: toUsage(c.usage),
     };
   });
 };
@@ -110,10 +115,12 @@ export const useClientTimeline = (companyName: string | null, refreshKey = 0, as
         }
 
         const base = 'id, code, company_name, campaign_name, created_at, audience';
-        let res = await supabase.from('campaigns').select(`${base}, wave, workflows`).ilike('company_name', companyName.trim());
+        // Columns added by supabase/007 (usage came last): try the fullest select first, then fall back.
+        let res = await supabase.from('campaigns').select(`${base}, wave, workflows, usage`).ilike('company_name', companyName.trim());
+        if (res.error) res = await supabase.from('campaigns').select(`${base}, wave, workflows`).ilike('company_name', companyName.trim());
         let hasWave = true;
         if (res.error) {
-          // Columns not created yet (supabase/007): fall back to the order of the campaigns.
+          // Columns not created yet: waves are inferred from the order of the campaigns.
           hasWave = false;
           res = await supabase.from('campaigns').select(base).ilike('company_name', companyName.trim());
         }
@@ -149,9 +156,9 @@ export const useClientTimeline = (companyName: string | null, refreshKey = 0, as
     };
   }, [companyName, refreshKey, asClient]);
 
-  /** Local update after saving a campaign's workflows, without reloading every result. */
-  const patchWorkflows = (campaignId: string, workflows: Workflow[]) =>
-    setPoints((prev) => prev.map((p) => (p.id === campaignId ? { ...p, workflows } : p)));
+  /** Local update after saving a campaign's workflows or usage, without reloading every result. */
+  const patchPoint = (campaignId: string, patch: Partial<Pick<TimelinePoint, 'workflows' | 'usage'>>) =>
+    setPoints((prev) => prev.map((p) => (p.id === campaignId ? { ...p, ...patch } : p)));
 
-  return { points, isLoading, waveColumn, patchWorkflows };
+  return { points, isLoading, waveColumn, patchPoint };
 };
