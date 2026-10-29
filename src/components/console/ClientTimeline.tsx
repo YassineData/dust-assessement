@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Loader2, PlusCircle, TrendingDown, TrendingUp, Minus } from 'lucide-react';
-import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { SectionCard } from '@/components/console/SectionCard';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { DIMENSIONS, dimensionLabel, dimensionShort, getReadinessBand, type RoleId } from '@/lib/assessment-v2';
+import { DIMENSIONS, dimensionLabel, getReadinessBand, type RoleId } from '@/lib/assessment-v2';
 import { PILLARS, WAVES, waveLabel, type Wave, type Workflow } from '@/lib/waves';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { TimelinePoint } from '@/hooks/useClientTimeline';
@@ -213,104 +212,133 @@ export const ClientTimeline = ({ companyName, points, isLoading, fr, onCreateCam
     );
   }
 
-  const radarData = shared.map((d) => ({ dim: dimensionShort(d.id, fr ? 'fr' : 'en'), from: A.dimensions[d.id] ?? 0, to: B.dimensions[d.id] ?? 0 }));
   const dimRows = shared
     .map((d) => ({ d, from: A.dimensions[d.id] as number, to: B.dimensions[d.id] as number }))
     .sort((x, y) => y.to - y.from - (x.to - x.from));
   const readinessDelta = A.readiness !== null && B.readiness !== null ? B.readiness - A.readiness : null;
   // Pre-sales and pulse surveys measure fewer dimensions than the full one.
   const differentSurveys = (A.audience === 'presales') !== (B.audience === 'presales') || (A.wave === 'pulse') !== (B.wave === 'pulse');
-  const fromLabel = `${waveLabel(A.wave, fr)} · ${fmtDate(A.createdAt, fr)}`;
-  const toLabel = `${waveLabel(B.wave, fr)} · ${fmtDate(B.createdAt, fr)}`;
+  const weeks = Math.max(1, Math.round((new Date(B.createdAt).getTime() - new Date(A.createdAt).getTime()) / (7 * 24 * 3600 * 1000)));
+  const bandA = A.readiness !== null ? getReadinessBand(A.readiness).headline : null;
+  const bandB = B.readiness !== null ? getReadinessBand(B.readiness).headline : null;
+  const best = dimRows[0];
+
+  // One headline sentence, then the four numbers that matter, then the detail.
+  const kpis = [
+    { id: 'readiness', label: fr ? 'Indice de préparation' : 'Readiness index', from: A.readiness, to: B.readiness, main: true },
+    ...PILLARS.map((pl) => ({ id: pl.id, label: fr ? pl.label.fr : pl.label.en, from: pillarScore(A, pl.dims), to: pillarScore(B, pl.dims), main: false })),
+  ];
 
   return (
     <div className="space-y-5">
       {timeline}
 
-      {differentSurveys && (
-        <p className="rounded-md bg-warn-soft px-3 py-2 text-[13px] text-warn-ink">
-          {fr
-            ? 'Les deux passages n’utilisent pas le même questionnaire : seules les dimensions mesurées dans les deux sont comparées.'
-            : 'The two waves do not use the same survey: only dimensions measured in both are compared.'}
-        </p>
-      )}
-
-      <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
-        <SectionCard
-          title={fr ? 'Avant / après' : 'Before / after'}
-          description={`${fromLabel} → ${toLabel}`}
-        >
-          <div className="h-[320px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                <PolarGrid stroke="hsl(var(--chart-grid))" />
-                <PolarAngleAxis dataKey="dim" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={3} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
-                <Radar name={fromLabel} dataKey="from" stroke="hsl(var(--chart-benchmark))" fill="hsl(var(--chart-benchmark))" fillOpacity={0.18} strokeDasharray="3 3" strokeWidth={1.25} />
-                <Radar name={toLabel} dataKey="to" stroke="hsl(var(--brand))" fill="hsl(var(--brand))" fillOpacity={0.16} strokeWidth={1.75} dot={{ r: 2.5, fill: 'hsl(var(--brand))', strokeWidth: 0 }} />
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        </SectionCard>
-
-        <div className="space-y-5">
-          <SectionCard title={fr ? 'Indice de préparation' : 'Readiness index'}>
-            <div className="flex items-end gap-4">
-              <span className="text-[15px] tabular-nums text-muted-foreground">{A.readiness}</span>
-              <ArrowRight className="mb-1 h-4 w-4 text-muted-foreground" aria-hidden />
-              <span className="text-[40px] font-semibold leading-none tabular-nums text-foreground">{B.readiness}</span>
-              <Delta value={readinessDelta} suffix=" pts" />
-            </div>
-            {B.readiness !== null && (
-              <p className="mt-2 text-[13px] text-muted-foreground">
-                {(fr ? getReadinessBand(A.readiness ?? 0).headline.fr : getReadinessBand(A.readiness ?? 0).headline.en)} →{' '}
-                <span className="font-medium text-foreground">{fr ? getReadinessBand(B.readiness).headline.fr : getReadinessBand(B.readiness).headline.en}</span>
-              </p>
+      <SectionCard
+        title={fr ? 'Avant / après' : 'Before / after'}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-1.5">
+            <span className="pill pill-neutral">{waveLabel(A.wave, fr)} · {fmtDate(A.createdAt, fr)}</span>
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            <span className="pill pill-blue">{waveLabel(B.wave, fr)} · {fmtDate(B.createdAt, fr)}</span>
+            <span className="text-[12px]">
+              · {weeks} {fr ? (weeks > 1 ? 'semaines' : 'semaine') : weeks > 1 ? 'weeks' : 'week'}
+            </span>
+          </span>
+        }
+      >
+        {bandA && bandB && readinessDelta !== null && (
+          <p className="text-[15px] leading-relaxed text-foreground">
+            {fr ? (
+              <>
+                En {weeks} semaine{weeks > 1 ? 's' : ''}, l’indice passe de <b>{A.readiness}</b> à <b>{B.readiness}</b>
+                {bandA.fr !== bandB.fr ? (
+                  <>
+                    {' '}: de « {bandA.fr} » à <b>« {bandB.fr} »</b>
+                  </>
+                ) : null}
+                .{best && best.to - best.from > 0 ? <> Plus forte progression : {dimensionLabel(best.d.id, 'fr').toLowerCase()} (+{best.to - best.from}).</> : null}
+              </>
+            ) : (
+              <>
+                In {weeks} week{weeks > 1 ? 's' : ''}, the index goes from <b>{A.readiness}</b> to <b>{B.readiness}</b>
+                {bandA.en !== bandB.en ? (
+                  <>
+                    : from “{bandA.en}” to <b>“{bandB.en}”</b>
+                  </>
+                ) : null}
+                .{best && best.to - best.from > 0 ? <> Biggest gain: {dimensionLabel(best.d.id, 'en').toLowerCase()} (+{best.to - best.from}).</> : null}
+              </>
             )}
-          </SectionCard>
+          </p>
+        )}
 
-          <SectionCard
-            title={fr ? 'Les trois piliers' : 'The three pillars'}
-            description={fr ? 'Lus depuis le questionnaire, avec les mêmes mots que les métriques d’usage.' : 'Read from the survey, in the same words as the usage metrics.'}
-          >
-            <div className="grid gap-2 sm:grid-cols-3">
-              {PILLARS.map((pl) => {
-                const a = pillarScore(A, pl.dims);
-                const b = pillarScore(B, pl.dims);
-                return (
-                  <div key={pl.id} className="rounded-md bg-paper p-3 ring-1 ring-border">
-                    <p className="text-[12px] font-medium text-muted-foreground">{fr ? pl.label.fr : pl.label.en}</p>
-                    <p className="mt-1 text-[22px] font-semibold tabular-nums text-foreground">
-                      {b ?? '·'}
-                      <span className="ml-1 text-[12px] font-normal text-muted-foreground">{a !== null ? `${fr ? 'vs' : 'vs'} ${a}` : ''}</span>
-                    </p>
-                    <Delta value={a !== null && b !== null ? b - a : null} />
-                  </div>
-                );
-              })}
+        <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+          {kpis.map((k) => (
+            <div key={k.id} className={cn('rounded-lg p-3.5 ring-1', k.main ? 'bg-brand-soft ring-brand/30' : 'bg-paper ring-border')}>
+              <p className="text-[12px] font-medium text-muted-foreground">{k.label}</p>
+              <div className="mt-1.5 flex items-baseline gap-2">
+                <span className="text-[28px] font-semibold leading-none tabular-nums text-foreground">{k.to ?? '·'}</span>
+                {k.from !== null && <span className="text-[12px] tabular-nums text-muted-foreground">{fr ? 'avant' : 'was'} {k.from}</span>}
+              </div>
+              <div className="mt-2">
+                <Delta value={k.from !== null && k.to !== null ? k.to - k.from : null} />
+              </div>
             </div>
-          </SectionCard>
+          ))}
         </div>
-      </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-        <SectionCard title={fr ? 'Ce qui a bougé, dimension par dimension' : 'What moved, dimension by dimension'} flush>
-          <ul className="divide-y divide-border">
-            {dimRows.map(({ d, from, to }) => (
-              <li key={d.id} className="grid grid-cols-[1fr_auto] items-center gap-3 px-5 py-2.5 sm:grid-cols-[220px_1fr_auto]">
-                <span className="text-[13px] text-foreground">{dimensionLabel(d.id, fr ? 'fr' : 'en')}</span>
-                <div className="relative hidden h-2 rounded-full bg-muted sm:block" aria-hidden>
-                  <span className="absolute inset-y-0 left-0 rounded-full bg-[hsl(var(--chart-benchmark))]" style={{ width: `${from}%` }} />
-                  <span className="absolute inset-y-0 left-0 rounded-full bg-brand opacity-80" style={{ width: `${to}%`, height: '50%', top: '25%' }} />
-                </div>
-                <span className="flex items-center gap-2 text-[12px] tabular-nums text-muted-foreground">
-                  {from} → <span className="font-semibold text-foreground">{to}</span>
-                  <Delta value={to - from} />
-                </span>
-              </li>
-            ))}
+        {differentSurveys && (
+          <p className="mt-3 rounded-md bg-warn-soft px-3 py-2 text-[12px] text-warn-ink">
+            {fr
+              ? 'Les deux passages n’utilisent pas le même questionnaire : seules les dimensions mesurées dans les deux sont comparées.'
+              : 'The two waves do not use the same survey: only dimensions measured in both are compared.'}
+          </p>
+        )}
+      </SectionCard>
+
+      <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+        <SectionCard
+          title={fr ? 'Dimension par dimension' : 'Dimension by dimension'}
+          description={fr ? 'Classées de la plus forte progression à la plus faible.' : 'From the biggest gain to the smallest.'}
+          actions={
+            <span className="flex items-center gap-3 text-[12px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[hsl(var(--chart-benchmark))]" />
+                {fr ? 'Avant' : 'Before'}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-brand" />
+                {fr ? 'Après' : 'After'}
+              </span>
+            </span>
+          }
+        >
+          <ul className="space-y-3">
+            {dimRows.map(({ d, from, to }) => {
+              const lo = Math.min(from, to);
+              const hi = Math.max(from, to);
+              return (
+                <li key={d.id} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[190px_1fr_92px]">
+                  <span className="truncate text-[13px] text-foreground" title={dimensionLabel(d.id, fr ? 'fr' : 'en')}>
+                    {dimensionLabel(d.id, fr ? 'fr' : 'en')}
+                  </span>
+                  {/* Dumbbell: grey dot before, blue dot after, the bar is the gap. */}
+                  <div className="relative order-last col-span-2 h-4 sm:order-none sm:col-span-1" aria-hidden>
+                    <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" />
+                    <span
+                      className={cn('absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full', to >= from ? 'bg-brand/30' : 'bg-risk-soft')}
+                      style={{ left: `${lo}%`, width: `${hi - lo}%` }}
+                    />
+                    <span className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[hsl(var(--chart-benchmark))]" style={{ left: `${from}%` }} />
+                    <span className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand ring-2 ring-card" style={{ left: `${to}%` }} />
+                  </div>
+                  <span className="flex items-center justify-end gap-2 text-[12px] tabular-nums">
+                    <span className="font-semibold text-foreground">{to}</span>
+                    <Delta value={to - from} />
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </SectionCard>
 
@@ -318,34 +346,34 @@ export const ClientTimeline = ({ companyName, points, isLoading, fr, onCreateCam
           title={fr ? 'Les personnes clés' : 'Key people'}
           description={fr ? 'Profils repérés à chaque passage. Une personne peut cumuler plusieurs rôles.' : 'Profiles found at each wave. One person can hold several roles.'}
         >
-          <ul className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
             {(['champion', 'trainer', 'builder', 'sponsor'] as RoleId[]).map((r) => (
-              <li key={r} className="flex items-center justify-between rounded-md bg-paper px-3 py-2 ring-1 ring-border">
-                <span className="text-[13px] font-medium text-foreground">{fr ? ROLE_LABEL[r].fr : ROLE_LABEL[r].en}</span>
-                <span className="flex items-center gap-2 text-[13px] tabular-nums text-muted-foreground">
-                  {A.roles[r]} → <span className="font-semibold text-foreground">{B.roles[r]}</span>
+              <div key={r} className="rounded-lg bg-paper p-3 ring-1 ring-border">
+                <p className="text-[12px] font-medium text-muted-foreground">{fr ? ROLE_LABEL[r].fr : ROLE_LABEL[r].en}</p>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span className="text-[22px] font-semibold leading-none tabular-nums text-foreground">{B.roles[r]}</span>
+                  <span className="text-[12px] tabular-nums text-muted-foreground">{fr ? 'avant' : 'was'} {A.roles[r]}</span>
+                </div>
+                <div className="mt-1.5">
                   <Delta value={B.roles[r] - A.roles[r]} />
-                </span>
-              </li>
+                </div>
+              </div>
             ))}
-            <li className="flex items-center justify-between px-3 pt-1 text-[12px] text-muted-foreground">
-              <span>{fr ? 'Réponses' : 'Answers'}</span>
-              <span className="tabular-nums">
-                {A.respondents} → {B.respondents}
-              </span>
-            </li>
-          </ul>
+          </div>
+          <p className="mt-3 text-[12px] tabular-nums text-muted-foreground">
+            {fr ? 'Réponses' : 'Answers'} : {A.respondents} → {B.respondents}
+          </p>
         </SectionCard>
       </div>
 
       <WorkflowsCard points={points} fr={fr} onSave={onSaveWorkflows} />
 
       {!client && (
-      <p className="text-[12px] text-muted-foreground">
-        {fr
-          ? 'Ici : le perçu et l’évolution, tirés du questionnaire. L’usage réel (breadth, recurrence) vient des métriques produit de l’équipe Data.'
-          : 'Here: perception and change, from the survey. Actual usage (breadth, recurrence) comes from the Data team’s product metrics.'}
-      </p>
+        <p className="text-[12px] text-muted-foreground">
+          {fr
+            ? 'Ici : le perçu et l’évolution, tirés du questionnaire. L’usage réel (breadth, recurrence) vient des métriques produit de l’équipe Data.'
+            : 'Here: perception and change, from the survey. Actual usage (breadth, recurrence) comes from the Data team’s product metrics.'}
+        </p>
       )}
     </div>
   );
