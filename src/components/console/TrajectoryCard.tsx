@@ -1,7 +1,7 @@
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { SectionCard } from '@/components/console/SectionCard';
 import { PILLARS, waveLabel } from '@/lib/waves';
-import { HEALTH_THRESHOLD, breadthOf, recurrenceOf } from '@/lib/usage-import';
+import { breadthOf, recurrenceOf, thresholdOf } from '@/lib/usage-import';
 import type { TimelinePoint } from '@/hooks/useClientTimeline';
 
 /**
@@ -151,6 +151,8 @@ export const TrajectoryCard = ({ points, fr }: { points: TimelinePoint[]; fr: bo
     { key: 'recurrence', label: 'Recurrence', color: INK, width: 2, dash: '5 4' },
   ];
   const usageRows = rows.filter((r) => r.breadth !== null || r.recurrence !== null).length;
+  const lastUsage = [...measured].reverse().find((p) => p.usage)?.usage;
+  const target = Math.round((lastUsage ? thresholdOf(lastUsage) : 0.7) * 100);
 
   return (
     <SectionCard
@@ -166,11 +168,11 @@ export const TrajectoryCard = ({ points, fr }: { points: TimelinePoint[]; fr: bo
         </div>
         <div>
           <p className="text-[13px] font-semibold text-foreground">{fr ? 'Ce qu’elles font vraiment' : 'What they actually do'}</p>
-          <p className="mb-2 text-[12px] text-muted-foreground">{fr ? 'Usage Dust, en % · repère à 70 %' : 'Dust usage, in % · 70% mark'}</p>
+          <p className="mb-2 text-[12px] text-muted-foreground">{fr ? `Usage Dust, en % · cible à ${target} %` : `Dust usage, in % · ${target}% target`}</p>
           {usageRows > 0 ? (
             <>
               <Legend series={usage} />
-              <Chart rows={rows} series={usage} threshold={Math.round(HEALTH_THRESHOLD * 100)} />
+              <Chart rows={rows} series={usage} threshold={target} />
             </>
           ) : (
             <div className="flex h-[240px] items-center justify-center rounded-lg border border-dashed border-border bg-paper px-6 text-center text-[13px] text-muted-foreground">

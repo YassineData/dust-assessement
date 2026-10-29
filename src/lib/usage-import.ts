@@ -8,7 +8,8 @@ import { norm, type Table } from '@/lib/import-responses';
  *  - one row per message (agent name, user, date): counted here.
  * Only totals and agent names are kept, never message contents or people.
  * Health follows the Data team's deployment success metrics: breadth (people who used Dust ÷ people in scope)
- * and recurrence (came back 3 of the last 4 weeks); 70% is the provisional threshold.
+ * and recurrence (came back 3 of the last 4 weeks); 70% is the provisional target (60% for consumption-priced accounts).
+ * Ramping: under 28 days of data, no health status yet.
  */
 
 export interface AgentUsage {
@@ -34,21 +35,44 @@ export interface Usage {
   conversations?: number;
   /** People in scope of the rollout (set by hand), for breadth. */
   scope?: number;
+  /** Days covered by the export. */
+  days?: number;
+  /** Consumption-priced account: the target is 60% instead of 70%. */
+  consumption?: boolean;
 }
 
 export const HEALTH_THRESHOLD = 0.7;
+export const CONSUMPTION_THRESHOLD = 0.6;
+export const RAMPING_DAYS = 28;
 export type Health = 'healthy' | 'watch' | 'risk' | 'ramping';
 
-export const breadthOf = (u: Usage) => (u.activeUsers && u.scope ? Math.min(1, u.activeUsers / u.scope) : null);
-export const recurrenceOf = (u: Usage) => (u.activeUsers && u.recurringUsers !== undefined && (u.weeks ?? 0) >= 3 ? u.recurringUsers / u.activeUsers : null);
+export const thresholdOf = (u: Usage) => (u.consumption ? CONSUMPTION_THRESHOLD : HEALTH_THRESHOLD);
 
-/** Healthy: both above 70%. Watch: one at or below. At risk: both at or below. Ramping: under 3 weeks of data. */
+/** Days covered by the export (older imports only stored the period or the number of weeks). */
+export const spanDays = (u: Usage) => {
+  if (u.days) return u.days;
+  if (u.period) return Math.round((new Date(u.period.to).getTime() - new Date(u.period.from).getTime()) / 86400000) + 1;
+  return u.weeks ? u.weeks * 7 : null;
+};
+
+export const breadthOf = (u: Usage) => (u.activeUsers && u.scope ? Math.min(1, u.activeUsers / u.scope) : null);
+export const recurrenceOf = (u: Usage) =>
+  u.activeUsers && u.recurringUsers !== undefined && (spanDays(u) ?? 0) >= RAMPING_DAYS ? u.recurringUsers / u.activeUsers : null;
+
+/** Same colour code as the deployment metrics: above target, at or below within 10 points, more than 10 points below. */
+export type Tone = 'ok' | 'warn' | 'risk';
+export const toneOf = (value: number | null, target: number): Tone | null =>
+  value === null ? null : value > target ? 'ok' : value >= target - 0.1 ? 'warn' : 'risk';
+
+/** Healthy: both above target. Watch: one at or below. At risk: both at or below. Ramping: under 28 days of data. */
 export const healthOf = (u: Usage): Health | null => {
+  const span = spanDays(u);
+  if (span !== null && span < RAMPING_DAYS) return 'ramping';
   const b = breadthOf(u);
-  if ((u.weeks ?? 0) < 3) return 'ramping';
   const r = recurrenceOf(u);
   if (b === null || r === null) return null;
-  const ok = [b, r].filter((x) => x > HEALTH_THRESHOLD).length;
+  const t = thresholdOf(u);
+  const ok = [b, r].filter((x) => x > t).length;
   return ok === 2 ? 'healthy' : ok === 1 ? 'watch' : 'risk';
 };
 
@@ -148,6 +172,7 @@ export const parseUsage = (table: Table, fileName: string): Usage | null => {
     activeUsers: people.size || undefined,
     recurringUsers,
     weeks,
+    days: days.length ? Math.round((end - new Date(days[0]).getTime()) / DAY) + 1 : undefined,
     sharedConversations: convPeople.size ? [...convPeople.values()].filter((p) => p.size >= 2).length : undefined,
     conversations: convPeople.size || undefined,
   };
@@ -173,5 +198,7 @@ export const toUsage = (v: unknown): Usage | null => {
     sharedConversations: u.sharedConversations !== undefined ? Number(u.sharedConversations) : undefined,
     conversations: u.conversations ? Number(u.conversations) : undefined,
     scope: u.scope ? Number(u.scope) : undefined,
+    days: u.days ? Number(u.days) : undefined,
+    consumption: u.consumption === true,
   };
 };

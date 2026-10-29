@@ -5,15 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { readTable } from '@/lib/import-responses';
-import { HEALTH_THRESHOLD, breadthOf, healthOf, parseUsage, recurrenceOf, type Health, type Usage } from '@/lib/usage-import';
+import { breadthOf, healthOf, parseUsage, recurrenceOf, spanDays, thresholdOf, toneOf, type Health, type Tone, type Usage } from '@/lib/usage-import';
 import { waveLabel } from '@/lib/waves';
 import type { TimelinePoint } from '@/hooks/useClientTimeline';
 
 const HEALTH: Record<Health, { fr: string; en: string; cls: string; hint: { fr: string; en: string } }> = {
-  healthy: { fr: 'En bonne santé', en: 'Healthy', cls: 'bg-ok-soft text-ok-ink', hint: { fr: 'Breadth et recurrence au-dessus de 70 %.', en: 'Breadth and recurrence above 70%.' } },
-  watch: { fr: 'À surveiller', en: 'Watch', cls: 'bg-warn-soft text-warn-ink', hint: { fr: 'Un des deux à 70 % ou moins.', en: 'One of the two at or below 70%.' } },
-  risk: { fr: 'À risque', en: 'At risk', cls: 'bg-risk-soft text-risk-ink', hint: { fr: 'Les deux à 70 % ou moins.', en: 'Both at or below 70%.' } },
-  ramping: { fr: 'En montée', en: 'Ramping', cls: 'bg-muted text-muted-foreground', hint: { fr: 'Moins de 3 semaines de données : la recurrence ne se lit pas encore.', en: 'Less than 3 weeks of data: recurrence cannot be read yet.' } },
+  healthy: { fr: 'En bonne santé', en: 'Healthy', cls: 'bg-ok-soft text-ok-ink', hint: { fr: 'Breadth et recurrence au-dessus de la cible.', en: 'Breadth and recurrence above target.' } },
+  watch: { fr: 'À surveiller', en: 'Watch', cls: 'bg-warn-soft text-warn-ink', hint: { fr: 'Un des deux à la cible ou en dessous.', en: 'One of the two at or below target.' } },
+  risk: { fr: 'À risque', en: 'At risk', cls: 'bg-risk-soft text-risk-ink', hint: { fr: 'Les deux à la cible ou en dessous.', en: 'Both at or below target.' } },
+  ramping: { fr: 'En montée', en: 'Ramping', cls: 'bg-muted text-muted-foreground', hint: { fr: 'Moins de 28 jours de données : pas encore de statut.', en: 'Under 28 days of data: no status yet.' } },
+};
+
+const TONE_CLASS: Record<Tone, string> = {
+  ok: 'bg-ok-soft/60 ring-ok-ink/20',
+  warn: 'bg-warn-soft/60 ring-warn-ink/20',
+  risk: 'bg-risk-soft/60 ring-risk-ink/20',
 };
 
 const pct = (x: number | null) => (x === null ? '·' : `${Math.round(x * 100)} %`);
@@ -101,6 +107,8 @@ export const UsageCard = ({ point, previous, fr, onSave }: Props) => {
   const recurrence = recurrenceOf(u);
   const maxMsg = Math.max(1, ...u.agents.map((a) => a.messages));
   const shared = u.conversations ? (u.sharedConversations ?? 0) / u.conversations : null;
+  const target = thresholdOf(u);
+  const span = spanDays(u);
 
   const saveScope = async () => {
     const n = Math.round(Number(scope));
@@ -121,7 +129,7 @@ export const UsageCard = ({ point, previous, fr, onSave }: Props) => {
           ? fr ? `${u.activeUsers} personnes sur ${u.scope} concernées` : `${u.activeUsers} people out of ${u.scope} in scope`
           : fr ? `${u.activeUsers} personnes actives · indiquez le nombre de personnes concernées` : `${u.activeUsers} active people · set the people in scope`
         : fr ? 'Il faut un export par message' : 'Needs a per-message export',
-      good: breadth !== null ? breadth > HEALTH_THRESHOLD : null,
+      tone: toneOf(breadth, target),
     },
     {
       id: 'recurrence',
@@ -130,8 +138,8 @@ export const UsageCard = ({ point, previous, fr, onSave }: Props) => {
       sub:
         recurrence !== null
           ? fr ? `${u.recurringUsers} reviennent 3 des 4 dernières semaines` : `${u.recurringUsers} came back 3 of the last 4 weeks`
-          : fr ? 'Il faut au moins 3 semaines de données' : 'Needs at least 3 weeks of data',
-      good: recurrence !== null ? recurrence > HEALTH_THRESHOLD : null,
+          : fr ? 'Il faut au moins 28 jours de données' : 'Needs at least 28 days of data',
+      tone: toneOf(recurrence, target),
     },
   ];
 
@@ -139,7 +147,7 @@ export const UsageCard = ({ point, previous, fr, onSave }: Props) => {
     { label: fr ? 'Agents utilisés' : 'Agents used', value: u.agents.length, was: before?.agents.length },
     { label: fr ? 'Messages' : 'Messages', value: u.totalMessages, was: before?.totalMessages },
     { label: fr ? 'Utilisateurs actifs' : 'Active users', value: u.activeUsers, was: before?.activeUsers },
-    { label: fr ? 'Conversations à plusieurs' : 'Shared conversations', value: shared !== null ? pct(shared) : undefined, was: undefined },
+    { label: 'Multiplayer conversations', value: shared !== null ? pct(shared) : undefined, was: undefined },
   ].filter((f) => f.value !== undefined);
 
   return (
@@ -149,7 +157,7 @@ export const UsageCard = ({ point, previous, fr, onSave }: Props) => {
         <>
           {waveLabel(point.wave, fr)}
           {u.period ? ` · ${fmtDay(u.period.from, fr)} → ${fmtDay(u.period.to, fr)}` : ''}
-          {u.weeks ? ` · ${u.weeks} ${fr ? 'sem.' : 'wk'}` : ''}
+          {span ? ` · ${span} ${fr ? 'jours' : 'days'}` : ''}
           {u.fileName ? ` · ${u.fileName}` : ''}
         </>
       }
@@ -173,7 +181,7 @@ export const UsageCard = ({ point, previous, fr, onSave }: Props) => {
       <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">{fr ? 'Santé d’usage' : 'Usage health'}</p>
       <div className="mt-2 grid gap-2 sm:grid-cols-3">
         {tiles.map((t) => (
-          <div key={t.id} className={cn('rounded-lg p-3.5 ring-1', t.good === true ? 'bg-ok-soft/60 ring-ok-ink/20' : t.good === false ? 'bg-warn-soft/60 ring-warn-ink/20' : 'bg-paper ring-border')}>
+          <div key={t.id} className={cn('rounded-lg p-3.5 ring-1', t.tone ? TONE_CLASS[t.tone] : 'bg-paper ring-border')}>
             <p className="text-[12px] font-medium text-muted-foreground">{t.label}</p>
             <p className="mt-1 text-[28px] font-semibold leading-none tabular-nums text-foreground">{t.value}</p>
             <p className="mt-1.5 text-[12px] text-muted-foreground">{t.sub}</p>
@@ -206,6 +214,24 @@ export const UsageCard = ({ point, previous, fr, onSave }: Props) => {
           <p className="mt-1.5 text-[12px] opacity-80">
             {health ? (fr ? HEALTH[health].hint.fr : HEALTH[health].hint.en) : fr ? 'Indiquez les personnes concernées pour le calculer.' : 'Set the people in scope to compute it.'}
           </p>
+          <p className="mt-1 text-[12px] opacity-80">
+            {fr ? 'Cible' : 'Target'} {Math.round(target * 100)} %{u.consumption ? (fr ? ' (facturation à la consommation)' : ' (consumption pricing)') : ''}
+          </p>
+          {onSave && (
+            <label className="mt-2 flex cursor-pointer items-center gap-1.5 text-[12px]">
+              <input
+                type="checkbox"
+                checked={!!u.consumption}
+                disabled={busy}
+                onChange={async (e) => {
+                  setBusy(true);
+                  await onSave(point.id, { ...u, consumption: e.target.checked });
+                  setBusy(false);
+                }}
+              />
+              {fr ? 'Facturé à la consommation (cible 60 %)' : 'Consumption-priced (60% target)'}
+            </label>
+          )}
         </div>
       </div>
 
@@ -242,8 +268,8 @@ export const UsageCard = ({ point, previous, fr, onSave }: Props) => {
       </ul>
       <p className="mt-4 text-[12px] text-muted-foreground">
         {fr
-          ? 'Définitions des métriques de déploiement de l’équipe Data. Le seuil de 70 % est provisoire (60 % pour les comptes facturés à la consommation).'
-          : 'Definitions from the Data team’s deployment metrics. The 70% threshold is provisional (60% for consumption-priced accounts).'}
+          ? 'Définitions des métriques de déploiement (v2). Vert : au-dessus de la cible · orange : jusqu’à 10 points en dessous · rouge : plus de 10 points en dessous. Cibles provisoires.'
+          : 'Deployment metrics definitions (v2). Green: above target · amber: up to 10 points below · red: more than 10 points below. Targets are provisional.'}
       </p>
     </SectionCard>
   );
