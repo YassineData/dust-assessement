@@ -87,6 +87,32 @@ const COMPANIES: DemoCompany[] = [
     teams: ['operations', 'finance', 'sales', 'support'], createdAt: '2026-10-12T08:00:00Z',
   },
   {
+    // Short check three weeks into the rollout (pulse), with the first usage export.
+    id: 'demo-northwind-pulse', code: 'NWLOGPLS', name: 'Northwind Logistique', domain: 'northwind-logistique.fr',
+    employees: 234, registered: 48, completedShare: 0.83, level: 47, label: 'Point d’étape · 3 semaines', wave: 'pulse',
+    offsets: { usage: -2, depth: -6, gov: 0, pain: 18, value: -2, team: 0, reach: -2 },
+    teams: ['operations', 'sales', 'support', 'finance', 'hr'], createdAt: '2026-09-18T08:00:00Z',
+    workflows: NW_WORKFLOWS.map((w, i) => ({ ...w, status: (['live', 'building', 'building', 'planned', 'planned'] as const)[i] })),
+    usage: {
+      importedAt: '2026-09-18T09:00:00Z',
+      fileName: 'northwind-usage-aout.csv',
+      period: { from: '2026-08-25', to: '2026-09-14' },
+      weeks: 3,
+      scope: 234,
+      activeUsers: 96,
+      recurringUsers: 49,
+      conversations: 610,
+      sharedConversations: 58,
+      totalMessages: 3120,
+      agents: [
+        { name: '@dust', messages: 1190, users: 74 },
+        { name: '@RetardsLivraison', messages: 980, users: 33 },
+        { name: '@PrepaRDV', messages: 520, users: 17 },
+        { name: '@CompteRendu', messages: 430, users: 29 },
+      ],
+    },
+  },
+  {
     // Same client re-surveyed after the first weeks of the rollout: the « Suivi » tab shows the change.
     id: 'demo-northwind-t1', code: 'NWLOG3MO', name: 'Northwind Logistique', domain: 'northwind-logistique.fr',
     employees: 234, registered: 76, completedShare: 0.87, level: 55, label: 'Re-mesure · 6 semaines', wave: 'remeasure',

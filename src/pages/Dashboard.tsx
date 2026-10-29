@@ -48,6 +48,7 @@ import { useCampaignParticipants } from '@/hooks/useCampaignParticipants';
 import { useClientCampaigns } from '@/hooks/useClientCampaigns';
 import { useClientTimeline } from '@/hooks/useClientTimeline';
 import { ClientTimeline } from '@/components/console/ClientTimeline';
+import { FollowupSummary, readinessGain } from '@/components/console/FollowupSummary';
 import type { SurveyAudience } from '@/lib/assessment-v2';
 import { waveLabel, type Wave, type Workflow } from '@/lib/waves';
 import type { Usage } from '@/lib/usage-import';
@@ -329,7 +330,9 @@ const Dashboard = () => {
     points: timelinePoints,
     isLoading: timelineLoading,
     patchPoint,
-  } = useClientTimeline(activeTab === 'progress' ? campaignAccess?.companyName || null : null, refreshKey, !isAdmin);
+  } = useClientTimeline(activeTab === 'progress' || activeTab === 'overview' ? campaignAccess?.companyName || null : null, refreshKey, !isAdmin);
+  // Shown on the overview and as a sidebar badge: the gain since the client's first wave.
+  const followupGain = readinessGain(timelinePoints);
   const saveCampaignFollowup = async (campaignId: string, patch: { workflows?: Workflow[]; usage?: Usage | null }) => {
     const { error } = await supabase.from('campaigns').update(patch as never).eq('id', campaignId);
     if (error) {
@@ -855,7 +858,13 @@ const Dashboard = () => {
         mobileOpen={mobileNavOpen}
         onMobileClose={closeMobileNav}
         clientView={isClientView}
-        highlight={kitPending && kitPending === campaignAccess?.campaignId ? { tab: 'share', badge: fr ? 'Kit PDF' : 'PDF kit' } : undefined}
+        highlight={
+          kitPending && kitPending === campaignAccess?.campaignId
+            ? { tab: 'share', badge: fr ? 'Kit PDF' : 'PDF kit' }
+            : followupGain
+              ? { tab: 'progress', badge: `${followupGain.delta > 0 ? '+' : ''}${followupGain.delta} pts` }
+              : undefined
+        }
       />
 
       <div className={cn('min-h-screen transition-[margin] duration-150', sidebarCollapsed ? 'lg:ml-14' : 'lg:ml-64')}>
@@ -906,9 +915,10 @@ const Dashboard = () => {
                 {isClientView && (
                   <div className="flex flex-wrap items-center gap-3 rounded-lg bg-brand-soft px-4 py-3 text-[13px] text-brand-ink">
                     <span className="font-semibold">{fr ? `Résultats de ${campaignAccess.companyName}, partagés par Dust` : `${campaignAccess.companyName} results, shared by Dust`}</span>
-                    <span className="text-brand-ink/80">{fr ? 'Mis à jour en direct à chaque nouvelle réponse. Seule votre campagne est visible ici.' : 'Updated live with every new answer. Only your campaign is visible here.'}</span>
+                    <span className="text-brand-ink/80">{fr ? 'Mis à jour en direct à chaque nouvelle réponse. Seule votre entreprise est visible ici.' : 'Updated live with every new answer. Only your company is visible here.'}</span>
                   </div>
                 )}
+                <FollowupSummary points={timelinePoints} fr={fr} onOpen={() => setActiveTab('progress')} />
                 {/* Results read as three blocks: starting point → people → plan (the plan is derived from 1 + 2). */}
                 <OverviewBlockHeader
                   n={1}

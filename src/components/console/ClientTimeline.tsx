@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import type { TimelinePoint } from '@/hooks/useClientTimeline';
 import { WorkflowsCard, workflowProgress } from '@/components/console/WorkflowsCard';
 import { UsageCard } from '@/components/console/UsageCard';
+import { PILLAR_COLOR, TrajectoryCard } from '@/components/console/TrajectoryCard';
 import type { Usage } from '@/lib/usage-import';
 
 const ROLE_LABEL: Record<RoleId, { fr: string; en: string }> = {
@@ -238,6 +239,8 @@ export const ClientTimeline = ({ companyName, points, isLoading, fr, onCreateCam
     <div className="space-y-5">
       {timeline}
 
+      <TrajectoryCard points={points} fr={fr} />
+
       <SectionCard
         title={fr ? 'Avant / après' : 'Before / after'}
         description={
@@ -280,7 +283,10 @@ export const ClientTimeline = ({ companyName, points, isLoading, fr, onCreateCam
         <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.id} className={cn('rounded-lg p-3.5 ring-1', k.main ? 'bg-brand-soft ring-brand/30' : 'bg-paper ring-border')}>
-              <p className="text-[12px] font-medium text-muted-foreground">{k.label}</p>
+              <p className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                {!k.main && <span className="h-2 w-2 rounded-full" style={{ background: PILLAR_COLOR[k.id as keyof typeof PILLAR_COLOR] }} aria-hidden />}
+                {k.label}
+              </p>
               <div className="mt-1.5 flex items-baseline gap-2">
                 <span className="text-[28px] font-semibold leading-none tabular-nums text-foreground">{k.to ?? '·'}</span>
                 {k.from !== null && <span className="text-[12px] tabular-nums text-muted-foreground">{fr ? 'avant' : 'was'} {k.from}</span>}
