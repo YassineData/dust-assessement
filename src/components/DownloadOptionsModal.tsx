@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { FileText, FileSpreadsheet, Presentation, FileDown, Loader2, Download } from 'lucide-react';
+import { FileText, FileSpreadsheet, Presentation, FileDown, Loader2, Download, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { CampaignParticipant } from '@/hooks/useCampaignParticipants';
@@ -8,9 +8,10 @@ import { exportCSV } from '@/lib/export-csv';
 import { exportWord } from '@/lib/export-word';
 import { exportPPT } from '@/lib/export-ppt';
 import { exportSummaryPDF, type SummaryPdfData } from '@/lib/export-pdf';
+import { exportDiagnosticPack } from '@/lib/export-diagnostic';
 import { cn } from '@/lib/utils';
 
-type ExportKind = 'pdf' | 'ppt' | 'word' | 'csv';
+type ExportKind = 'pdf' | 'ppt' | 'word' | 'csv' | 'pack';
 
 interface DownloadOptionsModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ interface DownloadOptionsModalProps {
   companyName: string;
   averageScore: number;
   thematicAverages: { thematic: string; originalThematic: string; score: number }[];
+  campaignName?: string | null;
 }
 
 /** Every export in one place: summary PDF, kickoff deck, full report, raw data. */
@@ -32,6 +34,7 @@ export const DownloadOptionsModal = ({
   companyName,
   averageScore,
   thematicAverages,
+  campaignName = null,
 }: DownloadOptionsModalProps) => {
   const { language } = useLanguage();
   const fr = language === 'fr';
@@ -44,6 +47,15 @@ export const DownloadOptionsModal = ({
       title: fr ? 'Synthèse d’une page (PDF)' : 'One-page summary (PDF)',
       body: fr ? 'Point de départ, personnes, plan : à envoyer au client ou à partager en interne.' : 'Starting point, people, plan: to send to the client or share internally.',
       tag: fr ? 'Recommandé' : 'Recommended',
+    },
+    {
+      kind: 'pack',
+      icon: Sparkles,
+      title: fr ? 'Présentation des résultats (dossier pour Claude)' : 'Results presentation (pack for Claude)',
+      body: fr
+        ? 'Un fichier anonyme à donner au skill « dust-diagnostic-deck » : il regroupe les cas d’usage et les freins et génère le deck Dust.'
+        : 'An anonymous file for the « dust-diagnostic-deck » skill: it groups use cases and blockers and builds the Dust deck.',
+      tag: fr ? 'Diagnostic IA' : 'AI diagnostic',
     },
     {
       kind: 'ppt',
@@ -72,6 +84,7 @@ export const DownloadOptionsModal = ({
       if (kind === 'ppt') await exportPPT(participants, companyName, language, averageScore, thematicAverages, summary);
       if (kind === 'word') await exportWord(participants, companyName, language, averageScore, thematicAverages);
       if (kind === 'csv') exportCSV(participants, companyName, language);
+      if (kind === 'pack') exportDiagnosticPack(participants, companyName, campaignName, fr ? 'fr' : 'en');
       toast.success(fr ? 'Export téléchargé' : 'Export downloaded');
     } catch (err) {
       console.error('Export error:', err);

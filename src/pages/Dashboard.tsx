@@ -1409,6 +1409,7 @@ const Dashboard = () => {
           companyName={campaignAccess.companyName}
           averageScore={averageScore}
           thematicAverages={thematicAverages}
+          campaignName={campaignName}
           summary={summary}
         />
         </main>
