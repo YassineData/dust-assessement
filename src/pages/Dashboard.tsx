@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DustWordmark } from '@/components/DustMark';
+import { DustMark, DustWordmark } from '@/components/DustMark';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { TopBar, PageHeader } from '@/components/CampaignHeader';
 import { DashboardSidebar, TabId, TAB_LABELS, CLIENT_HIDDEN_TABS } from '@/components/DashboardSidebar';
@@ -793,6 +793,12 @@ const Dashboard = () => {
 
   const pageActions = activeTab === 'overview' && hasParticipants ? (
     <>
+      {isAdmin && (
+        <Button variant="outline" onClick={() => setIsDownloadModalOpen(true)} className="border-brand/40 bg-brand-soft/50 hover:bg-brand-soft">
+          <DustMark className="h-4 w-4" />
+          {fr ? 'Analyser avec Dust' : 'Analyse with Dust'}
+        </Button>
+      )}
       <Button variant="outline" onClick={() => setIsDownloadModalOpen(true)}>
         <Download className="h-4 w-4" />
         {fr ? 'Exporter le rapport' : 'Export report'}

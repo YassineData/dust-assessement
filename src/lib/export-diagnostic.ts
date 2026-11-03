@@ -159,3 +159,25 @@ export const exportDiagnosticPack = (participants: CampaignParticipant[], compan
   a.remove();
   URL.revokeObjectURL(url);
 };
+
+/** Instruction to paste in a Dust agent together with the exported file. */
+export const dustAnalysisPrompt = (companyName: string, lang: Lang) =>
+  lang === 'fr'
+    ? `Tu es un expert du déploiement de l'IA en entreprise. Le fichier joint contient les résultats anonymes du diagnostic IA de ${companyName} (scores sur 100, répartition par équipe, affirmations avec le % d'accord, réponses libres avec l'équipe et le niveau de chaque personne).
+
+1. Regroupe les réponses libres en 3 ou 4 cas d'usage (tâches qu'un agent pourrait faire), avec pour chacun le nombre de mentions, les équipes qui en parlent et une citation exacte.
+2. Regroupe les freins en 3 ou 4 catégories, avec la part des répondants, une citation et comment lever chaque frein.
+3. Résume le point de départ : outils utilisés, indice de préparation, où passe le temps.
+4. Propose un pilote de six semaines : quelles équipes, quels cas d'usage, quelles étapes, en t'appuyant sur les champions repérés.
+5. Crée une présentation des résultats en Frame, aux couleurs Dust, une idée par slide, avec des titres qui donnent la conclusion.
+
+Règles : tous les chiffres viennent du fichier, les citations sont exactes, aucun nom de personne.`
+    : `You are an expert in enterprise AI rollouts. The attached file holds the anonymous results of ${companyName}'s AI diagnostic (scores out of 100, breakdown by team, statements with % agree, open answers with each person's team and level).
+
+1. Group the open answers into 3 or 4 use cases (tasks an agent could do), each with its number of mentions, the teams that cite it and one exact quote.
+2. Group the blockers into 3 or 4 categories, with the share of respondents, a quote and how to remove each one.
+3. Summarise the starting point: tools used, readiness index, where time goes.
+4. Propose a six-week pilot: which teams, which use cases, which steps, building on the champions found.
+5. Build a results presentation as a Frame, in Dust colours, one idea per slide, with headlines that state the conclusion.
+
+Rules: every number comes from the file, quotes are exact, no person's name.`;
