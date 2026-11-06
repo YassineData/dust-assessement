@@ -27,7 +27,7 @@ const RED: [number, number, number] = [225, 67, 34];
 const LIME: [number, number, number] = [226, 247, 140];
 
 // Brand shapes (Dust brand guide): circle, arch, square, two quarter circles.
-const drawBrandShapes = (pdf: jsPDF, x: number, y: number, s: number, gap: number) => {
+export const drawBrandShapes = (pdf: jsPDF, x: number, y: number, s: number, gap: number) => {
   const k = 0.5523 * s;
   pdf.setFillColor(65, 139, 92);
   pdf.circle(x + s / 2, y + s / 2, s / 2, 'F');
@@ -47,7 +47,7 @@ const drawBrandShapes = (pdf: jsPDF, x: number, y: number, s: number, gap: numbe
 };
 
 // Built-in PDF fonts only cover Latin-1: normalise the few characters outside it.
-const clean = (s: string) =>
+export const clean = (s: string) =>
   s.replace(/[’‘]/g, "'").replace(/[“”«»]/g, '"').replace(/[–—]/g, '-').replace(/→/g, '->').replace(/≥/g, '>=').replace(/…/g, '...').replace(/\u00A0|\u202F/g, ' ');
 
 export const exportSummaryPDF = (d: SummaryPdfData) => {

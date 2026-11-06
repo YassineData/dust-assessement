@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Copy, Eye, Handshake, Link2, Loader2, Mail, Pencil, Plus, Unlink } from 'lucide-react';
+import { Check, Copy, Eye, FileDown, Handshake, Link2, Loader2, Mail, Pencil, Plus, Unlink } from 'lucide-react';
+import { exportPartnerInvitePDF } from '@/lib/partner-invite-pdf';
 import { toast } from 'sonner';
 import { SectionCard } from '@/components/console/SectionCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { normalizeDomains, partnerInvite, publicDomainsIn, type Partner, type PartnerIdentity } from '@/lib/partners';
+import { normalizeDomains, normalizeEmails, partnerInvite, publicDomainsIn, type Partner, type PartnerIdentity } from '@/lib/partners';
 import type { Campaign } from '@/components/CampaignSelector';
 
 type Stats = { partner_id: string; campaigns: number; clients: number; completed: number; readiness: number | null };
@@ -21,7 +22,7 @@ interface Props {
   onViewAs: (p: PartnerIdentity) => void;
 }
 
-const empty = { name: '', domains: '', logo: '' };
+const empty = { name: '', domains: '', logo: '', restricted: true, emails: '' };
 
 /** Dust only: every deployment partner, their clients and how they are doing. */
 export const PartnersTab = ({ fr, campaigns, onCampaignsChanged, onOpenCampaign, onViewAs }: Props) => {
@@ -97,12 +98,27 @@ export const PartnersTab = ({ fr, campaigns, onCampaignsChanged, onOpenCampaign,
       toast.error(fr ? `Domaine déjà utilisé par ${taken.name}.` : `Domain already used by ${taken.name}.`);
       return;
     }
+    const emails = form.restricted ? normalizeEmails(form.emails) : [];
+    if (form.restricted && !emails.length) {
+      toast.error(fr ? 'Ajoutez au moins une adresse autorisée.' : 'Add at least one allowed address.');
+      return;
+    }
     setSaving(true);
-    const row = { name, domains, logo_url: logo || null };
-    const res =
+    const row = { name, domains, emails, logo_url: logo || null };
+    const write = (r: object) =>
       editing === 'new'
-        ? await supabase.from('partners' as never).insert(row as never).select('*').maybeSingle()
-        : await supabase.from('partners' as never).update(row as never).eq('id', editing!).select('*').maybeSingle();
+        ? supabase.from('partners' as never).insert(r as never).select('*').maybeSingle()
+        : supabase.from('partners' as never).update(r as never).eq('id', editing!).select('*').maybeSingle();
+    let res = await write(row);
+    // Named people need supabase/009; the whole-domain mode still works without it.
+    if (res.error && /emails/i.test(res.error.message || '')) {
+      if (emails.length) {
+        setSaving(false);
+        toast.error(fr ? 'Pour limiter à des personnes, lancez supabase/009-partner-emails.sql dans Supabase.' : 'To limit access to named people, run supabase/009-partner-emails.sql in Supabase.');
+        return;
+      }
+      res = await write({ name, domains, logo_url: logo || null });
+    }
     setSaving(false);
     if (res.error) {
       toast.error(fr ? 'Enregistrement impossible.' : 'Could not save.');
@@ -141,11 +157,42 @@ export const PartnersTab = ({ fr, campaigns, onCampaignsChanged, onOpenCampaign,
     );
   }
 
+  const choice = (on: boolean) =>
+    cn('flex flex-1 cursor-pointer flex-col rounded-md p-3 text-left ring-1 transition-colors', on ? 'bg-brand-soft ring-brand' : 'bg-card ring-border hover:bg-paper');
   const editor = (
-    <div className="grid gap-2 rounded-lg bg-paper p-4 ring-1 ring-border sm:grid-cols-[1fr_1.4fr_1.4fr_auto]">
-      <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={fr ? 'Nom du partenaire' : 'Partner name'} maxLength={120} />
-      <Input value={form.domains} onChange={(e) => setForm({ ...form, domains: e.target.value })} placeholder={fr ? 'Domaines e-mail (ex. cabinet.fr)' : 'Email domains (e.g. firm.com)'} />
-      <Input value={form.logo} onChange={(e) => setForm({ ...form, logo: e.target.value })} placeholder={fr ? 'Logo https:// (facultatif)' : 'Logo https:// (optional)'} />
+    <div className="space-y-3 rounded-lg bg-paper p-4 ring-1 ring-border">
+      <div className="grid gap-2 sm:grid-cols-3">
+        <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={fr ? 'Nom du partenaire' : 'Partner name'} maxLength={120} />
+        <Input value={form.domains} onChange={(e) => setForm({ ...form, domains: e.target.value })} placeholder={fr ? 'Domaine e-mail (ex. cabinet.fr)' : 'Email domain (e.g. firm.com)'} />
+        <Input value={form.logo} onChange={(e) => setForm({ ...form, logo: e.target.value })} placeholder={fr ? 'Logo https:// (facultatif)' : 'Logo https:// (optional)'} />
+      </div>
+      <div>
+        <p className="text-[13px] font-medium text-foreground">{fr ? 'Qui peut se connecter ?' : 'Who can sign in?'}</p>
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row" role="radiogroup">
+          <button type="button" role="radio" aria-checked={form.restricted} className={choice(form.restricted)} onClick={() => setForm({ ...form, restricted: true })}>
+            <span className="text-[13px] font-semibold text-foreground">{fr ? 'Seulement ces personnes' : 'Only these people'}</span>
+            <span className="text-[12px] text-muted-foreground">{fr ? 'Recommandé. Vous ajoutez ou retirez chaque personne.' : 'Recommended. You add or remove each person.'}</span>
+          </button>
+          <button type="button" role="radio" aria-checked={!form.restricted} className={choice(!form.restricted)} onClick={() => setForm({ ...form, restricted: false })}>
+            <span className="text-[13px] font-semibold text-foreground">{fr ? 'Tout le domaine' : 'The whole domain'}</span>
+            <span className="text-[12px] text-muted-foreground">{fr ? 'Toute adresse sur le domaine, sans liste à tenir.' : 'Any address on the domain, no list to keep.'}</span>
+          </button>
+        </div>
+        {form.restricted && (
+          <textarea
+            value={form.emails}
+            onChange={(e) => setForm({ ...form, emails: e.target.value })}
+            placeholder={fr ? 'jean@cabinet.fr, marie@cabinet.fr' : 'jean@firm.com, marie@firm.com'}
+            rows={2}
+            className="mt-2 w-full rounded-md border border-input bg-card px-3 py-2 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        )}
+        <p className="mt-1.5 text-[12px] text-muted-foreground">
+          {form.restricted
+            ? fr ? 'Seules ces adresses reçoivent un lien de connexion. Les autres personnes du partenaire n’ont aucun accès.' : 'Only these addresses get a sign-in link. Other people at the partner have no access.'
+            : fr ? 'Toute personne avec une adresse sur ce domaine pourra se connecter et verra les clients de ce partenaire.' : 'Anyone with an address on this domain can sign in and sees this partner’s clients.'}
+        </p>
+      </div>
       <div className="flex gap-2">
         <Button onClick={save} disabled={saving}>
           {saving && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -155,11 +202,6 @@ export const PartnersTab = ({ fr, campaigns, onCampaignsChanged, onOpenCampaign,
           {fr ? 'Annuler' : 'Cancel'}
         </Button>
       </div>
-      <p className="text-[12px] text-muted-foreground sm:col-span-4">
-        {fr
-          ? 'Toute personne avec une adresse sur ces domaines pourra se connecter à l’espace partenaire et verra les clients rattachés à ce partenaire, et seulement eux.'
-          : 'Anyone with an address on these domains can sign in to the partner space and sees the clients attached to this partner, and only those.'}
-      </p>
     </div>
   );
 
@@ -207,7 +249,11 @@ export const PartnersTab = ({ fr, campaigns, onCampaignsChanged, onOpenCampaign,
                 {!p.active && <span className="pill pill-neutral">{fr ? 'Désactivé' : 'Disabled'}</span>}
               </span>
             }
-            description={p.domains.map((d) => `@${d}`).join(' · ')}
+            description={
+              p.emails?.length
+                ? `${fr ? 'Accès' : 'Access'} : ${p.emails.join(', ')}`
+                : `${p.domains.map((d) => `@${d}`).join(' · ')} · ${fr ? 'tout le domaine' : 'whole domain'}`
+            }
             actions={
               <div className="flex flex-wrap gap-1.5">
                 <Button size="sm" onClick={() => setInviteOpen(inviteOpen === p.id ? null : p.id)} disabled={!p.active}>
@@ -218,7 +264,7 @@ export const PartnersTab = ({ fr, campaigns, onCampaignsChanged, onOpenCampaign,
                   <Eye className="h-4 w-4" />
                   {fr ? 'Voir comme ce partenaire' : 'View as this partner'}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => { setEditing(p.id); setForm({ name: p.name, domains: p.domains.join(', '), logo: p.logo_url ?? '' }); }} aria-label={fr ? 'Modifier' : 'Edit'}>
+                <Button variant="ghost" size="sm" onClick={() => { setEditing(p.id); setForm({ name: p.name, domains: p.domains.join(', '), logo: p.logo_url ?? '', restricted: !!p.emails?.length, emails: (p.emails ?? []).join(', ') }); }} aria-label={fr ? 'Modifier' : 'Edit'}>
                   <Pencil className="h-4 w-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setActive(p, !p.active)}>
@@ -233,15 +279,19 @@ export const PartnersTab = ({ fr, campaigns, onCampaignsChanged, onOpenCampaign,
               <div className="mb-4 rounded-lg bg-brand-soft/50 p-4 ring-1 ring-brand/30">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-[14px] font-semibold text-foreground">{fr ? 'Message à envoyer au partenaire' : 'Message to send the partner'}</p>
-                  <Button size="sm" className="ml-auto" onClick={() => copyInvite(p)}>
+                  <Button size="sm" variant="outline" className="ml-auto" onClick={() => exportPartnerInvitePDF(p, window.location.origin, fr ? 'fr' : 'en')}>
+                    <FileDown className="h-4 w-4" />
+                    {fr ? 'PDF à joindre' : 'PDF to attach'}
+                  </Button>
+                  <Button size="sm" onClick={() => copyInvite(p)}>
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     {copied ? (fr ? 'Copié' : 'Copied') : fr ? 'Copier le message' : 'Copy the message'}
                   </Button>
                 </div>
                 <p className="mt-1 text-[12px] text-muted-foreground">
                   {fr
-                    ? 'À envoyer par e-mail ou Slack à votre contact. Toute personne avec une adresse sur ces domaines pourra se connecter.'
-                    : 'Send it by email or Slack to your contact. Anyone with an address on these domains can sign in.'}
+                    ? p.emails?.length ? 'À envoyer par e-mail aux personnes autorisées.' : 'À envoyer par e-mail ou Slack à votre contact. Toute personne avec une adresse sur ce domaine pourra se connecter.'
+                    : p.emails?.length ? 'Send it by email to the allowed people.' : 'Send it by email or Slack to your contact. Anyone with an address on this domain can sign in.'}
                 </p>
                 <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-card p-3 font-sans text-[13px] leading-relaxed text-foreground ring-1 ring-border">
                   {partnerInvite(p, window.location.origin, fr ? 'fr' : 'en')}

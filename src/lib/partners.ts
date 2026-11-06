@@ -9,6 +9,8 @@ export interface Partner {
   id: string;
   name: string;
   domains: string[];
+  /** Only these addresses may sign in (supabase/009); empty = anyone on the domains. */
+  emails?: string[];
   logo_url: string | null;
   active: boolean;
   created_at: string;
@@ -49,14 +51,31 @@ export const normalizeDomains = (raw: string) =>
     ),
   ];
 
+export const normalizeEmails = (raw: string) => [
+  ...new Set(
+    raw
+      .split(/[\s,;]+/)
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => /^[^\s@]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(e) && !e.endsWith('@dust.tt'))
+  ),
+];
+
 /** Public email providers can never be a partner domain: everyone there would see the partner's clients. */
 const PUBLIC_DOMAINS = new Set(['gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 'hotmail.fr', 'live.com', 'live.fr', 'yahoo.com', 'yahoo.fr', 'icloud.com', 'me.com', 'orange.fr', 'free.fr', 'sfr.fr', 'laposte.net', 'wanadoo.fr', 'proton.me', 'protonmail.com', 'gmx.com', 'gmx.fr', 'aol.com']);
 export const publicDomainsIn = (domains: string[]) => domains.filter((d) => PUBLIC_DOMAINS.has(d));
 
 /** Ready-to-send invitation for a partner: where to sign in, with which address, what they will find. */
-export const partnerInvite = (p: Pick<Partner, 'name' | 'domains'>, origin: string, lang: 'fr' | 'en') => {
+export const partnerInvite = (p: Pick<Partner, 'name' | 'domains' | 'emails'>, origin: string, lang: 'fr' | 'en') => {
   const link = `${origin}/login?partenaire`;
-  const domains = p.domains.map((d) => `@${d}`).join(lang === 'fr' ? ' ou ' : ' or ');
+  const named = p.emails?.length ? p.emails : null;
+  const domains = named ? (lang === 'fr' ? 'celle à laquelle vous avez reçu ce message' : 'the one this message was sent to') : p.domains.map((d) => `@${d}`).join(lang === 'fr' ? ' ou ' : ' or ');
+  const who = named
+    ? lang === 'fr'
+      ? `L'accès est réservé à : ${named.join(', ')}. Pour ajouter quelqu'un, demandez-le à votre contact Dust.`
+      : `Access is limited to: ${named.join(', ')}. To add someone, ask your Dust contact.`
+    : lang === 'fr'
+      ? `Toute l'équipe peut se connecter de la même façon avec une adresse ${domains}.`
+      : `Your whole team can sign in the same way with a ${domains} address.`;
   return lang === 'fr'
     ? `Bonjour,
 
@@ -67,7 +86,7 @@ Pour vous connecter :
 2. Saisissez votre adresse e-mail professionnelle (${domains})
 3. Cliquez sur le lien de connexion reçu par e-mail : pas de mot de passe
 
-Toute l'équipe peut se connecter de la même façon avec une adresse ${domains}.
+${who}
 
 Ce que vous pouvez faire :
 - créer une campagne pour un client (diagnostic IA ou déploiement) et lui envoyer le lien du questionnaire ;
@@ -86,7 +105,7 @@ To sign in:
 2. Enter your work email address (${domains})
 3. Click the sign-in link you receive by email: no password
 
-Your whole team can sign in the same way with a ${domains} address.
+${who}
 
 What you can do:
 - create a campaign for a client (AI diagnostic or rollout) and send them the survey link;

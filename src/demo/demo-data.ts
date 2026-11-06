@@ -41,7 +41,7 @@ interface DemoCompany {
 
 /** One deployment partner, so the « Partenaires » tab and the partner view can be tried. */
 export const DEMO_PARTNERS = [
-  { id: 'demo-partner-horizon', name: 'Horizon Conseil', domains: ['horizon-conseil.fr'], logo_url: null, active: true, created_at: '2026-06-02T08:00:00Z' },
+  { id: 'demo-partner-horizon', name: 'Horizon Conseil', domains: ['horizon-conseil.fr'], emails: ['claire.martin@horizon-conseil.fr', 'paul.dubois@horizon-conseil.fr'], logo_url: null, active: true, created_at: '2026-06-02T08:00:00Z' },
 ];
 
 const NW_WORKFLOWS = [

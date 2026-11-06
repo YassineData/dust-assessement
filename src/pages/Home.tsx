@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react';
-import { ArrowRight, BarChart3, ChevronDown, Eye, GraduationCap, LogIn, Rocket, Smartphone, Timer, Users, Zap } from 'lucide-react';
+import { ArrowRight, BarChart3, ChevronDown, Eye, GraduationCap, LogIn, Handshake, Rocket, Smartphone, Timer, Users, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -113,6 +113,13 @@ const Home = () => {
           <DustWordmark subtitle={L('Deployment scoping · for the Dust team', 'Cadrage du déploiement · équipe Dust')} />
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
+              <a href="/login?partenaire">
+                <Handshake className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{L('Partner space', 'Espace partenaire')}</span>
+                <span className="sm:hidden">{L('Partners', 'Partenaires')}</span>
+              </a>
+            </Button>
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
               <a href="/login">
                 <LogIn className="h-3.5 w-3.5" />
