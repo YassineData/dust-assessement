@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Eye, Handshake, Link2, Loader2, Pencil, Plus, Unlink } from 'lucide-react';
+import { Check, Copy, Eye, Handshake, Link2, Loader2, Mail, Pencil, Plus, Unlink } from 'lucide-react';
 import { toast } from 'sonner';
 import { SectionCard } from '@/components/console/SectionCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { normalizeDomains, publicDomainsIn, type Partner, type PartnerIdentity } from '@/lib/partners';
+import { normalizeDomains, partnerInvite, publicDomainsIn, type Partner, type PartnerIdentity } from '@/lib/partners';
 import type { Campaign } from '@/components/CampaignSelector';
 
 type Stats = { partner_id: string; campaigns: number; clients: number; completed: number; readiness: number | null };
@@ -32,6 +32,18 @@ export const PartnersTab = ({ fr, campaigns, onCampaignsChanged, onOpenCampaign,
   const [editing, setEditing] = useState<string | 'new' | null>(null);
   const [saving, setSaving] = useState(false);
   const [attach, setAttach] = useState<Record<string, string>>({});
+  const [inviteOpen, setInviteOpen] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const copyInvite = async (p: Partner) => {
+    try {
+      await navigator.clipboard.writeText(partnerInvite(p, window.location.origin, fr ? 'fr' : 'en'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      toast.error(fr ? 'Copie impossible : sélectionnez le texte à la main.' : 'Could not copy: select the text by hand.');
+    }
+  };
 
   const load = async () => {
     const { data, error } = await supabase.from('partners' as never).select('*').order('name');
@@ -198,6 +210,10 @@ export const PartnersTab = ({ fr, campaigns, onCampaignsChanged, onOpenCampaign,
             description={p.domains.map((d) => `@${d}`).join(' · ')}
             actions={
               <div className="flex flex-wrap gap-1.5">
+                <Button size="sm" onClick={() => setInviteOpen(inviteOpen === p.id ? null : p.id)} disabled={!p.active}>
+                  <Mail className="h-4 w-4" />
+                  {fr ? 'Inviter' : 'Invite'}
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => onViewAs({ id: p.id, name: p.name, logo_url: p.logo_url })}>
                   <Eye className="h-4 w-4" />
                   {fr ? 'Voir comme ce partenaire' : 'View as this partner'}
@@ -212,6 +228,26 @@ export const PartnersTab = ({ fr, campaigns, onCampaignsChanged, onOpenCampaign,
             }
           >
             {editing === p.id && <div className="mb-4">{editor}</div>}
+
+            {inviteOpen === p.id && (
+              <div className="mb-4 rounded-lg bg-brand-soft/50 p-4 ring-1 ring-brand/30">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-[14px] font-semibold text-foreground">{fr ? 'Message à envoyer au partenaire' : 'Message to send the partner'}</p>
+                  <Button size="sm" className="ml-auto" onClick={() => copyInvite(p)}>
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copied ? (fr ? 'Copié' : 'Copied') : fr ? 'Copier le message' : 'Copy the message'}
+                  </Button>
+                </div>
+                <p className="mt-1 text-[12px] text-muted-foreground">
+                  {fr
+                    ? 'À envoyer par e-mail ou Slack à votre contact. Toute personne avec une adresse sur ces domaines pourra se connecter.'
+                    : 'Send it by email or Slack to your contact. Anyone with an address on these domains can sign in.'}
+                </p>
+                <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-card p-3 font-sans text-[13px] leading-relaxed text-foreground ring-1 ring-border">
+                  {partnerInvite(p, window.location.origin, fr ? 'fr' : 'en')}
+                </pre>
+              </div>
+            )}
 
             <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[

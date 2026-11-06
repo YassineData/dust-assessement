@@ -52,3 +52,48 @@ export const normalizeDomains = (raw: string) =>
 /** Public email providers can never be a partner domain: everyone there would see the partner's clients. */
 const PUBLIC_DOMAINS = new Set(['gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 'hotmail.fr', 'live.com', 'live.fr', 'yahoo.com', 'yahoo.fr', 'icloud.com', 'me.com', 'orange.fr', 'free.fr', 'sfr.fr', 'laposte.net', 'wanadoo.fr', 'proton.me', 'protonmail.com', 'gmx.com', 'gmx.fr', 'aol.com']);
 export const publicDomainsIn = (domains: string[]) => domains.filter((d) => PUBLIC_DOMAINS.has(d));
+
+/** Ready-to-send invitation for a partner: where to sign in, with which address, what they will find. */
+export const partnerInvite = (p: Pick<Partner, 'name' | 'domains'>, origin: string, lang: 'fr' | 'en') => {
+  const link = `${origin}/login?partenaire`;
+  const domains = p.domains.map((d) => `@${d}`).join(lang === 'fr' ? ' ou ' : ' or ');
+  return lang === 'fr'
+    ? `Bonjour,
+
+Votre espace partenaire Dust Assessment est ouvert pour ${p.name}. Vous y retrouvez vos clients, leurs campagnes de diagnostic et de déploiement, leurs résultats et leur suivi.
+
+Pour vous connecter :
+1. Ouvrez ${link}
+2. Saisissez votre adresse e-mail professionnelle (${domains})
+3. Cliquez sur le lien de connexion reçu par e-mail : pas de mot de passe
+
+Toute l'équipe peut se connecter de la même façon avec une adresse ${domains}.
+
+Ce que vous pouvez faire :
+- créer une campagne pour un client (diagnostic IA ou déploiement) et lui envoyer le lien du questionnaire ;
+- suivre les réponses et les résultats, équipe par équipe ;
+- exporter les données et les analyser avec Dust, puis suivre l'évolution du client dans l'onglet Suivi.
+
+Vous ne voyez que vos propres clients, et vos clients ne voient que leurs propres résultats.
+
+À très vite,`
+    : `Hello,
+
+Your Dust Assessment partner space is open for ${p.name}. You will find your clients, their diagnostic and rollout campaigns, their results and their follow-up.
+
+To sign in:
+1. Open ${link}
+2. Enter your work email address (${domains})
+3. Click the sign-in link you receive by email: no password
+
+Your whole team can sign in the same way with a ${domains} address.
+
+What you can do:
+- create a campaign for a client (AI diagnostic or rollout) and send them the survey link;
+- follow answers and results, team by team;
+- export the data and analyse it with Dust, then follow the client's progress in the Progress tab.
+
+You only see your own clients, and your clients only see their own results.
+
+Talk soon,`;
+};
