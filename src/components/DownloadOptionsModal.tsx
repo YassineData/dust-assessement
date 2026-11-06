@@ -136,7 +136,7 @@ export const DownloadOptionsModal = ({
             <ArrowRight className="hidden h-4 w-4 self-center text-brand-ink sm:block" aria-hidden />
             <li className="flex flex-col rounded-lg bg-card p-3 ring-1 ring-border">
               <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-brand-ink">2 · {fr ? 'Déposer dans Dust' : 'Drop into Dust'}</span>
-              <span className="mt-1 text-[12px] text-muted-foreground">{fr ? 'Le fichier et la consigne, dans une conversation.' : 'The file and the instruction, in a conversation.'}</span>
+              <span className="mt-1 text-[12px] text-muted-foreground">{fr ? 'Le fichier et la consigne, avec /Yassine Frame Maker.' : 'The file and the instruction, with /Yassine Frame Maker.'}</span>
               <div className="mt-auto flex gap-1.5 pt-2.5">
                 <Button size="sm" variant="outline" onClick={copyPrompt} className="flex-1">
                   {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
