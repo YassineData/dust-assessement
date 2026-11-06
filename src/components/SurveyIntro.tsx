@@ -11,6 +11,7 @@ export const SurveyIntro = ({
   company,
   custom,
   wave,
+  partner,
 }: {
   audience: SurveyAudience;
   fr: boolean;
@@ -18,6 +19,8 @@ export const SurveyIntro = ({
   custom?: { title?: string; body?: string } | null;
   /** A pulse or review wave replaces the audience's baseline wording. */
   wave?: Wave | null;
+  /** Deployment partner running the survey with Dust (shown next to the Dust mark). */
+  partner?: { name: string; logo?: string | null } | null;
 }) => {
   const f = wave === 'pulse' || wave === 'review' ? FOLLOWUP_INTRO[wave] : null;
   const a = f ? { ...AUDIENCES[audience], ...f, note: undefined } : AUDIENCES[audience];
@@ -37,6 +40,13 @@ export const SurveyIntro = ({
           <span className="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
             {fr ? 'Un questionnaire Dust' : 'A Dust survey'}
           </span>
+          {partner?.name && (
+            <span className="ml-1 inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              <span aria-hidden>·</span>
+              {fr ? 'avec' : 'with'}
+              {partner.logo ? <img src={partner.logo} alt={partner.name} className="h-5 max-w-[96px] object-contain" /> : <span className="normal-case tracking-normal text-foreground">{partner.name}</span>}
+            </span>
+          )}
         </div>
         <h1 className="page-title mt-2">{custom?.title || L(a.title)}</h1>
         <p className="mt-2 text-[14px] leading-relaxed text-slate">{custom?.body || L(a.about ?? DUST_ABOUT)}</p>

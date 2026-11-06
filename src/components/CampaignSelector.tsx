@@ -20,6 +20,8 @@ export interface Campaign {
   creator_first_name?: string | null;
   creator_last_name?: string | null;
   created_at: string;
+  /** Deployment partner the campaign belongs to (supabase/008); empty = Dust direct. */
+  partner_id?: string | null;
 }
 
 /** "First Last" of whoever created the campaign; empty for old rows without a real name. */

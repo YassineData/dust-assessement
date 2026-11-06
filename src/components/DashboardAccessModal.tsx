@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, Key, AlertCircle, Eye, EyeOff, Loader2, MousePointerClick, Link2, Mail, CheckCircle2 } from 'lucide-react';
+import { Lock, Key, AlertCircle, Eye, EyeOff, Loader2, MousePointerClick, Link2, Mail, CheckCircle2, Handshake } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { enterDemo } from '@/demo/demo-data';
 import { isDustEmail, setAccessKey, setAdminKey } from '@/lib/access';
+import { fetchCampaignList, fetchPartnerMe, type PartnerIdentity } from '@/lib/partners';
 
 export interface AdminCampaign {
   id: string;
@@ -22,6 +23,8 @@ interface DashboardAccessModalProps {
   onClose?: () => void;
   onAccessGranted: (campaignId: string, campaignData: { companyName: string; creatorEmail: string }) => void;
   onAdminAccessGranted?: (campaigns: AdminCampaign[], isSuperAdmin?: boolean) => void;
+  /** A deployment partner signed in: its own campaigns only (the database filters them). */
+  onPartnerAccessGranted?: (campaigns: AdminCampaign[], partner: PartnerIdentity) => void;
 }
 
 const CAMPAIGN_COLUMNS = 'id, code, company_name, campaign_name, creator_email, creator_first_name, creator_last_name, created_at';
@@ -39,9 +42,10 @@ const EMAIL_LOGIN_ENABLED = import.meta.env.VITE_EMAIL_LOGIN === 'true';
  * Console access. Every way in is checked by the database (row level security):
  *  - Dust team: login link sent by email, @dust.tt addresses only → every campaign;
  *  - Dust team fallback: the admin key (stored hashed server-side) → every campaign;
+ *  - deployment partner: login link sent by email, to a domain Dust registered (supabase/008) → its own clients;
  *  - client: the private results link Dust sends (/dashboard?key=…) → that campaign only.
  */
-export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGranted }: DashboardAccessModalProps) => {
+export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGranted, onPartnerAccessGranted }: DashboardAccessModalProps) => {
   const { language } = useLanguage();
   const fr = language === 'fr';
   const [adminKey, setAdminKeyInput] = useState('');
@@ -60,12 +64,17 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
   const [useKey, setUseKey] = useState(!EMAIL_LOGIN_ENABLED);
   // On /login the Dust sign-in is open; elsewhere it stays folded so clients only see how to open their results.
   const onLogin = typeof window !== 'undefined' && window.location.pathname === '/login';
-  const [dustOpen, setDustOpen] = useState(onLogin);
+  // /login?partenaire (the address given to partners) opens the partner sign-in.
+  const partnerParam = typeof window !== 'undefined' && /[?&](partenaire|partner)\b/.test(window.location.search);
+  const [partnerOpen, setPartnerOpen] = useState(partnerParam);
+  const [dustOpen, setDustOpen] = useState(onLogin && !partnerParam);
+  const [partnerEmail, setPartnerEmail] = useState('');
+  const [partnerLinkSentTo, setPartnerLinkSentTo] = useState<string | null>(null);
   const handledLink = useRef(false);
   const handledSession = useRef(false);
 
   const openAllCampaigns = async () => {
-    const { data, error: listErr } = await supabase.from('campaigns').select(CAMPAIGN_COLUMNS).order('created_at', { ascending: false });
+    const { data, error: listErr } = await fetchCampaignList();
     if (listErr) {
       setError(fr ? 'Une erreur est survenue. Réessayez.' : 'An error occurred. Please try again.');
       return false;
@@ -80,11 +89,26 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
     const params = new URLSearchParams(window.location.search);
     if (params.get('key')) return;
     const tryOpen = async (userEmail?: string | null) => {
-      if (handledSession.current || !isDustEmail(userEmail)) return;
+      if (handledSession.current || !userEmail) return;
       handledSession.current = true;
       setIsLoading(true);
       setAccessKey(null);
-      await openAllCampaigns();
+      if (isDustEmail(userEmail)) {
+        await openAllCampaigns();
+      } else {
+        // Anyone else signed in must belong to a partner; the database only returns its campaigns.
+        const partner = await fetchPartnerMe();
+        if (partner) {
+          setAdminKey(null);
+          const { data } = await fetchCampaignList();
+          onPartnerAccessGranted?.((data as AdminCampaign[]) ?? [], partner);
+        } else {
+          await supabase.auth.signOut();
+          handledSession.current = false;
+          setPartnerOpen(true);
+          setError(fr ? 'Cette adresse n’est rattachée à aucun partenaire Dust.' : 'This address is not linked to a Dust partner.');
+        }
+      }
       setIsLoading(false);
     };
     supabase.auth.getSession().then(({ data }) => tryOpen(data.session?.user?.email));
@@ -115,6 +139,36 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
       return;
     }
     setLinkSentTo(address);
+  };
+
+  const handlePartnerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const address = partnerEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(address)) {
+      setError(fr ? 'Saisissez votre adresse e-mail professionnelle.' : 'Enter your work email address.');
+      return;
+    }
+    if (isDustEmail(address)) {
+      setError(fr ? 'Adresse Dust : utilisez la connexion équipe Dust.' : 'Dust address: use the Dust team sign-in.');
+      return;
+    }
+    setIsLoading(true);
+    // The auth hook (supabase/008) only lets registered partner domains receive the link.
+    const { error: otpErr } = await supabase.auth.signInWithOtp({
+      email: address,
+      options: { emailRedirectTo: `${window.location.origin}/dashboard`, shouldCreateUser: true },
+    });
+    setIsLoading(false);
+    if (otpErr) {
+      setError(
+        /partner|dust/i.test(otpErr.message || '')
+          ? fr ? 'Cette adresse n’est rattachée à aucun partenaire Dust. Contactez votre interlocuteur Dust.' : 'This address is not linked to a Dust partner. Contact your Dust contact.'
+          : fr ? 'Impossible d’envoyer le lien pour le moment. Réessayez dans une minute.' : 'Could not send the link right now. Try again in a minute.'
+      );
+      return;
+    }
+    setPartnerLinkSentTo(address);
   };
 
   // Private results link: /dashboard?key=… opens that campaign only.
@@ -202,17 +256,63 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
             <Lock className="h-4 w-4 text-brand-ink" />
           </div>
           <h1 className="text-[20px] font-semibold tracking-[-0.01em] text-foreground">
-            {dustOpen ? (fr ? 'Connexion équipe Dust' : 'Dust team sign-in') : (fr ? 'Accès aux résultats' : 'Access your results')}
+            {partnerOpen ? (fr ? 'Espace partenaire' : 'Partner space') : dustOpen ? (fr ? 'Connexion équipe Dust' : 'Dust team sign-in') : (fr ? 'Accès aux résultats' : 'Access your results')}
           </h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            {dustOpen
+            {partnerOpen
+              ? (fr ? 'Pour les partenaires de déploiement Dust : vos clients, leurs campagnes et leurs résultats.' : 'For Dust deployment partners: your clients, their campaigns and their results.')
+              : dustOpen
               ? (fr ? 'Pour créer des campagnes et voir tous les résultats.' : 'To create campaigns and see every result.')
               : (fr ? 'Réservé à l’équipe Dust et aux clients disposant d’un lien de résultats.' : 'For the Dust team, and for clients with a results link.')}
           </p>
         </div>
 
+        {/* Deployment partner: login link by email, registered domains only */}
+        {partnerOpen && (partnerLinkSentTo ? (
+          <div role="status" className="mt-2 flex gap-3 rounded-md bg-ok-soft p-3 text-ok-ink">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="text-[13px]">
+              <p className="font-medium">{fr ? 'Lien envoyé' : 'Link sent'}</p>
+              <p className="mt-0.5">
+                {fr ? `Ouvrez l’e-mail envoyé à ${partnerLinkSentTo} et cliquez sur le lien pour vous connecter.` : `Open the email sent to ${partnerLinkSentTo} and click the link to sign in.`}
+              </p>
+              <button type="button" className="mt-1 underline underline-offset-2" onClick={() => setPartnerLinkSentTo(null)}>
+                {fr ? 'Utiliser une autre adresse' : 'Use another address'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handlePartnerSubmit} className="mt-2 space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="partner-email" className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                {fr ? 'Votre adresse e-mail professionnelle' : 'Your work email address'}
+              </Label>
+              <Input
+                id="partner-email"
+                type="email"
+                autoComplete="email"
+                placeholder={fr ? 'prenom@cabinet.fr' : 'name@firm.com'}
+                value={partnerEmail}
+                onChange={(e) => setPartnerEmail(e.target.value)}
+                autoFocus
+              />
+            </div>
+            {error && (
+              <div role="alert" className="flex items-center gap-2 rounded-md border-l-2 border-risk bg-risk-soft px-3 py-2 text-[13px] text-risk-ink">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {fr ? 'Recevoir un lien de connexion' : 'Email me a login link'}
+            </Button>
+          </form>
+        ))}
+
         {/* Client: private link (the Dust sign-in page skips it) */}
-        {!dustOpen && (
+        {!dustOpen && !partnerOpen && (
         <div className="flex gap-3 rounded-md bg-paper p-3 ring-1 ring-border">
           <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" />
           <div>
@@ -227,7 +327,7 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
         )}
 
         {/* Errors from a client results link, shown while the Dust sign-in is folded */}
-        {!dustOpen && error && (
+        {!dustOpen && !partnerOpen && error && (
           <div role="alert" className="mt-2 flex items-center gap-2 rounded-md border-l-2 border-risk bg-risk-soft px-3 py-2 text-[13px] text-risk-ink">
             <AlertCircle className="h-4 w-4 flex-shrink-0" />
             <span>{error}</span>
@@ -337,22 +437,57 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
             </Button>
           </form>
         )}
-        {!dustOpen ? (
-          <button
-            type="button"
-            className="mt-1 self-start text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-            onClick={() => { setDustOpen(true); setError(''); }}
-          >
-            {fr ? 'Équipe Dust : se connecter' : 'Dust team sign-in'}
-          </button>
-        ) : EMAIL_LOGIN_ENABLED && (
-          <button
-            type="button"
-            className="mt-1 self-start text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-            onClick={() => { setUseKey((v) => !v); setError(''); }}
-          >
-            {useKey ? (fr ? 'Se connecter avec une adresse @dust.tt' : 'Sign in with a @dust.tt address') : (fr ? 'Utiliser la clé admin (secours)' : 'Use the admin key instead')}
-          </button>
+        {!dustOpen || partnerOpen ? (
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+            {!partnerOpen && (
+              <button
+                type="button"
+                className="text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                onClick={() => { setDustOpen(true); setPartnerOpen(false); setError(''); }}
+              >
+                {fr ? 'Équipe Dust : se connecter' : 'Dust team sign-in'}
+              </button>
+            )}
+            {!partnerOpen && (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                onClick={() => { setPartnerOpen(true); setDustOpen(false); setError(''); }}
+              >
+                <Handshake className="h-3.5 w-3.5" />
+                {fr ? 'Partenaire de déploiement' : 'Deployment partner'}
+              </button>
+            )}
+            {partnerOpen && (
+              <button
+                type="button"
+                className="text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                onClick={() => { setPartnerOpen(false); setError(''); }}
+              >
+                {fr ? '← Retour' : '← Back'}
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+            {EMAIL_LOGIN_ENABLED && (
+              <button
+                type="button"
+                className="text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                onClick={() => { setUseKey((v) => !v); setError(''); }}
+              >
+                {useKey ? (fr ? 'Se connecter avec une adresse @dust.tt' : 'Sign in with a @dust.tt address') : (fr ? 'Utiliser la clé admin (secours)' : 'Use the admin key instead')}
+              </button>
+            )}
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 text-[12px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              onClick={() => { setPartnerOpen(true); setDustOpen(false); setError(''); }}
+            >
+              <Handshake className="h-3.5 w-3.5" />
+              {fr ? 'Partenaire de déploiement' : 'Deployment partner'}
+            </button>
+          </div>
         )}
 
         <div className="mt-2 flex items-center gap-3 border-t border-border pt-4">

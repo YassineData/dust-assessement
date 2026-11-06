@@ -35,7 +35,14 @@ interface DemoCompany {
   workflows?: { id: string; title: string; team?: string; status: 'planned' | 'building' | 'live' | 'dropped' }[];
   /** Imported Dust usage export at this wave (src/lib/usage-import.ts). */
   usage?: Record<string, unknown>;
+  /** Deployment partner running this client (supabase/008). */
+  partner?: string;
 }
+
+/** One deployment partner, so the « Partenaires » tab and the partner view can be tried. */
+export const DEMO_PARTNERS = [
+  { id: 'demo-partner-horizon', name: 'Horizon Conseil', domains: ['horizon-conseil.fr'], logo_url: null, active: true, created_at: '2026-06-02T08:00:00Z' },
+];
 
 const NW_WORKFLOWS = [
   { id: 'nw1', title: 'Suivi des retards de livraison', team: 'Opérations' },
@@ -55,7 +62,7 @@ const COMPANIES: DemoCompany[] = [
     workflows: NW_WORKFLOWS.map((w) => ({ ...w, status: 'planned' as const })),
   },
   {
-    id: 'demo-bellmont', code: 'BELLM518', name: 'Bellmont Assurances', domain: 'bellmont-assurances.fr',
+    id: 'demo-bellmont', partner: 'demo-partner-horizon', code: 'BELLM518', name: 'Bellmont Assurances', domain: 'bellmont-assurances.fr',
     employees: 518, registered: 142, completedShare: 0.84, level: 58,
     offsets: { gov: -18, will: 12, depth: -6, reach: 2, pain: 14, value: 4 },
     teams: ['sales', 'support', 'legal', 'data', 'finance', 'operations'], createdAt: '2026-09-02T08:00:00Z',
@@ -81,7 +88,7 @@ const COMPANIES: DemoCompany[] = [
   },
   {
     // A prospect before signature: the pre-sales diagnostic sent to 48 people.
-    id: 'demo-halden', code: 'HALDEN48', name: 'Halden Industries', domain: 'halden-industries.com',
+    id: 'demo-halden', partner: 'demo-partner-horizon', code: 'HALDEN48', name: 'Halden Industries', domain: 'halden-industries.com',
     employees: 640, registered: 48, completedShare: 0.86, level: 46, label: 'Diagnostic IA', presales: true,
     offsets: { gov: -14, team: -8, pain: 24, value: -4 },
     teams: ['operations', 'finance', 'sales', 'support'], createdAt: '2026-10-12T08:00:00Z',
@@ -228,7 +235,7 @@ const slug = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').t
 
 type Row = Record<string, unknown>;
 
-let cache: { campaigns: Row[]; participants: Row[] } | null = null;
+let cache: { campaigns: Row[]; participants: Row[]; partners: Row[] } | null = null;
 
 export const DEMO_CODES = COMPANIES.map((c) => c.code);
 
@@ -245,6 +252,7 @@ export const getDemoData = () => {
     wave: c.wave ?? null,
     workflows: c.workflows ?? null,
     usage: c.usage ?? null,
+    partner_id: c.partner ?? null,
     creator_email: 'demo@dust.tt',
     creator_first_name: DEMO_OWNERS[ci % DEMO_OWNERS.length][0],
     creator_last_name: DEMO_OWNERS[ci % DEMO_OWNERS.length][1],
@@ -358,7 +366,7 @@ export const getDemoData = () => {
     }
   });
 
-  cache = { campaigns, participants };
+  cache = { campaigns, participants, partners: DEMO_PARTNERS.map((p) => ({ ...p })) };
   return cache;
 };
 
@@ -391,6 +399,7 @@ export const getDemoCampaignList = () =>
     creator_first_name: c.creator_first_name as string,
     creator_last_name: c.creator_last_name as string,
     created_at: c.created_at as string,
+    partner_id: (c.partner_id as string | null) ?? null,
   }));
 
 /* ------------------------------------------------------------------ */
@@ -455,10 +464,29 @@ export const installDemoInterceptor = () => {
           }))
       );
     }
+    if (path === 'rpc/partner_me') return json([]);
+    if (path === 'rpc/partner_overview') {
+      const { campaigns, participants } = getDemoData();
+      const by = new Map<string, Row[]>();
+      campaigns.filter((c) => c.partner_id).forEach((c) => by.set(String(c.partner_id), [...(by.get(String(c.partner_id)) ?? []), c]));
+      return json(
+        [...by.entries()].map(([pid, list]) => {
+          const done = participants.filter((p) => list.some((c) => c.id === p.campaign_id) && p.status === 'completed');
+          const scores = done.map((p) => Number((p.item_scores as { readiness?: number } | null)?.readiness ?? 0));
+          return {
+            partner_id: pid,
+            campaigns: list.length,
+            clients: new Set(list.map((c) => String(c.company_name).toLowerCase())).size,
+            completed: done.length,
+            readiness: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null,
+          };
+        })
+      );
+    }
     if (path.startsWith('rpc/')) return json('DEMO' + Math.random().toString(36).slice(2, 6).toUpperCase());
 
     const data = getDemoData();
-    let rows: Row[] = path === 'participants' ? data.participants : path === 'campaigns' ? data.campaigns : [];
+    let rows: Row[] = path === 'participants' ? data.participants : path === 'campaigns' ? data.campaigns : path === 'partners' ? data.partners : [];
     const params = new URL(url).searchParams;
     params.forEach((v, k) => {
       if (!RESERVED.has(k)) rows = rows.filter((r) => matchFilter(r, k, v));

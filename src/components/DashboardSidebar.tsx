@@ -10,6 +10,7 @@ import {
   TrendingUp,
   ListTodo,
   Send,
+  Handshake,
   ClipboardList,
   SlidersHorizontal,
   KeyRound,
@@ -39,7 +40,8 @@ export type TabId =
   | 'campaignSettings'
   | 'access'
   | 'dataHealth'
-  | 'signIns';
+  | 'signIns'
+  | 'partners';
 
 interface NavItem {
   id: TabId | 'takeAssessment';
@@ -91,13 +93,17 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'access', fr: 'Accès & codes', en: 'Access & codes', icon: KeyRound },
       { id: 'dataHealth', fr: 'Santé des données', en: 'Data health', icon: Activity },
+      { id: 'partners', fr: 'Partenaires', en: 'Partners', icon: Handshake },
       { id: 'signIns', fr: 'Connexions', en: 'Sign-ins', icon: LogIn },
     ],
   },
 ];
 
 /** What a client manager sees: results, analysis and sharing, never settings or admin. */
-export const CLIENT_HIDDEN_TABS: TabId[] = ['campaignSettings', 'access', 'dataHealth', 'signIns'];
+export const CLIENT_HIDDEN_TABS: TabId[] = ['campaignSettings', 'access', 'dataHealth', 'signIns', 'partners'];
+/** A deployment partner runs its own campaigns but never sees Dust's admin tools. */
+export const PARTNER_HIDDEN_TABS: TabId[] = ['access', 'dataHealth', 'signIns', 'partners'];
+const PARTNER_NAV_GROUPS: NavGroup[] = NAV_GROUPS.filter((g) => g.en !== 'Admin');
 const CLIENT_NAV_GROUPS: NavGroup[] = NAV_GROUPS.filter((g) => g.en !== 'Admin').map((g) => ({
   ...g,
   items: g.items.filter((i) => !CLIENT_HIDDEN_TABS.includes(i.id as TabId)),
@@ -131,6 +137,8 @@ interface DashboardSidebarProps {
   onMobileClose: () => void;
   /** Client manager view: their campaign only, without the Dust team's settings and admin tools. */
   clientView?: boolean;
+  /** Deployment partner (or Dust previewing as one): no Admin group. */
+  partnerView?: boolean;
   /** A menu item to point at (e.g. Share & invite right after a campaign is created), with a short badge. */
   highlight?: { tab: TabId; badge: string };
 }
@@ -149,6 +157,7 @@ export const DashboardSidebar = ({
   mobileOpen,
   onMobileClose,
   clientView = false,
+  partnerView = false,
   highlight,
 }: DashboardSidebarProps) => {
   const { language } = useLanguage();
@@ -226,7 +235,7 @@ export const DashboardSidebar = ({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2 pb-3">
-          {(clientView ? CLIENT_NAV_GROUPS : NAV_GROUPS).map((group) => (
+          {(clientView ? CLIENT_NAV_GROUPS : partnerView ? PARTNER_NAV_GROUPS : NAV_GROUPS).map((group) => (
             <div key={group.en} className="mt-3 first:mt-1">
               <p
                 className={cn(

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Copy, Download, ExternalLink, FileText, Link2, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AUDIENCES, AUDIENCE_PARAM, type SurveyAudience } from '@/lib/assessment-v2';
@@ -13,6 +13,7 @@ import { resultsLink } from '@/lib/access';
 import { useIsDustTeam } from '@/hooks/useIsDustTeam';
 import { DUST_TEAM, splitName } from '@/lib/dust-team';
 import type { Campaign } from '@/components/CampaignSelector';
+import { fetchPartnerMe } from '@/lib/partners';
 import type { Wave } from '@/lib/waves';
 
 const TEAM_NAMES = DUST_TEAM.flatMap((g) => g.names);
@@ -28,6 +29,10 @@ interface AdminCampaignCreatorProps {
   onCreated?: () => void;
   /** Called as soon as the campaign exists, so the console can list and open it. */
   onCampaignCreated?: (campaign: Campaign) => void;
+  /** Partner the campaign belongs to (a partner's own console, or Dust previewing one). Read from the session when omitted. */
+  fixedPartnerId?: string | null;
+  /** Dust: partners it can create the campaign for (empty = Dust direct only). */
+  partnerOptions?: { id: string; name: string }[];
 }
 
 const CREATOR_KEY = 'dust_campaign_creator_name';
@@ -36,8 +41,20 @@ const CREATOR_KEY = 'dust_campaign_creator_name';
  * Creates a deployment and hands back a link (+ code) to send to the client.
  * No recipient list: respondents register themselves when they open the link.
  */
-export const AdminCampaignCreator = ({ defaultCompany, defaultCampaignName, defaultAudience, defaultWave, defaultCreatorEmail, onCreated, onCampaignCreated }: AdminCampaignCreatorProps) => {
+export const AdminCampaignCreator = ({ defaultCompany, defaultCampaignName, defaultAudience, defaultWave, defaultCreatorEmail, onCreated, onCampaignCreated, fixedPartnerId, partnerOptions = [] }: AdminCampaignCreatorProps) => {
   const { language } = useLanguage();
+  const [partnerId, setPartnerId] = useState<string>(fixedPartnerId ?? '');
+  const [partnerLocked, setPartnerLocked] = useState(!!fixedPartnerId);
+  // Standalone page (first campaign of a partner): the signed-in partner, if any, owns the campaign.
+  useEffect(() => {
+    if (fixedPartnerId !== undefined) return;
+    fetchPartnerMe().then((p) => {
+      if (p) {
+        setPartnerId(p.id);
+        setPartnerLocked(true);
+      }
+    });
+  }, [fixedPartnerId]);
   const fr = language !== 'en';
   const { toast } = useToast();
 
@@ -117,6 +134,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCampaignName, defa
         creator_last_name: last,
         creator_email: defaultCreatorEmail || 'team@dust.tt',
         language: campaignLanguage,
+        ...(partnerId ? { partner_id: partnerId } : {}),
       };
       const intro = introTitle.trim() || introBody.trim() ? { title: introTitle.trim(), body: introBody.trim() } : null;
       const COLS = 'id, code, company_name, campaign_name, creator_email, creator_first_name, creator_last_name, created_at, access_key';
@@ -333,6 +351,26 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCampaignName, defa
           </div>
         )}
       </div>
+
+      {!partnerLocked && partnerOptions.length > 0 && (
+        <div className="space-y-1.5">
+          <Label htmlFor="campaign-partner">{fr ? 'Partenaire de déploiement' : 'Deployment partner'}</Label>
+          <select
+            id="campaign-partner"
+            value={partnerId}
+            onChange={(e) => setPartnerId(e.target.value)}
+            className="h-10 w-full rounded-md border border-input bg-card px-3 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="">{fr ? 'Aucun : client Dust en direct' : 'None: Dust direct client'}</option>
+            {partnerOptions.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-[12px] text-muted-foreground">{fr ? 'Le partenaire verra ce client et ses résultats dans son espace.' : 'The partner will see this client and its results in its space.'}</p>
+        </div>
+      )}
 
       <div className="space-y-1.5">
         <Label>{fr ? 'Langue du questionnaire' : 'Questionnaire language'}</Label>

@@ -71,11 +71,15 @@ interface SettingsTabProps {
   onCampaignCreated?: (campaign: Campaign) => void;
   /** Prefills for the creation dialog (a follow-up wave started from the « Suivi » tab). */
   createPreset?: { company: string; name: string; audience: SurveyAudience; wave: Wave };
+  /** Partner owning new campaigns (partner console or Dust previewing one). */
+  fixedPartnerId?: string | null;
+  /** Dust: partners a new campaign can belong to. */
+  partnerOptions?: { id: string; name: string }[];
   /** A campaign was deleted (Dust team only): the console drops it and moves on. */
   onCampaignDeleted?: (campaignId: string) => void;
 }
 
-export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, campaignParticipants, averageScore, thematicAverages, view, allCampaigns = [], creatorEmail, onSelectCampaign, onNavigate, openCreate, onCampaignDeleted, onCampaignCreated, createPreset }: SettingsTabProps) => {
+export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, campaignParticipants, averageScore, thematicAverages, view, allCampaigns = [], creatorEmail, onSelectCampaign, onNavigate, openCreate, onCampaignDeleted, onCampaignCreated, createPreset, fixedPartnerId = null, partnerOptions = [] }: SettingsTabProps) => {
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
   const [justCreated, setJustCreated] = useState<Campaign | null>(null);
   const { language } = useLanguage();
@@ -562,6 +566,8 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
           defaultCampaignName={createPreset?.name}
           defaultAudience={createPreset?.audience}
           defaultWave={createPreset?.wave}
+          fixedPartnerId={fixedPartnerId}
+          partnerOptions={partnerOptions}
           onCreated={() => {
             setCreateDialogOpen(false);
             if (justCreated) onSelectCampaign?.(justCreated);

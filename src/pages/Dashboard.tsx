@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { DustMark, DustWordmark } from '@/components/DustMark';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { TopBar, PageHeader } from '@/components/CampaignHeader';
-import { DashboardSidebar, TabId, TAB_LABELS, CLIENT_HIDDEN_TABS } from '@/components/DashboardSidebar';
+import { DashboardSidebar, TabId, TAB_LABELS, CLIENT_HIDDEN_TABS, PARTNER_HIDDEN_TABS } from '@/components/DashboardSidebar';
+import { PartnersTab } from '@/components/console/PartnersTab';
+import { fetchCampaignList, type PartnerIdentity } from '@/lib/partners';
 import { SectionCard } from '@/components/console/SectionCard';
 import { OpenAnswersCard } from '@/components/console/OpenAnswersCard';
 import { SignInLog } from '@/components/console/SignInLog';
@@ -85,6 +87,10 @@ interface StoredSession {
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
   allCampaigns?: Campaign[];
+  /** Signed in as a deployment partner (the database only returns its campaigns). */
+  partner?: PartnerIdentity | null;
+  /** Dust previewing the console as a partner sees it. */
+  viewAs?: PartnerIdentity | null;
 }
 
 // v2: bumped to invalidate pre-security-fix sessions that may have cached
@@ -120,6 +126,10 @@ const Dashboard = () => {
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [partner, setPartner] = useState<PartnerIdentity | null>(null);
+  const [viewAs, setViewAs] = useState<PartnerIdentity | null>(null);
+  // Partner names for Dust (campaign creation and the partner shown next to a client).
+  const [partnerOptions, setPartnerOptions] = useState<PartnerIdentity[]>([]);
   const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
   const [showAccessModal, setShowAccessModal] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -170,6 +180,8 @@ const Dashboard = () => {
           setIsAdmin(session.isAdmin || false);
           setIsSuperAdmin(session.isSuperAdmin || false);
           setAllCampaigns(session.allCampaigns || []);
+          setPartner(session.partner ?? null);
+          setViewAs(session.viewAs ?? null);
           setShowAccessModal(false);
           // Mettre à jour le timestamp d'activité
           localStorage.setItem(SESSION_KEY, JSON.stringify({
@@ -292,10 +304,7 @@ const Dashboard = () => {
 
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('id, code, company_name, campaign_name, creator_email, creator_first_name, creator_last_name, created_at')
-        .order('created_at', { ascending: false });
+      const { data, error } = await fetchCampaignList();
 
       if (cancelled || error || !data) return;
 
@@ -411,10 +420,12 @@ const Dashboard = () => {
   }, [completedParticipants, language, activeThematics, globalBenchmark]);
 
   // Build selector list with a virtual "Global" entry per client with 2+ campaigns
+  // Dust previewing a partner only sees that partner's campaigns, as the partner would.
+  const scopedCampaigns = useMemo(() => (viewAs ? allCampaigns.filter((c) => c.partner_id === viewAs.id) : allCampaigns), [allCampaigns, viewAs]);
   const selectorCampaigns = useMemo<Campaign[]>(() => {
-    if (!isAdmin || allCampaigns.length === 0) return allCampaigns;
+    if (!isAdmin || scopedCampaigns.length === 0) return scopedCampaigns;
     const byCompany = new Map<string, Campaign[]>();
-    allCampaigns.forEach((c) => {
+    scopedCampaigns.forEach((c) => {
       const key = (c.company_name || '').trim();
       if (!key) return;
       if (!byCompany.has(key)) byCompany.set(key, []);
@@ -436,8 +447,8 @@ const Dashboard = () => {
       });
     });
     virtuals.sort((a, b) => a.company_name.localeCompare(b.company_name));
-    return [...virtuals, ...allCampaigns];
-  }, [isAdmin, allCampaigns, language]);
+    return [...virtuals, ...scopedCampaigns];
+  }, [isAdmin, scopedCampaigns, language]);
 
   // Top performers - only completed participants, sorted by score
   const topPerformers = useMemo(() => {
@@ -486,6 +497,8 @@ const Dashboard = () => {
       return;
     }
     setIsAdmin(true);
+    setPartner(null);
+    setViewAs(null);
     setIsSuperAdmin(superAdmin);
     setAllCampaigns(campaigns);
     setShowAccessModal(false);
@@ -512,6 +525,45 @@ const Dashboard = () => {
     }
   };
 
+  // Deployment partner signed in: same console, its own clients only (filtered by the database).
+  const handlePartnerAccessGranted = (campaigns: AdminCampaign[], p: PartnerIdentity) => {
+    if (campaigns.length === 0) {
+      // First client still to create: the creator tags it with the partner on its own.
+      navigate('/create-campaign');
+      return;
+    }
+    setIsAdmin(true);
+    setIsSuperAdmin(true);
+    setPartner(p);
+    setViewAs(null);
+    setAllCampaigns(campaigns);
+    setShowAccessModal(false);
+    const first = campaigns[0];
+    const access: CampaignAccess = { campaignId: first.id, companyName: first.company_name, creatorEmail: first.creator_email, campaignCode: first.code };
+    setCampaignAccess(access);
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ access, lastActivity: Date.now(), isAdmin: true, isSuperAdmin: true, allCampaigns: campaigns, partner: p } as StoredSession));
+  };
+
+  // Dust previews (or stops previewing) the console as a partner sees it.
+  const handleViewAs = (p: PartnerIdentity | null) => {
+    setViewAs(p);
+    const list = p ? allCampaigns.filter((c) => c.partner_id === p.id) : allCampaigns;
+    const keep = list.find((c) => c.id === campaignAccess?.campaignId);
+    const target = keep ?? list[0];
+    let access = campaignAccess;
+    if (target && !keep) {
+      access = { campaignId: target.id, companyName: target.company_name, creatorEmail: target.creator_email, campaignCode: target.code };
+      setCampaignAccess(access);
+    }
+    setActiveTab('overview');
+    try {
+      const stored = JSON.parse(localStorage.getItem(SESSION_KEY) || '{}');
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ ...stored, access, viewAs: p, lastActivity: Date.now() }));
+    } catch {
+      /* preview lasts for this page only */
+    }
+  };
+
   const handleCampaignSelect = (campaign: Campaign) => {
     const access: CampaignAccess = {
       campaignId: campaign.id,
@@ -526,7 +578,9 @@ const Dashboard = () => {
       lastActivity: Date.now(),
       isAdmin: true,
       isSuperAdmin,
-      allCampaigns
+      allCampaigns,
+      partner,
+      viewAs,
     };
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   };
@@ -564,7 +618,7 @@ const Dashboard = () => {
       ? { campaignId: next.id, companyName: next.company_name, creatorEmail: next.creator_email, campaignCode: next.code }
       : campaignAccess!;
     if (next) setCampaignAccess(access);
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ access, lastActivity: Date.now(), isAdmin: true, isSuperAdmin, allCampaigns: remaining } as StoredSession));
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ access, lastActivity: Date.now(), isAdmin: true, isSuperAdmin, allCampaigns: remaining, partner, viewAs } as StoredSession));
     setRefreshKey((k) => k + 1);
   };
 
@@ -576,6 +630,8 @@ const Dashboard = () => {
   // Attendre l'initialisation avant d'afficher quoi que ce soit
   // Client manager (private results link): their campaign only, without Dust settings and admin tools.
   const isClientView = !!campaignAccess && !isAdmin;
+  // A deployment partner, or Dust previewing as one: no Dust admin tools.
+  const partnerView = !!partner || !!viewAs;
   // Campaign just created whose client kit has not been opened yet (per browser).
   const [kitPending, setKitPending] = useState<string | null>(() => {
     try {
@@ -603,7 +659,21 @@ const Dashboard = () => {
   })();
   useEffect(() => {
     if (isClientView && CLIENT_HIDDEN_TABS.includes(activeTab)) setActiveTab('overview');
-  }, [isClientView, activeTab]);
+    if (partnerView && PARTNER_HIDDEN_TABS.includes(activeTab)) setActiveTab('overview');
+  }, [isClientView, partnerView, activeTab]);
+
+  // Dust: partner names for campaign creation (empty until supabase/008 is installed).
+  useEffect(() => {
+    if (!isAdmin || partner) return;
+    supabase
+      .from('partners' as never)
+      .select('id, name, logo_url')
+      .eq('active', true)
+      .order('name')
+      .then(({ data, error }) => {
+        if (!error) setPartnerOptions((data as unknown as PartnerIdentity[]) ?? []);
+      });
+  }, [isAdmin, partner]);
 
   // /login is only the way in: once signed in, land on the console's own URL.
   useEffect(() => {
@@ -636,6 +706,7 @@ const Dashboard = () => {
             onClose={handleCloseModal}
             onAccessGranted={handleAccessGranted}
             onAdminAccessGranted={handleAdminAccessGranted}
+            onPartnerAccessGranted={handlePartnerAccessGranted}
           />
         </main>
       </div>
@@ -667,6 +738,8 @@ const Dashboard = () => {
     setCampaignAccess(null);
     setIsAdmin(false);
     setIsSuperAdmin(false);
+    setPartner(null);
+    setViewAs(null);
     setAllCampaigns([]);
     setShowAccessModal(true);
   };
@@ -681,10 +754,7 @@ const Dashboard = () => {
       // Reload admin campaign list if super admin
       // Only super-admins may reload the full campaign list from DB
       if (isSuperAdmin) {
-        const { data } = await supabase
-          .from('campaigns')
-          .select('id, code, company_name, campaign_name, creator_email, creator_first_name, creator_last_name, created_at')
-          .order('created_at', { ascending: false });
+        const { data } = await fetchCampaignList();
         if (data) {
           setAllCampaigns(data as Campaign[]);
           const session = localStorage.getItem(SESSION_KEY);
@@ -782,6 +852,7 @@ const Dashboard = () => {
     participants: { fr: `${participants.length} membres inscrits, profils et scores individuels.`, en: `${participants.length} enrolled members, profiles and individual scores.` },
     itemScores: { fr: `Performance de chaque répondant sur les ${activeThematics.length} dimensions.`, en: `Each respondent's performance across all ${activeThematics.length} dimensions.` },
     detailed: { fr: 'Répartition des réponses pour chaque question.', en: 'Answer distribution for every question.' },
+    partners: { fr: 'Les partenaires de déploiement, leurs clients et ce qu’ils voient.', en: 'Deployment partners, their clients and what they see.' },
     progress: { fr: 'L’évolution d’un passage à l’autre : point de départ, re-mesures, bilan, et les workflows convenus au kickoff.', en: 'How things evolve from one wave to the next: baseline, re-measures, review, and the workflows agreed at the kickoff.' },
     compare: { fr: 'Comparez la cohorte à des participants, d’autres campagnes ou des secteurs.', en: 'Benchmark the cohort against participants, other campaigns or sectors.' },
     actions: { fr: 'Qui fait quoi dans le déploiement, et par où commencer.', en: 'Who does what in the rollout, and where to start.' },
@@ -864,6 +935,7 @@ const Dashboard = () => {
         mobileOpen={mobileNavOpen}
         onMobileClose={closeMobileNav}
         clientView={isClientView}
+        partnerView={partnerView}
         highlight={
           kitPending && kitPending === campaignAccess?.campaignId
             ? { tab: 'share', badge: fr ? 'Kit PDF' : 'PDF kit' }
@@ -877,10 +949,10 @@ const Dashboard = () => {
         <TopBar
           company={campaignAccess.companyName}
           campaignName={campaignName}
-          campaignsCount={isAdmin ? allCampaigns.length : undefined}
+          campaignsCount={isAdmin ? scopedCampaigns.length : undefined}
           campaignCode={campaignCodeForLinks}
           userEmail={isAdmin ? (adminEmail || undefined) : undefined}
-          roleLabel={isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : 'Manager'}
+          roleLabel={partner ? partner.name : viewAs ? (fr ? `Vue ${viewAs.name}` : `${viewAs.name} view`) : isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : 'Manager'}
           isDemo={isDemoMode()}
           onOpenNav={() => setMobileNavOpen(true)}
           onOpenSettings={() => setActiveTab('campaignSettings')}
@@ -890,6 +962,15 @@ const Dashboard = () => {
         />
 
         <main className="mx-auto w-full max-w-[1440px] space-y-5 px-4 py-5 md:px-6">
+          {viewAs && (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg bg-warn-soft px-4 py-2.5 text-[13px] text-warn-ink">
+              <span className="font-semibold">{fr ? `Vous voyez la plateforme comme ${viewAs.name}` : `You are seeing the platform as ${viewAs.name}`}</span>
+              <span>{fr ? 'Seuls ses clients sont visibles, sans les outils Dust.' : 'Only its clients are visible, without Dust tools.'}</span>
+              <Button size="sm" variant="outline" className="ml-auto" onClick={() => { handleViewAs(null); setActiveTab('partners'); }}>
+                {fr ? 'Revenir à la vue Dust' : 'Back to the Dust view'}
+              </Button>
+            </div>
+          )}
           <PageHeader
             crumbs={[fr ? 'Campagnes' : 'Campaigns', campaignAccess.companyName, ...(campaignName ? [campaignName] : []), fr ? tabMeta.fr : tabMeta.en]}
             title={fr ? tabMeta.fr : tabMeta.en}
@@ -1355,6 +1436,24 @@ const Dashboard = () => {
 
         {activeTab === 'signIns' && !isClientView && <SignInLog fr={fr} />}
 
+        {activeTab === 'partners' && isAdmin && !partnerView && (
+          <PartnersTab
+            fr={fr}
+            campaigns={allCampaigns}
+            onCampaignsChanged={(list) => {
+              setAllCampaigns(list);
+              try {
+                const stored = JSON.parse(localStorage.getItem(SESSION_KEY) || '{}');
+                localStorage.setItem(SESSION_KEY, JSON.stringify({ ...stored, allCampaigns: list, lastActivity: Date.now() }));
+              } catch {
+                /* reloaded from the database next time */
+              }
+            }}
+            onOpenCampaign={(c) => { handleCampaignSelect(c); setActiveTab('overview'); }}
+            onViewAs={(p) => handleViewAs(p)}
+          />
+        )}
+
         {activeTab === 'openAnswers' && (
           <div className="space-y-5">
             <OpenAnswersCard participants={participants} fr={fr} showEmpty />
@@ -1390,6 +1489,8 @@ const Dashboard = () => {
             onNavigate={setActiveTab}
             openCreate={createRequested > 0}
             createPreset={createPreset}
+            fixedPartnerId={partner?.id ?? viewAs?.id ?? null}
+            partnerOptions={partner || viewAs ? [] : partnerOptions}
             onCampaignDeleted={isAdmin ? handleCampaignDeleted : undefined}
             onCampaignCreated={isAdmin ? handleCampaignCreated : undefined}
             key={activeTab === 'campaignSettings' ? `settings-${createRequested}` : activeTab}
