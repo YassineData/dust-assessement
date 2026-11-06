@@ -111,19 +111,20 @@ const Home = () => {
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1080px] items-center justify-between px-4">
           <DustWordmark subtitle={L('Deployment scoping · for the Dust team', 'Cadrage du déploiement · équipe Dust')} />
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <LanguageSwitcher />
-            <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
+            <Button variant="outline" size="sm" asChild className="h-9 gap-1.5 rounded-full border-[#1C91FF]/40 px-2.5 sm:px-3 bg-[#E9F7FF] font-medium text-[#0B6BC7] hover:bg-[#D6EFFF] hover:text-[#0B6BC7] dark:bg-[#1C91FF]/15 dark:text-[#7DBEFF]">
               <a href="/login?partenaire">
-                <Handshake className="h-3.5 w-3.5" />
+                <Handshake className="h-4 w-4" />
                 <span className="hidden sm:inline">{L('Partner space', 'Espace partenaire')}</span>
                 <span className="sm:hidden">{L('Partners', 'Partenaires')}</span>
               </a>
             </Button>
-            <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
+            <Button size="sm" asChild className="h-9 gap-1.5 rounded-full px-2.5 font-medium sm:px-3">
               <a href="/login">
-                <LogIn className="h-3.5 w-3.5" />
-                {L('Sign in', 'Connexion')}
+                <LogIn className="h-4 w-4" />
+                <span className="hidden sm:inline">{L('Dust team sign in', 'Connexion équipe Dust')}</span>
+                <span className="sm:hidden">{L('Sign in', 'Connexion')}</span>
               </a>
             </Button>
           </div>

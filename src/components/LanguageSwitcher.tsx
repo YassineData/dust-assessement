@@ -20,7 +20,7 @@ export const LanguageSwitcher = ({ compact = false }: { compact?: boolean }) => 
       aria-label={language === 'fr' ? 'Langue' : 'Language'}
       className="inline-flex items-center gap-1 rounded-full bg-brand-soft p-1 ring-1 ring-sky"
     >
-      <Languages className="ml-1.5 h-4 w-4 text-brand-ink" aria-hidden="true" />
+      <Languages className="ml-1.5 hidden h-4 w-4 text-brand-ink sm:block" aria-hidden="true" />
       {OPTIONS.map((o) => {
         const on = language === o.id;
         return (
