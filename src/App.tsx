@@ -12,6 +12,7 @@ import CreateCampaign from "./pages/CreateCampaign";
 import NotFound from "./pages/NotFound";
 import ParticipantResult from "./pages/ParticipantResult";
 import ChampionKit from "./pages/ChampionKit";
+import AuthConfirm from "./pages/AuthConfirm";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/internal" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/login" element={<Dashboard />} />
+            <Route path="/auth/confirm" element={<AuthConfirm />} />
             {/* Client manager's private results link: /results?key=… (same console, client view) */}
             <Route path="/results" element={<Dashboard />} />
             <Route path="/assessment" element={<Assessment />} />
