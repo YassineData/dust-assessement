@@ -70,8 +70,65 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
   const [dustOpen, setDustOpen] = useState(onLogin && !partnerParam);
   const [partnerEmail, setPartnerEmail] = useState('');
   const [partnerLinkSentTo, setPartnerLinkSentTo] = useState<string | null>(null);
+  const [otpCode, setOtpCode] = useState('');
   const handledLink = useRef(false);
   const handledSession = useRef(false);
+
+  // A link that failed comes back as #error=…&error_code=otp_expired: say so plainly instead of a blank page.
+  useEffect(() => {
+    if (!isOpen) return;
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const code = hash.get('error_code') || hash.get('error');
+    if (!code) return;
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    setPartnerOpen(true);
+    setDustOpen(false);
+    setError(
+      code === 'otp_expired'
+        ? fr ? 'Ce lien a expiré ou a déjà été ouvert (certaines messageries l’ouvrent pour le vérifier). Demandez un nouveau lien, puis saisissez le code reçu dans l’e-mail.' : 'This link has expired or was already opened (some mail systems open links to scan them). Request a new link, then enter the code from the email.'
+        : fr ? 'La connexion n’a pas abouti. Demandez un nouveau lien.' : 'Sign-in did not go through. Request a new link.'
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // The code in the email signs in too: works even when a mail scanner has already used the link.
+  const handleCodeSubmit = async (address: string) => {
+    setError('');
+    const token = otpCode.replace(/\s/g, '');
+    if (!/^\d{6,10}$/.test(token)) {
+      setError(fr ? 'Saisissez le code à chiffres reçu par e-mail.' : 'Enter the numeric code from the email.');
+      return;
+    }
+    setIsLoading(true);
+    const { error: vErr } = await supabase.auth.verifyOtp({ email: address, token, type: 'email' });
+    setIsLoading(false);
+    if (vErr) setError(fr ? 'Code incorrect ou expiré. Demandez un nouveau lien.' : 'Wrong or expired code. Request a new link.');
+    // Success: onAuthStateChange opens the space.
+  };
+
+  const codeForm = (address: string) => (
+    <form
+      className="mt-2 flex gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleCodeSubmit(address);
+      }}
+    >
+      <Input
+        aria-label={fr ? 'Code reçu par e-mail' : 'Code from the email'}
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        placeholder={fr ? 'Ou saisissez le code' : 'Or enter the code'}
+        value={otpCode}
+        onChange={(e) => setOtpCode(e.target.value)}
+        className="h-9 bg-card text-foreground"
+      />
+      <Button type="submit" size="sm" className="h-9" disabled={isLoading}>
+        {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+        {fr ? 'Valider' : 'Verify'}
+      </Button>
+    </form>
+  );
 
   const openAllCampaigns = async () => {
     const { data, error: listErr } = await fetchCampaignList();
@@ -276,7 +333,9 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
               <p className="mt-0.5">
                 {fr ? `Ouvrez l’e-mail envoyé à ${partnerLinkSentTo} et cliquez sur le lien pour vous connecter.` : `Open the email sent to ${partnerLinkSentTo} and click the link to sign in.`}
               </p>
-              <button type="button" className="mt-1 underline underline-offset-2" onClick={() => setPartnerLinkSentTo(null)}>
+              {codeForm(partnerLinkSentTo)}
+              {error && <p role="alert" className="mt-1 text-risk-ink">{error}</p>}
+              <button type="button" className="mt-1 underline underline-offset-2" onClick={() => { setOtpCode(''); setError(''); setPartnerLinkSentTo(null); }}>
                 {fr ? 'Utiliser une autre adresse' : 'Use another address'}
               </button>
             </div>
@@ -343,7 +402,9 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
               <p className="mt-0.5">
                 {fr ? `Ouvrez l’e-mail envoyé à ${linkSentTo} et cliquez sur le lien pour vous connecter.` : `Open the email sent to ${linkSentTo} and click the link to sign in.`}
               </p>
-              <button type="button" className="mt-1 underline underline-offset-2" onClick={() => setLinkSentTo(null)}>
+              {codeForm(linkSentTo)}
+              {error && <p role="alert" className="mt-1 text-risk-ink">{error}</p>}
+              <button type="button" className="mt-1 underline underline-offset-2" onClick={() => { setOtpCode(''); setError(''); setLinkSentTo(null); }}>
                 {fr ? 'Utiliser une autre adresse' : 'Use another address'}
               </button>
             </div>
