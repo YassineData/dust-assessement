@@ -15,6 +15,7 @@ import {
 import { PRESALES_CONTEXT_FIELDS, PRESALES_FOLLOW_UPS, PRESALES_OPEN_FIELDS, PRESALES_QUESTIONS } from '@/lib/presales';
 import { isPresalesCohort } from '@/components/console/OpenAnswersCard';
 import { PILLARS } from '@/lib/waves';
+import { contextDistribution, pctOf } from '@/lib/results-stats';
 
 /**
  * « Dossier diagnostic »: everything a results presentation needs, in one JSON file, read by the
@@ -24,7 +25,7 @@ import { PILLARS } from '@/lib/waves';
 
 type Lang = 'fr' | 'en';
 const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
-const share = (n: number, total: number) => (total ? Math.round((n / total) * 100) : 0);
+const share = pctOf;
 
 export const buildDiagnosticPack = (participants: CampaignParticipant[], companyName: string, campaignName: string | null, lang: Lang, audience?: string | null) => {
   const done = participants.filter((p) => p.status === 'completed');
@@ -40,18 +41,7 @@ export const buildDiagnosticPack = (participants: CampaignParticipant[], company
   // Who answered: counts per option of each « About you » field (multiple answers counted once each).
   const fields = presales ? PRESALES_CONTEXT_FIELDS : CONTEXT_FIELDS;
   const breakdown = Object.fromEntries(
-    fields.map((f) => {
-      const counts = new Map<string, number>();
-      done.forEach((p) => contextLabels(p.context, f.id, lang).forEach((l) => counts.set(l, (counts.get(l) ?? 0) + 1)));
-      return [
-        f.id,
-        {
-          question: pick(f.label),
-          multiple: !!f.multiple,
-          answers: [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([option, count]) => ({ option, count, pct: share(count, done.length) })),
-        },
-      ];
-    })
+    fields.map((f) => [f.id, { question: pick(f.label), multiple: !!f.multiple, answers: contextDistribution(done, f.id, lang) }])
   );
 
   // Statements: share who agree / disagree, as respondents saw them.

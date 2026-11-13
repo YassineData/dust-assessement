@@ -12,6 +12,7 @@ import { exportPPT } from '@/lib/export-ppt';
 import { exportSummaryPDF, type SummaryPdfData } from '@/lib/export-pdf';
 import { dustAnalysisPrompt, exportDiagnosticPack } from '@/lib/export-diagnostic';
 import { cn } from '@/lib/utils';
+import { HubspotExportButton } from '@/components/HubspotExportButton';
 
 type ExportKind = 'pdf' | 'ppt' | 'word' | 'csv' | 'pack';
 
@@ -25,6 +26,8 @@ interface DownloadOptionsModalProps {
   averageScore: number;
   thematicAverages: { thematic: string; originalThematic: string; score: number }[];
   campaignName?: string | null;
+  /** Dust team on a single campaign only (not partners, not the « Global » view): shows « Exporter vers HubSpot ». */
+  hubspotCampaignId?: string | null;
 }
 
 /** Every export in one place: summary PDF, kickoff deck, full report, raw data. */
@@ -37,6 +40,7 @@ export const DownloadOptionsModal = ({
   averageScore,
   thematicAverages,
   campaignName = null,
+  hubspotCampaignId = null,
 }: DownloadOptionsModalProps) => {
   const { language } = useLanguage();
   const fr = language === 'fr';
@@ -185,6 +189,7 @@ export const DownloadOptionsModal = ({
               {loading === kind ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : <Download className="h-4 w-4 text-muted-foreground" />}
             </button>
           ))}
+          {hubspotCampaignId && <HubspotExportButton campaignId={hubspotCampaignId} participants={participants} fr={fr} />}
         </div>
       </DialogContent>
     </Dialog>

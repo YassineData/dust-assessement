@@ -34,6 +34,7 @@ import { clearAccessKeys } from '@/lib/access';
 import { DashboardAccessModal, AdminCampaign, ADMIN_EMAIL_KEY } from '@/components/DashboardAccessModal';
 import { EmptyDashboardState } from '@/components/EmptyDashboardState';
 import { DownloadOptionsModal } from '@/components/DownloadOptionsModal';
+import { averageReadiness, dimensionAverage, measuredDimensionIds, pctOf, profileCounts, teamReadiness } from '@/lib/results-stats';
 import { DetailedScoresTab } from '@/components/DetailedScoresTab';
 import { ItemScoresMatrix } from '@/components/ItemScoresMatrix';
 import { ProfileDistribution } from '@/components/charts/ProfileDistribution';
@@ -366,29 +367,13 @@ const Dashboard = () => {
   );
   const hasParticipants = completedParticipants.length > 0;
   // The 9 Dust dimensions, minus those this campaign's questionnaire does not measure (pre-sales diagnostic).
-  const activeThematics = useMemo(() => {
-    const all = DIMENSION_IDS as string[];
-    if (!completedParticipants.length) return all;
-    const measured = all.filter((id) => completedParticipants.some((p) => id in p.thematicScores));
-    return measured.length ? measured : all;
-  }, [completedParticipants]);
+  const activeThematics = useMemo(() => measuredDimensionIds(completedParticipants, DIMENSION_IDS), [completedParticipants]);
 
   // Calculate profile distribution - only completed participants
-  const profileDistribution = useMemo(() => {
-    if (completedParticipants.length === 0) return CLASS_PROFILES.map(profile => ({ profile, count: 0 }));
-
-    return CLASS_PROFILES.map(profile => ({
-      profile,
-      count: completedParticipants.filter(p => p.profile.id === profile.id).length,
-    }));
-  }, [completedParticipants]);
+  const profileDistribution = useMemo(() => profileCounts(completedParticipants), [completedParticipants]);
 
   // Calculate average score (completed participants only)
-  const averageScore = useMemo(() => {
-    if (completedParticipants.length === 0) return 0;
-    const total = completedParticipants.reduce((sum, p) => sum + p.score, 0);
-    return Math.round(total / completedParticipants.length);
-  }, [completedParticipants]);
+  const averageScore = useMemo(() => averageReadiness(completedParticipants), [completedParticipants]);
 
   // Helper function to translate thematic names
   const translateThematic = (thematic: string): string => dimensionLabel(thematic, language === 'en' ? 'en' : 'fr');
@@ -406,8 +391,7 @@ const Dashboard = () => {
     }
 
     return activeThematics.map(thematic => {
-      const total = completedParticipants.reduce((sum, p) => sum + (p.thematicScores[thematic] || 0), 0);
-      const avg = Math.round(total / completedParticipants.length);
+      const avg = dimensionAverage(completedParticipants, thematic);
       const benchmark = globalBenchmark.thematicScores[thematic] ?? 50;
       return {
         thematic: translateThematic(thematic),
@@ -800,21 +784,12 @@ const Dashboard = () => {
   const weakest = rankedThematics[rankedThematics.length - 1];
   const hasBenchmark = globalBenchmark.participantCount > 0;
   const profileCount = (id: string) => profileDistribution.find(d => d.profile.id === id)?.count ?? 0;
-  const pctOfCohort = (n: number) => completedParticipants.length > 0 ? Math.round((n / completedParticipants.length) * 100) : 0;
+  const pctOfCohort = (n: number) => pctOf(n, completedParticipants.length);
   const profileById = (id: string) => classAsProfile(id);
   const roleMismatchCount = completedParticipants.filter(p => p.roleMismatch).length;
   // Roles are independent: one person can count as both builder and champion.
   const roleCount = (role: RoleId) => completedParticipants.filter(p => p.roles.includes(role)).length;
-  const teamRows = (() => {
-    const byTeam = new Map<string, number[]>();
-    completedParticipants.forEach(p => {
-      const key = p.team || (fr ? 'Non renseignée' : 'Not specified');
-      byTeam.set(key, [...(byTeam.get(key) || []), p.score]);
-    });
-    return [...byTeam.entries()]
-      .map(([name, xs]) => ({ name: `${name} (${xs.length})`, score: Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) }))
-      .sort((a, b) => b.score - a.score);
-  })();
+  const teamRows = teamReadiness(completedParticipants, fr ? 'Non renseignée' : 'Not specified').map(({ team, count, score }) => ({ name: `${team} (${count})`, score }));
   const sortedScores = completedParticipants.map(p => p.score).sort((a, b) => a - b);
   const medianScore = sortedScores.length === 0 ? 0 : sortedScores.length % 2
     ? sortedScores[(sortedScores.length - 1) / 2]
@@ -1518,6 +1493,7 @@ const Dashboard = () => {
           thematicAverages={thematicAverages}
           campaignName={campaignName}
           summary={summary}
+          hubspotCampaignId={isAdmin && !partner && !viewAs && !isGlobalView ? campaignAccess.campaignId : null}
         />
         </main>
       </div>

@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:hubspot": "node scripts/check-hubspot-export.mjs"
   },
   "dependencies": {
     "@fontsource/plus-jakarta-sans": "^5.2.8",

@@ -1,33 +1,13 @@
 import { useMemo } from 'react';
-import { getQuestionText } from '@/lib/assessment-data';
 import { V2_AS_LEGACY_QUESTIONS, V2_QUESTION_BY_NUMERIC_ID, dimensionLabel, getDimension } from '@/lib/assessment-v2';
 import { useAssessmentType } from '@/hooks/useAssessmentType';
-import { QUESTION_TRANSLATIONS_EN } from '@/lib/question-translations';
 import { CampaignParticipant } from '@/hooks/useCampaignParticipants';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { completedOnly, likertQuestionStats, questionLabel } from '@/lib/results-stats';
 
 interface DetailedScoresTabProps {
   participants: CampaignParticipant[];
 }
-
-// Map string response labels to numeric values (1-5)
-const responseToValue = (response: string | number): number => {
-  const mapping: Record<string, number> = {
-    'disagree': 1,
-    'somewhatDisagree': 2,
-    'neutral': 3,
-    'somewhatAgree': 4,
-    'agree': 5,
-  };
-  if (typeof response === 'string' && mapping[response]) return mapping[response];
-  // Support numeric responses: stored as 0-4 (index) → map to 1-5
-  const n = typeof response === 'number' ? response : parseInt(response as string, 10);
-  if (!isNaN(n)) {
-    if (n >= 0 && n <= 4) return n + 1;
-    if (n >= 1 && n <= 5) return n;
-  }
-  return 0;
-};
 
 export const DetailedScoresTab = ({ participants }: DetailedScoresTabProps) => {
   const { t, language } = useLanguage();
@@ -35,49 +15,8 @@ export const DetailedScoresTab = ({ participants }: DetailedScoresTabProps) => {
   // v2 questionnaire (numeric ids 101+ match the keys exposed by useCampaignParticipants)
   const activeQuestions = V2_AS_LEGACY_QUESTIONS;
   
-  // Calculate response distribution for each question
-  const questionStats = useMemo(() => {
-    const completedParticipants = participants.filter(p => p.status === 'completed');
-    if (!completedParticipants.length) return [];
-
-    return activeQuestions.map((question, qIndex) => {
-      // Count responses for each value (1-5)
-      const responseCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-      const questionNumber = qIndex + 1;
-      // Responses are stored keyed by question.id (not sequential index),
-      // so we must look them up by the real question id.
-      const responseKey = question.id.toString();
-      
-      completedParticipants.forEach(participant => {
-        const responses = participant.responses as Record<string, string> | null;
-        if (responses) {
-          const responseValue = responses[responseKey];
-          if (responseValue) {
-            const numericValue = responseToValue(responseValue);
-            if (numericValue >= 1 && numericValue <= 5) {
-              responseCounts[numericValue]++;
-            }
-          }
-        }
-      });
-
-      // Count how many actually responded to this question
-      const totalResponded = Object.values(responseCounts).reduce((a, b) => a + b, 0);
-      
-      const percentages = Object.entries(responseCounts).map(([value, count]) => ({
-        value: parseInt(value),
-        count,
-        percentage: totalResponded > 0 ? Math.round((count / totalResponded) * 100) : 0,
-      }));
-
-      return {
-        question,
-        questionNumber,
-        percentages,
-        totalResponses: totalResponded,
-      };
-    });
-  }, [participants]);
+  // Answer distribution for each question (shared with the exports: src/lib/results-stats.ts)
+  const questionStats = useMemo(() => likertQuestionStats(completedOnly(participants), V2_AS_LEGACY_QUESTIONS), [participants]);
 
   // Group questions by thematic
   const questionsByThematic = useMemo(() => {
@@ -164,7 +103,7 @@ export const DetailedScoresTab = ({ participants }: DetailedScoresTabProps) => {
                       {V2_QUESTION_BY_NUMERIC_ID[question.id]?.reverse && (
                         <span className="pill pill-neutral mr-1.5 align-middle" title={language === 'en' ? 'Reverse-scored: agreeing lowers the score' : 'Question inversée : être d’accord fait baisser le score'}>{language === 'en' ? 'reversed' : 'inversée'}</span>
                       )}
-                      {getQuestionText(question.id, language === 'en' ? (QUESTION_TRANSLATIONS_EN[question.id] || question.text) : question.text, assessmentType, language)}
+                      {questionLabel(question, language === 'en' ? 'en' : 'fr', assessmentType)}
                     </h3>
                   </div>
 

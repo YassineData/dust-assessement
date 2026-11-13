@@ -23,14 +23,22 @@ const RESPONSE_LABELS_EN: Record<string, string> = {
   agree: 'Strongly agree',
 };
 
-export const exportCSV = (participants: CampaignParticipant[], companyName: string, language: string) => {
+/** Options of the raw-data table: the CSV keeps emails and local dates; the HubSpot export drops emails and uses ISO dates. */
+export interface ResponsesTableOptions {
+  includeEmail?: boolean;
+  isoDates?: boolean;
+}
+
+/** One row per completed respondent: the columns of the raw-data CSV. Pure, shared with the HubSpot export. */
+export const buildResponsesTable = (participants: CampaignParticipant[], language: string, { includeEmail = true, isoDates = false }: ResponsesTableOptions = {}) => {
   const completedParticipants = participants.filter(p => p.status === 'completed');
   const labels = language === 'fr' ? RESPONSE_LABELS_FR : RESPONSE_LABELS_EN;
   const lang: 'fr' | 'en' = language === 'en' ? 'en' : 'fr';
   const activeThematics = getActiveThematics();
   const activeQuestions = getActiveQuestions();
-  
-  const headers = [
+  const withEmail = <T,>(cells: T[]) => (includeEmail ? cells : cells.filter((_, i) => i !== 2));
+
+  const headers = withEmail([
     language === 'fr' ? 'Prénom' : 'First Name',
     language === 'fr' ? 'Nom' : 'Last Name',
     'Email',
@@ -49,9 +57,9 @@ export const exportCSV = (participants: CampaignParticipant[], companyName: stri
       return `Q${i + 1}: ${qText.substring(0, 80)}`;
     }),
     language === 'fr' ? 'Date de complétion' : 'Completion Date',
-  ];
+  ]);
 
-  const rows = completedParticipants.map(p => [
+  const rows = completedParticipants.map(p => withEmail<string | number>([
     p.firstName,
     p.lastName,
     p.email,
@@ -71,8 +79,14 @@ export const exportCSV = (participants: CampaignParticipant[], companyName: stri
       const responseKey = responses[q.id.toString()];
       return responseKey ? (labels[responseKey] || responseKey) : '';
     }),
-    p.completedAt.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-GB'),
-  ]);
+    isoDates ? p.completedAt.toISOString().slice(0, 10) : p.completedAt.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-GB'),
+  ]));
+
+  return { headers, rows };
+};
+
+export const exportCSV = (participants: CampaignParticipant[], companyName: string, language: string) => {
+  const { headers, rows } = buildResponsesTable(participants, language);
 
   const csvContent = [headers, ...rows]
     .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))

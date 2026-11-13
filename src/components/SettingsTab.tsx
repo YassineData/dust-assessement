@@ -47,6 +47,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { validateProfessionalEmail } from '@/lib/email-validation';
 import { isGlobalCampaignId, GLOBAL_CAMPAIGN_PREFIX } from '@/lib/global-campaign';
+import { normalizeHubspotDomain } from '@/lib/hubspot-export';
 
 type Participant = Tables<'participants'>;
 type MemberRole = 'participant' | 'manager' | 'consultant' | 'admin';
@@ -156,6 +157,52 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
     }
     setShareAudience(typeDraft);
     toast({ title: fr ? 'Questionnaire mis à jour' : 'Survey updated', description: fr ? 'Le lien existant affiche déjà le nouvel en-tête.' : 'The existing link already shows the new header.' });
+  };
+
+  // Client domain in HubSpot (supabase/010): the @hubspot-assessment agent finds the Company with it. Dust team only.
+  const [hubspotDomain, setHubspotDomain] = useState<{ saved: string | null; draft: string; suggested: boolean } | 'missing' | null>(null);
+  const [savingHubspot, setSavingHubspot] = useState(false);
+  useEffect(() => {
+    if (!campaignId || isGlobalCampaignId(campaignId) || !isDustTeam) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.from('campaigns').select('company_name, hubspot_domain' as never).eq('id', campaignId).maybeSingle();
+      if (cancelled) return;
+      if (error) return setHubspotDomain('missing');
+      const row = data as unknown as { company_name: string; hubspot_domain: string | null } | null;
+      if (row?.hubspot_domain) return setHubspotDomain({ saved: row.hubspot_domain, draft: row.hubspot_domain, suggested: false });
+      // Same client, other campaign: suggest its domain (saved only on « Enregistrer »).
+      const { data: sibling } = await supabase
+        .from('campaigns')
+        .select('hubspot_domain' as never)
+        .eq('company_name', row?.company_name ?? '')
+        .not('hubspot_domain' as never, 'is', null)
+        .limit(1);
+      if (cancelled) return;
+      const suggestion = (sibling as unknown as { hubspot_domain: string }[] | null)?.[0]?.hubspot_domain ?? '';
+      setHubspotDomain({ saved: null, draft: suggestion, suggested: !!suggestion });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [campaignId, isDustTeam]);
+  const handleSaveHubspotDomain = async () => {
+    if (!hubspotDomain || hubspotDomain === 'missing') return;
+    const raw = hubspotDomain.draft.trim();
+    const value = raw ? normalizeHubspotDomain(raw) : null;
+    if (raw && !value) {
+      toast({ title: fr ? 'Domaine invalide' : 'Invalid domain', description: fr ? 'Exemple : tempo-one.com' : 'Example: tempo-one.com', variant: 'destructive' });
+      return;
+    }
+    setSavingHubspot(true);
+    const { error } = await supabase.from('campaigns').update({ hubspot_domain: value } as never).eq('id', campaignId);
+    setSavingHubspot(false);
+    if (error) {
+      toast({ title: fr ? 'Enregistrement impossible' : 'Could not save', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setHubspotDomain({ saved: value, draft: value ?? '', suggested: false });
+    toast({ title: fr ? 'Domaine HubSpot enregistré' : 'HubSpot domain saved', description: value ?? (fr ? 'Domaine retiré' : 'Domain removed') });
   };
 
   // Where this campaign sits in the client's follow-up (supabase/007). null = inferred from the order.
@@ -919,6 +966,43 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
                 </button>
               ))}
             </div>
+          )}
+        </SectionCard>
+      )}
+
+      {isAdmin && isDustTeam && !fixedPartnerId && current && hubspotDomain && (
+        <SectionCard
+          title={fr ? 'Domaine HubSpot' : 'HubSpot domain'}
+          description={fr ? 'Le domaine du client dans HubSpot (ex. tempo-one.com). Il sert à rattacher l’export « Exporter vers HubSpot » à la bonne Company.' : 'The client’s domain in HubSpot (e.g. tempo-one.com). It attaches the « Export to HubSpot » export to the right Company.'}
+        >
+          {hubspotDomain === 'missing' ? (
+            <p className="text-[13px] text-muted-foreground">{fr ? 'Lancez supabase/010-hubspot.sql dans l’éditeur SQL de Supabase.' : 'Run supabase/010-hubspot.sql in the Supabase SQL editor.'}</p>
+          ) : (
+            <form
+              className="flex flex-col gap-2 sm:flex-row sm:items-center"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveHubspotDomain();
+              }}
+            >
+              <Label htmlFor="hubspot-domain" className="sr-only">{fr ? 'Domaine HubSpot' : 'HubSpot domain'}</Label>
+              <Input
+                id="hubspot-domain"
+                value={hubspotDomain.draft}
+                placeholder="client.com"
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(e) => setHubspotDomain({ ...hubspotDomain, draft: e.target.value })}
+                className="sm:max-w-xs"
+              />
+              <Button type="submit" size="sm" disabled={savingHubspot || (normalizeHubspotDomain(hubspotDomain.draft) ?? '') === (hubspotDomain.saved ?? '')}>
+                {savingHubspot ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {fr ? 'Enregistrer' : 'Save'}
+              </Button>
+              {hubspotDomain.suggested && (
+                <span className="text-[12px] text-muted-foreground">{fr ? 'Proposé depuis une autre campagne de ce client.' : 'Suggested from another campaign of this client.'}</span>
+              )}
+            </form>
           )}
         </SectionCard>
       )}
