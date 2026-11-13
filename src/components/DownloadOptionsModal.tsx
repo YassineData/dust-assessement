@@ -163,6 +163,8 @@ export const DownloadOptionsModal = ({
           </ol>
         </section>
 
+        {hubspotCampaignId && <HubspotExportButton campaignId={hubspotCampaignId} participants={participants} fr={fr} />}
+
         <p className="mt-4 text-[12px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">{fr ? 'Autres exports' : 'Other exports'}</p>
         <div className="mt-2 grid gap-2">
           {options.map(({ kind, icon: Icon, title, body, tag }) => (
@@ -189,7 +191,6 @@ export const DownloadOptionsModal = ({
               {loading === kind ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : <Download className="h-4 w-4 text-muted-foreground" />}
             </button>
           ))}
-          {hubspotCampaignId && <HubspotExportButton campaignId={hubspotCampaignId} participants={participants} fr={fr} />}
         </div>
       </DialogContent>
     </Dialog>

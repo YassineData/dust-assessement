@@ -113,14 +113,28 @@ export const HubspotExportButton = ({ campaignId, participants, fr }: { campaign
   };
 
   const button = (
-    <Button variant="outline" className="w-full justify-start gap-2" onClick={run} disabled={state !== 'ready' || !!disabledReason}>
+    <Button
+      className="w-full gap-2 bg-[#D9481E] font-semibold text-white hover:bg-[#BF3D17] focus-visible:ring-[#FF7A59] disabled:bg-[#D9481E]/45"
+      onClick={run}
+      disabled={state !== 'ready' || !!disabledReason}
+    >
       {state === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
       {fr ? 'Exporter vers HubSpot' : 'Export to HubSpot'}
     </Button>
   );
 
   return (
-    <div className="rounded-lg p-3 ring-1 ring-border">
+    <section className="mt-3 rounded-xl bg-[#FFF1EC] p-4 ring-1 ring-[#FF7A59]/45 dark:bg-[#FF7A59]/10">
+      <div className="flex items-center gap-2">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF7A59] text-white" aria-hidden>
+          <Send className="h-3 w-3" />
+        </span>
+        <p className="text-[15px] font-semibold text-foreground">HubSpot</p>
+        <span className="rounded-full bg-[#FF7A59]/15 px-2 py-0.5 text-[11px] font-semibold text-[#B23C15] dark:text-[#FF9F85]">{fr ? 'Équipe Dust' : 'Dust team'}</span>
+      </div>
+      <p className="mb-3 mt-1 text-[12px] text-muted-foreground">
+        {fr ? 'Envoie la synthèse chiffrée et les réponses brutes dans une note sur la Company HubSpot du client, via l’agent Dust @hubspot-assessment.' : 'Sends the figures and the raw answers to a note on the client’s HubSpot Company, through the Dust agent @hubspot-assessment.'}
+      </p>
       {disabledReason ? (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -134,14 +148,16 @@ export const HubspotExportButton = ({ campaignId, participants, fr }: { campaign
       ) : (
         button
       )}
-      <p className="mt-1.5 text-[12px] text-muted-foreground">
-        {fr ? 'Note de synthèse et réponses brutes sur la Company HubSpot, via l’agent Dust @hubspot-assessment.' : 'Summary note and raw answers on the HubSpot Company, through the Dust agent @hubspot-assessment.'}
-        {domain && <> · {domain}</>}
-      </p>
-      {row?.hubspot_exported_at && (
-        <p className="mt-0.5 text-[12px] text-muted-foreground">
-          {fr ? 'Dernier export : ' : 'Last export: '}
-          {new Date(row.hubspot_exported_at).toLocaleString(fr ? 'fr-FR' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+      {(domain || row?.hubspot_exported_at) && (
+        <p className="mt-2 text-[12px] text-muted-foreground">
+          {domain && <>{fr ? 'Company : ' : 'Company: '}<span className="font-medium text-foreground">{domain}</span></>}
+          {domain && row?.hubspot_exported_at && ' · '}
+          {row?.hubspot_exported_at && (
+            <>
+              {fr ? 'Dernier export : ' : 'Last export: '}
+              {new Date(row.hubspot_exported_at).toLocaleString(fr ? 'fr-FR' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+            </>
+          )}
         </p>
       )}
 
@@ -171,6 +187,6 @@ export const HubspotExportButton = ({ campaignId, participants, fr }: { campaign
           </Button>
         </DialogContent>
       </Dialog>
-    </div>
+    </section>
   );
 };
