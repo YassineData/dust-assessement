@@ -138,7 +138,7 @@ check('message starts with the agent', message.startsWith('@hubspot-assessment\n
 check('message lines', message.split('\n').length === 9);
 check('message has the file name', message.endsWith(`Fichier joint : ${fileName}`));
 check('message: no partner = aucun', message.includes('Partenaire : aucun'));
-check('message period', message.includes('Période : 2026-10-06 → 2026-10-29'));
+check('message period', message.includes('Période : 2026-10-06 → dernière réponse le 2026-10-29'));
 check('message: no raw answers', !message.includes('Les reportings') && !message.includes('Prénom1'));
 const big = buildHubspotExport({ participants: make(2000), campaign, platformUrl: '', now });
 const bigMessage = buildHubspotMessage(big);

@@ -202,7 +202,7 @@ export const buildHubspotMessage = (exp: HubspotExport, fileName: string = hubsp
     `Domaine : ${exp.meta.client_domain ?? ''}`,
     `Type : ${exp.meta.campaign_type}`,
     `Partenaire : ${exp.meta.partner ?? 'aucun'}`,
-    `Période : ${exp.meta.start_date} → ${exp.meta.end_date ?? 'en cours'}`,
+    `Période : ${exp.meta.start_date} → ${exp.meta.end_date ? `dernière réponse le ${exp.meta.end_date}` : 'en cours'}`,
     `Répondants : ${exp.meta.respondents_count}`,
     `Fichier joint : ${fileName}`,
   ].join('\n');

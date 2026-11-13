@@ -56,7 +56,7 @@ Client : {client_name}
 Domaine : {client_domain}
 Type : {campaign_type}
 Partenaire : {partner ou "aucun"}
-Période : {start_date} → {end_date ou "en cours"}
+Période : {start_date} → dernière réponse le {end_date} (ou "en cours" si aucune réponse)
 Répondants : {respondents_count}
 Fichier joint : {nom du fichier}
 ```
