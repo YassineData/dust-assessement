@@ -27,15 +27,18 @@ const RESPONSE_LABELS_EN: Record<string, string> = {
 export interface ResponsesTableOptions {
   includeEmail?: boolean;
   isoDates?: boolean;
+  /** Drop the « About you › Team » column, which repeats the person's team (HubSpot export). */
+  singleTeamColumn?: boolean;
 }
 
 /** One row per completed respondent: the columns of the raw-data CSV. Pure, shared with the HubSpot export. */
-export const buildResponsesTable = (participants: CampaignParticipant[], language: string, { includeEmail = true, isoDates = false }: ResponsesTableOptions = {}) => {
+export const buildResponsesTable = (participants: CampaignParticipant[], language: string, { includeEmail = true, isoDates = false, singleTeamColumn = false }: ResponsesTableOptions = {}) => {
   const completedParticipants = participants.filter(p => p.status === 'completed');
   const labels = language === 'fr' ? RESPONSE_LABELS_FR : RESPONSE_LABELS_EN;
   const lang: 'fr' | 'en' = language === 'en' ? 'en' : 'fr';
   const activeThematics = getActiveThematics();
   const activeQuestions = getActiveQuestions();
+  const contextFields = singleTeamColumn ? CONTEXT_FIELDS.filter(f => f.id !== 'team') : CONTEXT_FIELDS;
   const withEmail = <T,>(cells: T[]) => (includeEmail ? cells : cells.filter((_, i) => i !== 2));
 
   const headers = withEmail([
@@ -50,7 +53,7 @@ export const buildResponsesTable = (participants: CampaignParticipant[], languag
     'Fit builder',
     'Fit champion',
     'Fit sponsor',
-    ...CONTEXT_FIELDS.map(f => lang === 'en' ? f.label.en : f.label.fr),
+    ...contextFields.map(f => lang === 'en' ? f.label.en : f.label.fr),
     ...OPEN_FIELDS.map(f => lang === 'en' ? f.label.en : f.label.fr),
     ...activeQuestions.map((q, i) => {
       const qText = getQuestionText(q.id, q.text, 'generic', lang);
@@ -71,7 +74,7 @@ export const buildResponsesTable = (participants: CampaignParticipant[], languag
     p.fits?.builder ?? '',
     p.fits?.champion ?? '',
     p.fits?.sponsor ?? '',
-    ...CONTEXT_FIELDS.map(f => contextLabels(p.context, f.id, lang).join(' | ')),
+    ...contextFields.map(f => contextLabels(p.context, f.id, lang).join(' | ')),
     ...OPEN_FIELDS.map(f => p.open?.[f.id] ?? ''),
     ...activeQuestions.map((q) => {
       const responses = p.responses as Record<string, string> | null;

@@ -18,13 +18,16 @@ Tous les chiffres sont calculés par la plateforme, avec les arrondis de la page
 | `meta.campaign_type` | `Diagnostic pré-sales` (audience `presales`) ou `Déploiement` |
 | `meta.partner` | Nom du partenaire, ou `null` (Dust direct) |
 | `meta.start_date` | Création de la campagne, `YYYY-MM-DD` |
-| `meta.end_date` | Date de la dernière réponse complète, ou `null` si aucune |
+| `meta.end_date` | Date de la **dernière réponse** complète, ou `null` si aucune (les campagnes n'ont pas de date de clôture) |
+| `meta.end_date_kind` | Toujours `"last_answer"` : rappelle le sens de `end_date` |
 | `meta.respondents_count` | Réponses complètes. Toujours égal à `responses.rows.length` |
-| `meta.language` | `fr` ou `en` : langue des libellés du fichier |
-| `meta.platform_url` | Lien vers la console |
-| `summary.scores_avg` | `global` et `by_team` : indice de préparation et chaque dimension mesurée, sur 100. `by_team` contient aussi `Répondants`. L'équipe est celle de la personne (« Non renseignée » sinon) |
+| `meta.language` | `fr` ou `en` : langue de la campagne, utilisée pour les libellés des questions et les réponses |
+| `meta.campaign_url` | Lien qui ouvre directement la campagne dans la console (`/dashboard?campaign=<id>`) |
+| `meta.platform_url` | Identique à `campaign_url` (conservé pour compatibilité) |
+| `summary.scores_avg` | `global` et `by_team` : `Readiness index` et chaque dimension mesurée, sur 100. `by_team` contient aussi `Respondents`. **Clés fixes en anglais** quelle que soit la langue. L'équipe est celle de la personne (« Non renseignée » sinon) |
+| `summary.labels_fr` | Libellé français de chaque clé de score : `{ "Readiness index": "Indice de préparation", "AI fluency today": "…", … }` |
 | `summary.fits_avg` | `global` et `by_team` : moyennes Fit trainer / builder / champion / sponsor (0-100) |
-| `summary.profiles_distribution` | `[{ profile, count, pct }]`, les 7 profils |
+| `summary.profiles_distribution` | `[{ profile, label_fr, count, pct }]`, les 7 profils. `profile` est la clé fixe en anglais (Trainer potential, Champion potential…) |
 | `summary.likert` | Une entrée par affirmation : `id` (`Q1`…`Q26`, numérotation de la page), `question_key` (identifiant stable, ex. `u1`), `label` (texte complet), `answered`, `distribution` (`{ "Pas du tout d'accord": { count, pct }, … }`, % de ceux qui ont répondu), `disagreement_pct` (« Pas du tout » + « Plutôt pas », calculé sur les nombres) |
 | `summary.top_disagreement_questions` | Les 3 `id` au `disagreement_pct` le plus haut |
 | `summary.ai_tools` | `[{ tool, count, pct }]`, outils d'IA déclarés (plusieurs par personne, % des répondants) |
@@ -33,7 +36,7 @@ Tous les chiffres sont calculés par la plateforme, avec les arrondis de la page
 | `summary.expected_outcomes_distribution` | Idem, « Quels seraient les résultats les plus utiles… ? » |
 | `summary.top_champions_builders` | 5 personnes au meilleur Fit champion + Fit builder : `first_name`, `last_name`, `team`, `fit_champion`, `fit_builder`. Jamais d'email |
 | `open_answers` | `columns: [question_id, question_label, team, answer]`, une ligne par réponse libre non vide |
-| `responses` | Format colonnaire `columns` + `rows` : les colonnes de l'export CSV, sans l'email (`INCLUDE_EMAILS_IN_HUBSPOT_EXPORT = false`), dates `YYYY-MM-DD` |
+| `responses` | Format colonnaire `columns` + `rows` : les colonnes de l'export CSV, sans l'email (`INCLUDE_EMAILS_IN_HUBSPOT_EXPORT = false`) et avec une seule colonne Équipe, dates `YYYY-MM-DD`. Les colonnes entièrement vides restent : l'agent les retire |
 
 Identifiants des réponses libres (`open_answers.question_id`) utiles à l'agent :
 

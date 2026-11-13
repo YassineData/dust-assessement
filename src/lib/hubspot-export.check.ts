@@ -75,7 +75,7 @@ const now = new Date('2026-11-13T10:00:00Z');
 const make = (n: number, pending = 0) => [...Array.from({ length: n }, (_, i) => person(i + 1)), ...Array.from({ length: pending }, (_, i) => person(n + i + 1, i % 2 ? 'in_progress' : 'not_started'))];
 
 const participants = make(51, 10);
-const exp = buildHubspotExport({ participants, campaign, platformUrl: 'https://dust-assessment.com/dashboard', lang: 'fr', now });
+const exp = buildHubspotExport({ participants, campaign, campaignUrl: 'https://dust-assessment.com/dashboard?campaign=cf23b765-0000-0000-0000-000000000000', lang: 'fr', now });
 const json = JSON.stringify(exp);
 
 // Format
@@ -83,7 +83,7 @@ check('schema_version is 1', exp.schema_version === 1 && HUBSPOT_EXPORT_SCHEMA_V
 check('generated_at is ISO', exp.generated_at === '2026-11-13T10:00:00.000Z');
 check('domain normalised in meta', exp.meta.client_domain === 'client-test.com', exp.meta.client_domain);
 check('type Déploiement', exp.meta.campaign_type === 'Déploiement');
-check('type Diagnostic pré-sales', buildHubspotExport({ participants, campaign: { ...campaign, audience: 'presales' }, platformUrl: '', now }).meta.campaign_type === 'Diagnostic pré-sales');
+check('type Diagnostic pré-sales', buildHubspotExport({ participants, campaign: { ...campaign, audience: 'presales' }, campaignUrl: '', now }).meta.campaign_type === 'Diagnostic pré-sales');
 check('start_date = creation date', exp.meta.start_date === '2026-10-06');
 check('end_date = last completed answer', exp.meta.end_date === '2026-10-29', exp.meta.end_date);
 
@@ -91,12 +91,26 @@ check('end_date = last completed answer', exp.meta.end_date === '2026-10-29', ex
 check('respondents_count = completed only', exp.meta.respondents_count === 51, exp.meta.respondents_count);
 check('respondents_count = responses rows', exp.responses.rows.length === exp.meta.respondents_count);
 check('every row has every column', exp.responses.rows.every((r) => r.length === exp.responses.columns.length));
-check('responses = CSV columns without email', JSON.stringify(exp.responses.columns) === JSON.stringify(buildResponsesTable(participants, 'fr').headers.filter((h) => h !== 'Email')));
+const csvHeaders = buildResponsesTable(participants, 'fr').headers;
+check('responses = CSV columns minus email and the repeated team', exp.responses.columns.length === csvHeaders.length - 2 && exp.responses.columns.every((c) => csvHeaders.includes(c)));
+check('a single team column', exp.responses.columns.filter((c) => c === 'Équipe').length === 1);
+
+// Fixed keys whatever the language, French wording on the side
+const expEn = buildHubspotExport({ participants, campaign, campaignUrl: '', lang: 'en', now });
+check('score keys identical in fr and en', JSON.stringify(Object.keys(exp.summary.scores_avg.global)) === JSON.stringify(Object.keys(expEn.summary.scores_avg.global)));
+check('score keys in English', 'Readiness index' in exp.summary.scores_avg.global && 'AI fluency today' in exp.summary.scores_avg.global, Object.keys(exp.summary.scores_avg.global));
+check('fit keys fixed', JSON.stringify(Object.keys(exp.summary.fits_avg.global)) === JSON.stringify(['Fit trainer', 'Fit builder', 'Fit champion', 'Fit sponsor']));
+check('profile keys identical in fr and en', JSON.stringify(exp.summary.profiles_distribution.map((p) => p.profile)) === JSON.stringify(expEn.summary.profiles_distribution.map((p) => p.profile)));
+check('profiles have label_fr', exp.summary.profiles_distribution.every((p) => p.label_fr && p.label_fr.length > 0));
+check('labels_fr covers every score key', Object.keys(exp.summary.scores_avg.global).every((k) => k in exp.summary.labels_fr));
+check('campaign_url in meta', exp.meta.campaign_url.endsWith('?campaign=cf23b765-0000-0000-0000-000000000000') && exp.meta.platform_url === exp.meta.campaign_url);
+check('end_date is the last answer', exp.meta.end_date_kind === 'last_answer');
+check('campaign_id in meta', exp.meta.campaign_id === campaign.id);
 
 // No email by default
 check('no email column', !exp.responses.columns.includes('Email'));
 check('no email address anywhere in the file', !/@client-test\.com/.test(json));
-const withEmails = buildHubspotExport({ participants, campaign, platformUrl: '', now, includeEmails: true });
+const withEmails = buildHubspotExport({ participants, campaign, campaignUrl: '', now, includeEmails: true });
 check('emails only when asked', withEmails.responses.columns.includes('Email') && JSON.stringify(withEmails).includes('personne1@client-test.com'));
 
 // Top 5 champions + builders
@@ -106,7 +120,7 @@ check('top 5 has 5 people', top.length === 5);
 check('top 5 sorted by champion + builder', top.every((t, i) => i === 0 || top[i - 1].fit_champion + top[i - 1].fit_builder >= t.fit_champion + t.fit_builder));
 check('top 5 are the 5 best', JSON.stringify(top.map((t) => t.fit_champion + t.fit_builder)) === JSON.stringify(sums.slice(0, 5)));
 check('top 5 has no email', top.every((t) => !('email' in t)));
-check('top 5 with fewer people', buildHubspotExport({ participants: make(3), campaign, platformUrl: '', now }).summary.top_champions_builders.length === 3);
+check('top 5 with fewer people', buildHubspotExport({ participants: make(3), campaign, campaignUrl: '', now }).summary.top_champions_builders.length === 3);
 
 // Likert
 const likert = exp.summary.likert;
@@ -125,7 +139,7 @@ check('3 most disagreed statements', top3.length === 3 && likert.find((q) => q.i
 
 // Other figures
 check('profiles cover everyone', exp.summary.profiles_distribution.reduce((n, p) => n + p.count, 0) === 51);
-check('teams cover everyone', Object.values(exp.summary.scores_avg.by_team).reduce((n, t) => n + (t['Répondants'] as number), 0) === 51);
+check('teams cover everyone', Object.values(exp.summary.scores_avg.by_team).reduce((n, t) => n + (t['Respondents'] as number), 0) === 51);
 check('fits by team', Object.keys(exp.summary.fits_avg.by_team).length === Object.keys(exp.summary.scores_avg.by_team).length);
 check('AI tools counted', exp.summary.ai_tools.length > 0 && exp.summary.ai_tools.every((t) => t.pct === Math.round((t.count / 51) * 100)));
 check('open answers: non-empty only', exp.open_answers.rows.length > 0 && exp.open_answers.rows.every((r) => r[3].length > 0 && r.length === 4));
@@ -140,10 +154,10 @@ check('message has the file name', message.endsWith(`Fichier joint : ${fileName}
 check('message: no partner = aucun', message.includes('Partenaire : aucun'));
 check('message period', message.includes('Période : 2026-10-06 → dernière réponse le 2026-10-29'));
 check('message: no raw answers', !message.includes('Les reportings') && !message.includes('Prénom1'));
-const big = buildHubspotExport({ participants: make(2000), campaign, platformUrl: '', now });
+const big = buildHubspotExport({ participants: make(2000), campaign, campaignUrl: '', now });
 const bigMessage = buildHubspotMessage(big);
 check('message stays short whatever the size', message.length < 400 && bigMessage.length < 400 && Math.abs(bigMessage.length - message.length) < 5, [message.length, bigMessage.length]);
-check('en cours when nobody answered', buildHubspotMessage(buildHubspotExport({ participants: make(0, 3), campaign, platformUrl: '', now })).includes('→ en cours'));
+check('en cours when nobody answered', buildHubspotMessage(buildHubspotExport({ participants: make(0, 3), campaign, campaignUrl: '', now })).includes('→ en cours'));
 
 // Domain and Dust link
 const domains: [string, string | null][] = [

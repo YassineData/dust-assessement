@@ -20,6 +20,7 @@ interface CampaignRow {
   company_name: string;
   campaign_name: string | null;
   audience: string | null;
+  language: string | null;
   created_at: string;
   hubspot_domain: string | null;
   hubspot_exported_at: string | null;
@@ -53,7 +54,7 @@ export const HubspotExportButton = ({
     setState('loading');
     supabase
       .from('campaigns')
-      .select('id, company_name, campaign_name, audience, created_at, hubspot_domain, hubspot_exported_at, partners(name)' as never)
+      .select('id, company_name, campaign_name, audience, language, created_at, hubspot_domain, hubspot_exported_at, partners(name)' as never)
       .eq('id', campaignId)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -93,7 +94,13 @@ export const HubspotExportButton = ({
       hubspotDomain: domain,
       partnerName: row.partners?.name ?? null,
     };
-    const exp = buildHubspotExport({ participants, campaign, platformUrl: `${window.location.origin}/dashboard`, lang: fr ? 'fr' : 'en' });
+    // The campaign's own language (not the screen's): the note reads the same whoever exports it.
+    const exp = buildHubspotExport({
+      participants,
+      campaign,
+      campaignUrl: `${window.location.origin}/dashboard?campaign=${encodeURIComponent(row.id)}`,
+      lang: row.language === 'en' ? 'en' : 'fr',
+    });
     const fileName = hubspotFileName(exp);
     const message = buildHubspotMessage(exp, fileName);
 

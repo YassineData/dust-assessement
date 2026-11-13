@@ -46,8 +46,8 @@ export interface HubspotExportCampaign {
 export interface HubspotExportInput {
   participants: CampaignParticipant[];
   campaign: HubspotExportCampaign;
-  /** Link to the campaign's results page. */
-  platformUrl: string;
+  /** Link that opens this campaign's results (/dashboard?campaign=<id>). */
+  campaignUrl: string;
   lang?: Lang;
   /** Defaults to now; fixed in tests. */
   now?: Date;
@@ -78,21 +78,23 @@ const slugify = (s: string) =>
     .replace(/^-|-$/g, '') || 'client';
 const mean = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
 
+const READINESS_KEY = 'Readiness index';
+const RESPONDENTS_KEY = 'Respondents';
 const FIT_KEYS = ['trainer', 'builder', 'champion', 'sponsor'] as const;
 const FIT_LABEL: Record<(typeof FIT_KEYS)[number], string> = { trainer: 'Fit trainer', builder: 'Fit builder', champion: 'Fit champion', sponsor: 'Fit sponsor' };
 const OPEN_FIELDS = [...SURVEY_OPEN_FIELDS, ...PRESALES_ONLY_OPEN_FIELDS, ...FOLLOWUP_ONLY_OPEN_FIELDS];
 
-export const buildHubspotExport = ({ participants, campaign, platformUrl, lang = 'fr', now = new Date(), includeEmails = INCLUDE_EMAILS_IN_HUBSPOT_EXPORT }: HubspotExportInput) => {
+export const buildHubspotExport = ({ participants, campaign, campaignUrl, lang = 'fr', now = new Date(), includeEmails = INCLUDE_EMAILS_IN_HUBSPOT_EXPORT }: HubspotExportInput) => {
   const done = completedOnly(participants);
   const fr = lang === 'fr';
-  const readinessLabel = fr ? 'Indice de préparation' : 'Readiness index';
   const unknownTeam = fr ? 'Non renseignée' : 'Not specified';
   const dims = measuredDimensionIds(done, DIMENSION_IDS);
 
-  // Scores: readiness index and each measured dimension, for everyone and per team (same rounding as the results page).
+  // Keys of scores, fits and profiles are fixed (English) whatever the language: the agent reads them by name.
+  // French wording is in summary.labels_fr. Question labels and answers follow the campaign language.
   const scoresOf = (group: CampaignParticipant[]) => ({
-    [readinessLabel]: averageReadiness(group),
-    ...Object.fromEntries(dims.map((d) => [dimensionLabel(d, lang), dimensionAverage(group, d)])),
+    [READINESS_KEY]: averageReadiness(group),
+    ...Object.fromEntries(dims.map((d) => [dimensionLabel(d, 'en'), dimensionAverage(group, d)])),
   });
   const teams = new Map<string, CampaignParticipant[]>();
   done.forEach((p) => {
@@ -100,7 +102,6 @@ export const buildHubspotExport = ({ participants, campaign, platformUrl, lang =
     teams.set(t, [...(teams.get(t) ?? []), p]);
   });
   const teamEntries = [...teams.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
-  const respondentsLabel = fr ? 'Répondants' : 'Respondents';
 
   // Fits: average of people who have one (0-100, rounded).
   const fitsOf = (group: CampaignParticipant[]) =>
@@ -140,7 +141,7 @@ export const buildHubspotExport = ({ participants, campaign, platformUrl, lang =
     OPEN_FIELDS.map((f) => [f.id, fr ? f.label.fr : f.label.en, p.team || unknownTeam, (p.open?.[f.id] ?? '').trim()] as [string, string, string, string]).filter((r) => r[3].length > 0)
   );
 
-  const table = buildResponsesTable(done, lang, { includeEmail: includeEmails, isoDates: true });
+  const table = buildResponsesTable(done, lang, { includeEmail: includeEmails, isoDates: true, singleTeamColumn: true });
   const lastAnswer = done.length ? new Date(Math.max(...done.map((p) => p.completedAt.getTime()))) : null;
 
   return {
@@ -155,21 +156,30 @@ export const buildHubspotExport = ({ participants, campaign, platformUrl, lang =
       partner: campaign.partnerName || null,
       start_date: isoDate(new Date(campaign.createdAt)),
       end_date: lastAnswer ? isoDate(lastAnswer) : null,
+      /** end_date is the date of the last completed answer (campaigns have no closing date). */
+      end_date_kind: 'last_answer' as const,
       respondents_count: done.length,
       language: lang,
-      platform_url: platformUrl,
+      campaign_url: campaignUrl,
+      /** Same as campaign_url (kept for schema_version 1 readers). */
+      platform_url: campaignUrl,
     },
     summary: {
       scores_scale: fr ? 'Sur 100, arrondi à l’unité.' : 'Out of 100, rounded.',
+      labels_fr: {
+        [READINESS_KEY]: 'Indice de préparation',
+        [RESPONDENTS_KEY]: 'Répondants',
+        ...Object.fromEntries(dims.map((d) => [dimensionLabel(d, 'en'), dimensionLabel(d, 'fr')])),
+      },
       scores_avg: {
         global: scoresOf(done),
-        by_team: Object.fromEntries(teamEntries.map(([t, g]) => [t, { [respondentsLabel]: g.length, ...scoresOf(g) }])),
+        by_team: Object.fromEntries(teamEntries.map(([t, g]) => [t, { [RESPONDENTS_KEY]: g.length, ...scoresOf(g) }])),
       },
       fits_avg: {
         global: fitsOf(done),
-        by_team: Object.fromEntries(teamEntries.map(([t, g]) => [t, { [respondentsLabel]: g.length, ...fitsOf(g) }])),
+        by_team: Object.fromEntries(teamEntries.map(([t, g]) => [t, { [RESPONDENTS_KEY]: g.length, ...fitsOf(g) }])),
       },
-      profiles_distribution: profileCounts(done).map(({ profile, count }) => ({ profile: classLabel(profile.id, lang), count, pct: pctOf(count, done.length) })),
+      profiles_distribution: profileCounts(done).map(({ profile, count }) => ({ profile: classLabel(profile.id, 'en'), label_fr: classLabel(profile.id, 'fr'), count, pct: pctOf(count, done.length) })),
       likert,
       top_disagreement_questions: topDisagreement,
       ai_tools: dist('tools').map(({ option, count, pct }) => ({ tool: option, count, pct })),

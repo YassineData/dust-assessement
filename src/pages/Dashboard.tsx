@@ -112,6 +112,7 @@ const OverviewBlockHeader = ({ n, title, question, meta }: { n: number; title: s
 );
 
 const SESSION_KEY = 'dashboard_session_v2';
+const PENDING_CAMPAIGN_KEY = 'dashboard_pending_campaign';
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes en millisecondes
 const SIDEBAR_KEY = 'console_sidebar_collapsed';
 
@@ -569,6 +570,44 @@ const Dashboard = () => {
     };
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   };
+
+  // Direct link to a campaign (/dashboard?campaign=<id>, e.g. from a HubSpot note): kept across the sign-in, opened once the campaigns are loaded.
+  useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get('campaign');
+    if (fromUrl) {
+      try {
+        localStorage.setItem(PENDING_CAMPAIGN_KEY, JSON.stringify({ id: fromUrl, at: Date.now() }));
+      } catch {
+        /* convenience only */
+      }
+      const params = new URLSearchParams(window.location.search);
+      params.delete('campaign');
+      const rest = params.toString();
+      window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}${window.location.hash}`);
+    }
+  }, []);
+  useEffect(() => {
+    if (!isAdmin || allCampaigns.length === 0) return;
+    let pending: { id?: string; at?: number } | null = null;
+    try {
+      pending = JSON.parse(localStorage.getItem(PENDING_CAMPAIGN_KEY) || 'null');
+    } catch {
+      pending = null;
+    }
+    if (!pending?.id) return;
+    try {
+      localStorage.removeItem(PENDING_CAMPAIGN_KEY);
+    } catch {
+      /* convenience only */
+    }
+    if (!pending.at || Date.now() - pending.at > 60 * 60 * 1000) return;
+    const target = allCampaigns.find((c) => c.id === pending!.id);
+    if (target && target.id !== campaignAccess?.campaignId) {
+      handleCampaignSelect(target);
+      setActiveTab('overview');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, allCampaigns]);
 
   // A campaign was just created from the console: list it right away (it opens when the dialog closes).
   const handleCampaignCreated = (campaign: Campaign) => {
