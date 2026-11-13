@@ -207,6 +207,11 @@ export const buildHubspotMessage = (exp: HubspotExport, fileName: string = hubsp
     `Fichier joint : ${fileName}`,
   ].join('\n');
 
-/** Where the message is pasted: a new Dust conversation in the workspace, or Dust's home page without the env var. */
-export const dustNewConversationUrl = (workspaceId: string | undefined | null) =>
-  workspaceId ? `https://dust.tt/w/${encodeURIComponent(workspaceId)}/assistant/new` : 'https://dust.tt';
+/**
+ * Where the message is pasted: a new conversation in the Dust workspace, with the @hubspot-assessment agent
+ * preselected when its id is set (the @mention stays in the message anyway). Dust's home page without a workspace id.
+ */
+export const dustNewConversationUrl = (workspaceId: string | undefined | null, agentId?: string | null) =>
+  workspaceId
+    ? `https://app.dust.tt/w/${encodeURIComponent(workspaceId)}/conversation/new${agentId ? `?agent=${encodeURIComponent(agentId)}` : ''}`
+    : 'https://app.dust.tt';

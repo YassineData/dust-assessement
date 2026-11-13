@@ -155,8 +155,9 @@ const domains: [string, string | null][] = [
   ['localhost', null],
 ];
 domains.forEach(([raw, want]) => check(`normalizeHubspotDomain(${JSON.stringify(raw)})`, normalizeHubspotDomain(raw) === want, normalizeHubspotDomain(raw)));
-check('Dust link with workspace', dustNewConversationUrl('abc123') === 'https://dust.tt/w/abc123/assistant/new');
-check('Dust link without workspace', dustNewConversationUrl(undefined) === 'https://dust.tt');
+check('Dust link with workspace and agent', dustNewConversationUrl('0ec9852c2f', 'kmBRw33kFz') === 'https://app.dust.tt/w/0ec9852c2f/conversation/new?agent=kmBRw33kFz');
+check('Dust link without agent', dustNewConversationUrl('0ec9852c2f', '') === 'https://app.dust.tt/w/0ec9852c2f/conversation/new');
+check('Dust link without workspace', dustNewConversationUrl(undefined) === 'https://app.dust.tt');
 
 console.log(`HubSpot export: ${passes} checks passed, ${failures} failed.`);
 console.log(`Sample (51 respondents, synthetic): file ${json.length.toLocaleString('fr-FR')} characters, message ${message.length} characters.`);

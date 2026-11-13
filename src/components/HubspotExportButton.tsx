@@ -96,9 +96,9 @@ export const HubspotExportButton = ({ campaignId, participants, fr }: { campaign
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-    // 2. Message (started while this page still has focus), 3. Dust in a new tab: both inside the click.
+    // 2. Message (started while this page still has focus), 3. Dust in a new tab (agent preselected): both inside the click.
     const copying = navigator.clipboard?.writeText(message) ?? Promise.reject(new Error('no clipboard'));
-    window.open(dustNewConversationUrl(import.meta.env.VITE_DUST_WORKSPACE_ID as string | undefined), '_blank', 'noopener');
+    window.open(dustNewConversationUrl(import.meta.env.VITE_DUST_WORKSPACE_ID as string | undefined, import.meta.env.VITE_DUST_HUBSPOT_AGENT_ID as string | undefined), '_blank', 'noopener');
     copying.then(
       () => toast.success('Fichier téléchargé et message copié. Dans Dust : colle (Cmd+V), glisse le fichier, puis Entrée.', { duration: 8000 }),
       () => setFallbackMessage(message)
