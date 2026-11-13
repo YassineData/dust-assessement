@@ -34,6 +34,7 @@ import { clearAccessKeys } from '@/lib/access';
 import { DashboardAccessModal, AdminCampaign, ADMIN_EMAIL_KEY } from '@/components/DashboardAccessModal';
 import { EmptyDashboardState } from '@/components/EmptyDashboardState';
 import { DownloadOptionsModal } from '@/components/DownloadOptionsModal';
+import { HubspotExportButton } from '@/components/HubspotExportButton';
 import { averageReadiness, dimensionAverage, measuredDimensionIds, pctOf, profileCounts, teamReadiness } from '@/lib/results-stats';
 import { DetailedScoresTab } from '@/components/DetailedScoresTab';
 import { ItemScoresMatrix } from '@/components/ItemScoresMatrix';
@@ -837,6 +838,9 @@ const Dashboard = () => {
     dataHealth: { fr: 'Suivi de chaque participant, import et exports.', en: 'Per-participant tracking, import and exports.' },
   };
 
+  // « Exporter vers HubSpot »: Dust team only, on one campaign (not partners, not their preview, not the « Global » view).
+  const hubspotCampaignId = isAdmin && !partner && !viewAs && !isGlobalView ? campaignAccess?.campaignId ?? null : null;
+
   const pageActions = activeTab === 'overview' && hasParticipants ? (
     <>
       {isAdmin && (
@@ -845,6 +849,7 @@ const Dashboard = () => {
           {fr ? 'Analyser avec Dust' : 'Analyse with Dust'}
         </Button>
       )}
+      {hubspotCampaignId && <HubspotExportButton compact campaignId={hubspotCampaignId} participants={participants} fr={fr} />}
       <Button variant="outline" onClick={() => setIsDownloadModalOpen(true)}>
         <Download className="h-4 w-4" />
         {fr ? 'Exporter le rapport' : 'Export report'}
@@ -1493,7 +1498,7 @@ const Dashboard = () => {
           thematicAverages={thematicAverages}
           campaignName={campaignName}
           summary={summary}
-          hubspotCampaignId={isAdmin && !partner && !viewAs && !isGlobalView ? campaignAccess.campaignId : null}
+          hubspotCampaignId={hubspotCampaignId}
         />
         </main>
       </div>

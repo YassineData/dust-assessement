@@ -31,7 +31,18 @@ interface CampaignRow {
  * @hubspot-assessment agent and opens a new Dust conversation, all inside the click so the browser allows it.
  * The campaign's HubSpot fields are loaded when the export window opens, before any click.
  */
-export const HubspotExportButton = ({ campaignId, participants, fr }: { campaignId: string; participants: CampaignParticipant[]; fr: boolean }) => {
+export const HubspotExportButton = ({
+  campaignId,
+  participants,
+  fr,
+  compact = false,
+}: {
+  campaignId: string;
+  participants: CampaignParticipant[];
+  fr: boolean;
+  /** Page header: the orange button alone. Otherwise the highlighted block of the export window. */
+  compact?: boolean;
+}) => {
   const [row, setRow] = useState<CampaignRow | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'notfound'>('loading');
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
@@ -114,7 +125,7 @@ export const HubspotExportButton = ({ campaignId, participants, fr }: { campaign
 
   const button = (
     <Button
-      className="w-full gap-2 bg-[#D9481E] font-semibold text-white hover:bg-[#BF3D17] focus-visible:ring-[#FF7A59] disabled:bg-[#D9481E]/45"
+      className={`${compact ? '' : 'w-full '}gap-2 bg-[#D9481E] font-semibold text-white hover:bg-[#BF3D17] focus-visible:ring-[#FF7A59] disabled:bg-[#D9481E]/45`}
       onClick={run}
       disabled={state !== 'ready' || !!disabledReason}
     >
@@ -123,44 +134,22 @@ export const HubspotExportButton = ({ campaignId, participants, fr }: { campaign
     </Button>
   );
 
-  return (
-    <section className="mt-3 rounded-xl bg-[#FFF1EC] p-4 ring-1 ring-[#FF7A59]/45 dark:bg-[#FF7A59]/10">
-      <div className="flex items-center gap-2">
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF7A59] text-white" aria-hidden>
-          <Send className="h-3 w-3" />
+  const trigger = disabledReason ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {/* A disabled button gets no hover: the wrapper carries the tooltip. */}
+        <span tabIndex={0} className={compact ? 'inline-block' : 'block'}>
+          {button}
         </span>
-        <p className="text-[15px] font-semibold text-foreground">HubSpot</p>
-        <span className="rounded-full bg-[#FF7A59]/15 px-2 py-0.5 text-[11px] font-semibold text-[#B23C15] dark:text-[#FF9F85]">{fr ? 'Équipe Dust' : 'Dust team'}</span>
-      </div>
-      <p className="mb-3 mt-1 text-[12px] text-muted-foreground">
-        {fr ? 'Envoie la synthèse chiffrée et les réponses brutes dans une note sur la Company HubSpot du client, via l’agent Dust @hubspot-assessment.' : 'Sends the figures and the raw answers to a note on the client’s HubSpot Company, through the Dust agent @hubspot-assessment.'}
-      </p>
-      {disabledReason ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {/* A disabled button gets no hover: the wrapper carries the tooltip. */}
-            <span tabIndex={0} className="block">
-              {button}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>{disabledReason}</TooltipContent>
-        </Tooltip>
-      ) : (
-        button
-      )}
-      {(domain || row?.hubspot_exported_at) && (
-        <p className="mt-2 text-[12px] text-muted-foreground">
-          {domain && <>{fr ? 'Company : ' : 'Company: '}<span className="font-medium text-foreground">{domain}</span></>}
-          {domain && row?.hubspot_exported_at && ' · '}
-          {row?.hubspot_exported_at && (
-            <>
-              {fr ? 'Dernier export : ' : 'Last export: '}
-              {new Date(row.hubspot_exported_at).toLocaleString(fr ? 'fr-FR' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
-            </>
-          )}
-        </p>
-      )}
+      </TooltipTrigger>
+      <TooltipContent>{disabledReason}</TooltipContent>
+    </Tooltip>
+  ) : (
+    button
+  );
 
+  const fallbackDialog = (
+    <>
       {/* Clipboard refused: the message to copy by hand. */}
       <Dialog open={fallbackMessage !== null} onOpenChange={(open) => !open && setFallbackMessage(null)}>
         <DialogContent className="sm:max-w-lg">
@@ -187,6 +176,44 @@ export const HubspotExportButton = ({ campaignId, participants, fr }: { campaign
           </Button>
         </DialogContent>
       </Dialog>
+    </>
+  );
+
+  if (compact)
+    return (
+      <>
+        {trigger}
+        {fallbackDialog}
+      </>
+    );
+
+  return (
+    <section className="mt-3 rounded-xl bg-[#FFF1EC] p-4 ring-1 ring-[#FF7A59]/45 dark:bg-[#FF7A59]/10">
+      <div className="flex items-center gap-2">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF7A59] text-white" aria-hidden>
+          <Send className="h-3 w-3" />
+        </span>
+        <p className="text-[15px] font-semibold text-foreground">HubSpot</p>
+        <span className="rounded-full bg-[#FF7A59]/15 px-2 py-0.5 text-[11px] font-semibold text-[#B23C15] dark:text-[#FF9F85]">{fr ? 'Équipe Dust' : 'Dust team'}</span>
+      </div>
+      <p className="mb-3 mt-1 text-[12px] text-muted-foreground">
+        {fr ? 'Envoie la synthèse chiffrée et les réponses brutes dans une note sur la Company HubSpot du client, via l’agent Dust @hubspot-assessment.' : 'Sends the figures and the raw answers to a note on the client’s HubSpot Company, through the Dust agent @hubspot-assessment.'}
+      </p>
+      {trigger}
+      {(domain || row?.hubspot_exported_at) && (
+        <p className="mt-2 text-[12px] text-muted-foreground">
+          {domain && <>{fr ? 'Company : ' : 'Company: '}<span className="font-medium text-foreground">{domain}</span></>}
+          {domain && row?.hubspot_exported_at && ' · '}
+          {row?.hubspot_exported_at && (
+            <>
+              {fr ? 'Dernier export : ' : 'Last export: '}
+              {new Date(row.hubspot_exported_at).toLocaleString(fr ? 'fr-FR' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+            </>
+          )}
+        </p>
+      )}
+
+      {fallbackDialog}
     </section>
   );
 };
