@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
+import { HubspotExportGuide } from '@/components/HubspotExportGuide';
+import { hubspotGuideHidden } from '@/lib/hubspot-guide';
 import type { CampaignParticipant } from '@/lib/participant-row';
 import {
   buildHubspotExport,
@@ -28,8 +30,8 @@ interface CampaignRow {
 }
 
 /**
- * « Exporter vers HubSpot » (Dust team only): downloads the export file, copies the short message for the
- * @hubspot-assessment agent and opens a new Dust conversation, all inside the click so the browser allows it.
+ * « Exporter vers HubSpot » (Dust team only): downloads the export file, then (after an animated explanation the
+ * first times) copies the short message for the @hubspot-assessment agent and opens a new Dust conversation.
  * The campaign's HubSpot fields are loaded when the export window opens, before any click.
  */
 export const HubspotExportButton = ({
@@ -48,6 +50,7 @@ export const HubspotExportButton = ({
   const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'notfound'>('loading');
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [guide, setGuide] = useState<{ message: string; fileName: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,6 +86,17 @@ export const HubspotExportButton = ({
           ? fr ? 'Aucune réponse complète à exporter.' : 'No completed answer to export.'
           : null;
 
+  // Copy the message (started while this page still has focus) and open Dust with the agent preselected:
+  // called from a click, so the browser allows both.
+  const sendToDust = (message: string) => {
+    const copying = navigator.clipboard?.writeText(message) ?? Promise.reject(new Error('no clipboard'));
+    window.open(dustNewConversationUrl(import.meta.env.VITE_DUST_WORKSPACE_ID as string | undefined, import.meta.env.VITE_DUST_HUBSPOT_AGENT_ID as string | undefined), '_blank', 'noopener');
+    copying.then(
+      () => toast.success('Message copié. Dans Dust : colle (Cmd+V), glisse le fichier, puis Entrée.', { duration: 8000 }),
+      () => setFallbackMessage(message)
+    );
+  };
+
   const run = () => {
     if (!row || !domain) return;
     const campaign: HubspotExportCampaign = {
@@ -114,13 +128,10 @@ export const HubspotExportButton = ({
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-    // 2. Message (started while this page still has focus), 3. Dust in a new tab (agent preselected): both inside the click.
-    const copying = navigator.clipboard?.writeText(message) ?? Promise.reject(new Error('no clipboard'));
-    window.open(dustNewConversationUrl(import.meta.env.VITE_DUST_WORKSPACE_ID as string | undefined, import.meta.env.VITE_DUST_HUBSPOT_AGENT_ID as string | undefined), '_blank', 'noopener');
-    copying.then(
-      () => toast.success('Fichier téléchargé et message copié. Dans Dust : colle (Cmd+V), glisse le fichier, puis Entrée.', { duration: 8000 }),
-      () => setFallbackMessage(message)
-    );
+    // 2-3. First time: an animated explanation, whose button copies the message and opens Dust.
+    // Otherwise straight away, still inside this click.
+    if (hubspotGuideHidden()) sendToDust(message);
+    else setGuide({ message, fileName });
 
     // 4. Last export date (best effort, after the click).
     const at = new Date().toISOString();
@@ -157,6 +168,19 @@ export const HubspotExportButton = ({
 
   const fallbackDialog = (
     <>
+      <HubspotExportGuide
+        open={guide !== null}
+        fr={fr}
+        fileName={guide?.fileName ?? ''}
+        companyName={row?.company_name ?? ''}
+        domain={domain ?? ''}
+        onSend={() => {
+          const message = guide?.message;
+          setGuide(null);
+          if (message) sendToDust(message);
+        }}
+        onClose={() => setGuide(null)}
+      />
       {/* Clipboard refused: the message to copy by hand. */}
       <Dialog open={fallbackMessage !== null} onOpenChange={(open) => !open && setFallbackMessage(null)}>
         <DialogContent className="sm:max-w-lg">
