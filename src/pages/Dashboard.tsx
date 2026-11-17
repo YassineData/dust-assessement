@@ -130,6 +130,8 @@ const Dashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [partner, setPartner] = useState<PartnerIdentity | null>(null);
+  // Partner signed in with no client yet: their own welcome page, not the campaign creator.
+  const [emptyPartner, setEmptyPartner] = useState<PartnerIdentity | null>(null);
   const [viewAs, setViewAs] = useState<PartnerIdentity | null>(null);
   // Partner names for Dust (campaign creation and the partner shown next to a client).
   const [partnerOptions, setPartnerOptions] = useState<PartnerIdentity[]>([]);
@@ -514,10 +516,13 @@ const Dashboard = () => {
   // Deployment partner signed in: same console, its own clients only (filtered by the database).
   const handlePartnerAccessGranted = (campaigns: AdminCampaign[], p: PartnerIdentity) => {
     if (campaigns.length === 0) {
-      // First client still to create: the creator tags it with the partner on its own.
-      navigate('/create-campaign');
+      // No client yet: open their space anyway (welcome page with « create your first client »).
+      setPartner(p);
+      setEmptyPartner(p);
+      setShowAccessModal(false);
       return;
     }
+    setEmptyPartner(null);
     setIsAdmin(true);
     setIsSuperAdmin(true);
     setPartner(p);
@@ -708,6 +713,54 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Partner space with no client yet.
+  if (emptyPartner) {
+    const isFr = language === 'fr';
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <header className="border-b border-border/70">
+          <div className="mx-auto flex h-14 max-w-[1080px] items-center justify-between gap-3 px-4">
+            <Link to="/" className="rounded-md" aria-label="Dust">
+              <DustWordmark subtitle={isFr ? 'Espace partenaire' : 'Partner space'} />
+            </Link>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher compact />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  localStorage.removeItem(SESSION_KEY);
+                  setEmptyPartner(null);
+                  setPartner(null);
+                  setShowAccessModal(true);
+                }}
+              >
+                {isFr ? 'Se déconnecter' : 'Sign out'}
+              </Button>
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto flex w-full max-w-[560px] flex-1 flex-col justify-center px-4 py-12">
+          {emptyPartner.logo_url && <img src={emptyPartner.logo_url} alt="" className="mb-4 h-10 w-auto self-start object-contain" />}
+          <p className="eyebrow">{isFr ? 'Espace partenaire' : 'Partner space'}</p>
+          <h1 className="page-title mt-1">{isFr ? `Bienvenue, ${emptyPartner.name}` : `Welcome, ${emptyPartner.name}`}</h1>
+          <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
+            {fr
+              ? 'Vous n’avez pas encore de client ici. Créez votre premier client : vous obtenez le lien du questionnaire à envoyer à ses équipes, puis vous suivez les résultats depuis cet espace. Seule votre équipe y a accès.'
+              : 'You have no client here yet. Create your first one: you get the survey link to send to their teams, then follow the results from this space. Only your team can see it.'}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button onClick={() => navigate('/create-campaign')}>
+              {isFr ? 'Créer votre premier client' : 'Create your first client'}
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </main>
       </div>
     );
   }
