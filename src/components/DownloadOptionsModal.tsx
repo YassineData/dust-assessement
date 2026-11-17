@@ -6,7 +6,7 @@ import { DustMark } from '@/components/DustMark';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { CampaignParticipant } from '@/hooks/useCampaignParticipants';
-import { exportCSV } from '@/lib/export-csv';
+import { buildResponsesTable, exportCSV } from '@/lib/export-csv';
 import { exportWord } from '@/lib/export-word';
 import { exportPPT } from '@/lib/export-ppt';
 import { exportSummaryPDF, type SummaryPdfData } from '@/lib/export-pdf';
@@ -65,6 +65,10 @@ export const DownloadOptionsModal = ({
     const pack = buildDiagnosticPack(participants, companyName, campaignName, lang);
     const slug = companyName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'client';
     const fileName = `diagnostic-${slug}-${new Date().toISOString().slice(0, 10)}.json`;
+    // Raw answers as in the CSV export, without email addresses.
+    const table = buildResponsesTable(participants, language, { includeEmail: false, isoDates: true, singleTeamColumn: true });
+    const csv = [table.headers, ...table.rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const csvName = `reponses-${slug}-${new Date().toISOString().slice(0, 10)}.csv`;
     const tab = window.open('', '_blank');
     if (tab) {
       tab.opener = null;
@@ -74,7 +78,18 @@ export const DownloadOptionsModal = ({
     fetch('/api/hubspot-export', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${dustToken}` },
-      body: JSON.stringify({ kind: 'analysis', fileName, message: dustAnalysisPrompt(companyName, lang), exportJson: JSON.stringify(pack), title: `Diagnostic IA · ${companyName}` }),
+      body: JSON.stringify({
+        kind: 'analysis',
+        fileName,
+        message:
+          dustAnalysisPrompt(companyName, lang) +
+          (fr
+            ? `\n\nDeux fichiers sont joints : ${fileName} (synthèse et réponses libres) et ${csvName} (réponses brutes, une ligne par répondant, sans e-mail). Utilise le CSV pour vérifier les chiffres et nommer les personnes à mobiliser. Termine par la présentation en Frame.`
+            : `\n\nTwo files are attached: ${fileName} (summary and open answers) and ${csvName} (raw answers, one row per respondent, no email). Use the CSV to check figures and name the people to rely on. Finish with the presentation as a Frame.`),
+        exportJson: JSON.stringify(pack),
+        csv: { fileName: csvName, content: csv },
+        title: `Diagnostic IA · ${companyName}`,
+      }),
     })
       .then(async (res) => {
         const data = (await res.json().catch(() => ({}))) as { url?: string };

@@ -45,7 +45,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json(401, { error: 'bad_token' });
   }
 
-  let body: { kind?: 'hubspot' | 'analysis'; fileName?: string; message?: string; exportJson?: string; title?: string };
+  let body: { kind?: 'hubspot' | 'analysis'; fileName?: string; message?: string; exportJson?: string; title?: string; csv?: { fileName?: string; content?: string } };
   try {
     body = await req.json();
   } catch {
@@ -76,7 +76,11 @@ export default async function handler(req: Request): Promise<Response> {
         mentions: [{ configurationId: targetAgent }],
         context: { username: email.split('@')[0], email, timezone: 'Europe/Paris' },
       },
-      contentFragments: [{ title: fileName, contentType: 'application/json', content: exportJson }],
+      contentFragments: [
+        { title: fileName, contentType: 'application/json', content: exportJson },
+        // Analysis: the raw answers too (one row per respondent, no email), when the console sends them.
+        ...(kind === 'analysis' && body.csv?.fileName && body.csv?.content ? [{ title: body.csv.fileName, contentType: 'text/csv', content: body.csv.content }] : []),
+      ],
       // The conversation is created by the API key: share it with the person who clicked, so they can confirm.
       sharedWith: [{ email }],
     }),
