@@ -9,8 +9,6 @@ import { AUDIENCE_PARAM, V2_QUESTIONS, type SurveyAudience } from '@/lib/assessm
 import { PRESALES_QUESTIONS } from '@/lib/presales';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { getAdminKey } from '@/lib/access';
-import { isDemoMode } from '@/demo/demo-data';
 
 /**
  * One-pager sent to the client's champion before the survey links:
@@ -166,12 +164,12 @@ const ChampionKit = () => {
     `Bonjour à tous,\n\nDust est notre nouvelle plateforme d'IA. L'équipe Dust veut en savoir plus sur vous et sur ce que vous faites, pour que le déploiement colle à notre façon de travailler.\n\nCela prend moins de 5 minutes : ${linkFor(presales ? 'presales' : 'general')}\n\nMerci !`
   );
 
-  // Private results link for the client's project lead. Only the Dust team (admin key) can read it,
-  // and it sits apart from everything meant to be forwarded.
+  // Private results link for the client's project lead. Only whoever may read the campaign gets it
+  // (the database decides: Dust, by key or @dust.tt session, or the campaign's partner); it sits apart from everything meant to be forwarded.
   const [resultsKey, setResultsKey] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(true);
   useEffect(() => {
-    if ((!getAdminKey() && !isDemoMode()) || code === 'XXXXXXXX') return;
+    if (code === 'XXXXXXXX') return;
     supabase
       .from('campaigns')
       .select('access_key' as never)

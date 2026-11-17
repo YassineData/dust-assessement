@@ -45,15 +45,19 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCampaignName, defa
   const { language } = useLanguage();
   const [partnerId, setPartnerId] = useState<string>(fixedPartnerId ?? '');
   const [partnerLocked, setPartnerLocked] = useState(!!fixedPartnerId);
+  // Until we know whether the signed-in person is a partner, show nothing rather than « Dust only ».
+  const [partnerChecked, setPartnerChecked] = useState(fixedPartnerId !== undefined);
   // Standalone page (first campaign of a partner): the signed-in partner, if any, owns the campaign.
   useEffect(() => {
     if (fixedPartnerId !== undefined) return;
-    fetchPartnerMe().then((p) => {
-      if (p) {
-        setPartnerId(p.id);
-        setPartnerLocked(true);
-      }
-    });
+    fetchPartnerMe()
+      .then((p) => {
+        if (p) {
+          setPartnerId(p.id);
+          setPartnerLocked(true);
+        }
+      })
+      .finally(() => setPartnerChecked(true));
   }, [fixedPartnerId]);
   const fr = language !== 'en';
   const { toast } = useToast();
@@ -72,8 +76,10 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCampaignName, defa
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<{ code: string; company: string; accessKey: string } | null>(null);
   const [copied, setCopied] = useState<'link' | 'message' | 'results' | null>(null);
-  // Only the Dust team (admin key) can create campaigns; the database enforces it too.
-  const canCreate = useIsDustTeam();
+  // The Dust team, or a partner for its own clients (the campaign then carries its partner_id).
+  // The database enforces the same rule (campaigns_insert: is_admin() or partner_id = my_partner_id()).
+  const isDustTeam = useIsDustTeam();
+  const canCreate = isDustTeam || (partnerLocked && !!partnerId);
   // Survey type, saved with the campaign (own header; Sales and CS pre-select the team). Default: all teams.
   const [audience, setAudience] = useState<SurveyAudience>(defaultAudience ?? 'general');
   // Optional intro written for this client, replacing the standard title and first line.
@@ -279,6 +285,7 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCampaignName, defa
     );
   }
 
+  if (!canCreate && !partnerChecked) return null;
   if (!canCreate) {
     return (
       <div className="space-y-3 rounded-md bg-paper p-4 ring-1 ring-border">

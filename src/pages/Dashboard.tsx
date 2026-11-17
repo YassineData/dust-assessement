@@ -750,7 +750,7 @@ const Dashboard = () => {
           <p className="eyebrow">{isFr ? 'Espace partenaire' : 'Partner space'}</p>
           <h1 className="page-title mt-1">{isFr ? `Bienvenue, ${emptyPartner.name}` : `Welcome, ${emptyPartner.name}`}</h1>
           <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
-            {fr
+            {isFr
               ? 'Vous n’avez pas encore de client ici. Créez votre premier client : vous obtenez le lien du questionnaire à envoyer à ses équipes, puis vous suivez les résultats depuis cet espace. Seule votre équipe y a accès.'
               : 'You have no client here yet. Create your first one: you get the survey link to send to their teams, then follow the results from this space. Only your team can see it.'}
           </p>
