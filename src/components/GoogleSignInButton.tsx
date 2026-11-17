@@ -98,11 +98,14 @@ export const GoogleSignInButton = ({
           if (error) {
             const f = cb.current.fr;
             // The auth hook refuses addresses that are neither @dust.tt nor a partner's.
+            const refused = /partner|dust|hook|not allowed|403/i.test(error.message || '');
             cb.current.onError(
-              /partner|dust|hook|not allowed|403/i.test(error.message || '')
+              refused
                 ? f ? 'Cette adresse n’est rattachée à aucun partenaire Dust. Contactez votre interlocuteur Dust.' : 'This address is not linked to a Dust partner. Contact your Dust contact.'
-                : f ? 'La connexion Google n’a pas abouti. Réessayez.' : 'Google sign-in did not go through. Try again.'
+                : f ? 'La connexion Google n’a pas abouti. Réessayez avec le bouton ci-dessous.' : 'Google sign-in did not go through. Try again with the button below.'
             );
+            // Any other failure: bring back the redirect button, which never depends on this flow.
+            if (!refused) setState('fallback');
           }
           // Success: the session listener of the access modal opens the space.
         },
