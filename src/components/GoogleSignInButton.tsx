@@ -7,7 +7,9 @@ import { supabase } from '@/integrations/supabase/client';
  * to Supabase (signInWithIdToken); the session listener of the access modal then opens the right space.
  * If the Google script can't load (blocked, offline, no client id), `fallback` is shown instead: the old redirect button.
  */
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+// Switched on only with VITE_GOOGLE_GSI=true, once https://dust-assessment.com is an « Authorized JavaScript origin »
+// of the Google OAuth client (otherwise Google answers origin_mismatch).
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_GSI === 'true' ? (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) : undefined;
 const SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 
 type Gsi = {
