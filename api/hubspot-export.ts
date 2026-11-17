@@ -26,13 +26,24 @@ export default async function handler(req: Request): Promise<Response> {
   const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!apiKey || !workspaceId || !agentId || !supabaseUrl || !supabaseKey) return json(501, { error: 'not_configured' });
 
-  // Who is asking: the Supabase session sent by the console, checked against Supabase itself.
+  // Who is asking: the same check as the database rules (is_dust_member on the caller's token), so whoever
+  // sees the console as Dust can send. The email comes from the token itself.
   const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
   if (!token) return json(401, { error: 'no_session' });
-  const who = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: supabaseKey, authorization: `Bearer ${token}` } });
-  if (!who.ok) return json(401, { error: 'bad_session', supabase_status: who.status, supabase_host: new URL(supabaseUrl).host.split('.')[0].slice(0, 4) });
-  const email = String(((await who.json()) as { email?: string }).email || '').toLowerCase();
-  if (!email.endsWith('@dust.tt')) return json(403, { error: 'dust_team_only' });
+  const check = await fetch(`${supabaseUrl}/rest/v1/rpc/is_dust_member`, {
+    method: 'POST',
+    headers: { apikey: supabaseKey, authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: '{}',
+  });
+  if (!check.ok) return json(401, { error: 'bad_session', supabase_status: check.status });
+  if ((await check.json()) !== true) return json(403, { error: 'dust_team_only' });
+  let email = '';
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    email = String(payload.email || '').toLowerCase();
+  } catch {
+    return json(401, { error: 'bad_token' });
+  }
 
   let body: { kind?: 'hubspot' | 'analysis'; fileName?: string; message?: string; exportJson?: string; title?: string };
   try {
