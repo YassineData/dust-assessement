@@ -91,11 +91,12 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
   const [introDraft, setIntroDraft] = useState({ title: '', body: '' });
   const [savingType, setSavingType] = useState(false);
   const [clientDraft, setClientDraft] = useState(companyName ?? '');
-  // Secret of the client's private results link: readable by the Dust team (admin key) only.
+  // Secret of the client's private results link: whoever may read the campaign gets it (the database decides:
+  // Dust, or the campaign's own partner), so a partner can hand its client the results console too.
   const [clientAccessKey, setClientAccessKey] = useState<string | null>(null);
   const isDustTeam = useIsDustTeam();
   useEffect(() => {
-    if (!campaignId || !isDustTeam) {
+    if (!campaignId || isGlobalCampaignId(campaignId) || !isAdmin) {
       setClientAccessKey(null);
       return;
     }
@@ -104,7 +105,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
       if (!cancelled) setClientAccessKey((data as { access_key?: string } | null)?.access_key ?? null);
     });
     return () => { cancelled = true; };
-  }, [campaignId, isDustTeam]);
+  }, [campaignId, isAdmin]);
   const { toast } = useToast();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [members, setMembers] = useState<{ id: string; email: string; role: MemberRole }[]>([]);
@@ -1099,7 +1100,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
           if (!campaignToDelete) return;
           const { data, error } = await supabase.from('campaigns').delete().eq('id', campaignToDelete.id).select('id');
           if (error || !data || data.length === 0) {
-            toast({ title: fr ? 'Suppression impossible' : 'Could not delete', description: fr ? 'Réservé à l’équipe Dust. Réessayez.' : 'Dust team only. Please try again.', variant: 'destructive' });
+            toast({ title: fr ? 'Suppression impossible' : 'Could not delete', description: fr ? 'Seuls l’équipe Dust et le partenaire du client peuvent la supprimer. Réessayez.' : 'Only the Dust team and the client’s partner can delete it. Please try again.', variant: 'destructive' });
             return;
           }
           toast({ title: fr ? 'Campagne supprimée' : 'Campaign deleted', description: campaignToDelete.company_name });
