@@ -86,8 +86,8 @@ export const DownloadOptionsModal = ({
           (import.meta.env.VITE_DUST_FRAME_SKILL ? `${String(import.meta.env.VITE_DUST_FRAME_SKILL).trim()}\n\n` : '') +
           dustAnalysisPrompt(companyName, lang) +
           (fr
-            ? `\n\nDeux fichiers sont joints : ${fileName} (synthèse et réponses libres) et ${csvName} (réponses brutes, une ligne par répondant, sans e-mail). Utilise le CSV pour vérifier les chiffres et nommer les personnes à mobiliser. Termine par la présentation en Frame.`
-            : `\n\nTwo files are attached: ${fileName} (summary and open answers) and ${csvName} (raw answers, one row per respondent, no email). Use the CSV to check figures and name the people to rely on. Finish with the presentation as a Frame.`),
+            ? `\n\nDeux fichiers sont joints : ${fileName} (synthèse et réponses libres) et ${csvName} (réponses brutes, une ligne par répondant, sans e-mail). Utilise le CSV pour vérifier les chiffres. Exception à la règle « aucun nom » : tu peux nommer les 3 à 5 personnes à mobiliser (meilleurs fits champion et builder), et seulement dans la slide dédiée. Termine par la présentation en Frame.`
+            : `\n\nTwo files are attached: ${fileName} (summary and open answers) and ${csvName} (raw answers, one row per respondent, no email). Use the CSV to check figures. Exception to the « no person's name » rule: you may name the 3 to 5 people to rely on (best champion and builder fits), only on the dedicated slide. Finish with the presentation as a Frame.`),
         exportJson: JSON.stringify(pack),
         csv: { fileName: csvName, content: csv },
         title: `Diagnostic IA · ${companyName}`,
