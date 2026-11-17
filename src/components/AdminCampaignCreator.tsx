@@ -289,11 +289,11 @@ export const AdminCampaignCreator = ({ defaultCompany, defaultCampaignName, defa
   if (!canCreate) {
     return (
       <div className="space-y-3 rounded-md bg-paper p-4 ring-1 ring-border">
-        <p className="text-[14px] font-medium text-foreground">{fr ? 'Réservé à l’équipe Dust' : 'For the Dust team only'}</p>
+        <p className="text-[14px] font-medium text-foreground">{fr ? 'Connexion nécessaire' : 'Sign-in needed'}</p>
         <p className="text-[13px] text-muted-foreground">
           {fr
-            ? 'Connectez-vous côté équipe Dust (Console → « Équipe Dust : se connecter ») pour créer un lien de campagne.'
-            : 'Sign in as the Dust team (Console → "Dust team sign-in") to create a campaign link.'}
+            ? 'Connectez-vous (équipe Dust ou partenaire de déploiement, avec Google) pour créer un lien de campagne.'
+            : 'Sign in (Dust team or deployment partner, with Google) to create a campaign link.'}
         </p>
         <Button asChild>
           <a href="/login">{fr ? 'Se connecter' : 'Sign in'}</a>
