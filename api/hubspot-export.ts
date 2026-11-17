@@ -4,7 +4,7 @@
  *  - kind "analysis": the « dossier diagnostic » to @dust with the analysis instruction, which builds the results Frame.
  *
  * Only the Dust team: the caller's Supabase session must belong to an @dust.tt address.
- * Needs DUST_API_KEY (Vercel, sensitive). Without it the function answers 501 and the console falls back to the
+ * Needs DUST_API_KEY (Vercel, sensitive) and, if the key belongs to another workspace, DUST_API_WORKSPACE_ID. Without it the function answers 501 and the console falls back to the
  * manual flow (file + copied message). Dust API: POST /api/v1/w/{wId}/assistant/conversations.
  */
 declare const process: { env: Record<string, string | undefined> };
@@ -18,7 +18,8 @@ export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json(405, { error: 'method_not_allowed' });
 
   const apiKey = process.env.DUST_API_KEY;
-  const workspaceId = process.env.VITE_DUST_WORKSPACE_ID;
+  // Workspace of the API key (can differ from the one the manual button opens).
+  const workspaceId = process.env.DUST_API_WORKSPACE_ID || process.env.VITE_DUST_WORKSPACE_ID;
   const agentId = process.env.VITE_DUST_HUBSPOT_AGENT_ID;
   const dustBase = process.env.DUST_API_BASE || 'https://dust.tt';
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
