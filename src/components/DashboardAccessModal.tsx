@@ -488,6 +488,19 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
         {/* Admin key (fallback, or the only Dust sign-in while email login is off) */}
         {dustOpen && useKey && (
           <form onSubmit={handleAdminSubmit} className="mt-2 space-y-3">
+            {GOOGLE_LOGIN_ENABLED && (
+              <>
+                <Button type="button" variant="outline" className="w-full gap-2 bg-card font-medium" onClick={handleGoogle} disabled={isLoading}>
+                  <GoogleMark />
+                  {fr ? 'Continuer avec Google (@dust.tt)' : 'Continue with Google (@dust.tt)'}
+                </Button>
+                <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  {fr ? 'ou avec la clé admin' : 'or with the admin key'}
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Label htmlFor="admin-email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
