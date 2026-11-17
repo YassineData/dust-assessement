@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { FileText, FileSpreadsheet, Presentation, FileDown, Loader2, Download, ArrowRight, Copy, Check, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,8 @@ import { exportCSV } from '@/lib/export-csv';
 import { exportWord } from '@/lib/export-word';
 import { exportPPT } from '@/lib/export-ppt';
 import { exportSummaryPDF, type SummaryPdfData } from '@/lib/export-pdf';
-import { dustAnalysisPrompt, exportDiagnosticPack } from '@/lib/export-diagnostic';
+import { buildDiagnosticPack, dustAnalysisPrompt, exportDiagnosticPack } from '@/lib/export-diagnostic';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { HubspotExportButton } from '@/components/HubspotExportButton';
 
@@ -47,6 +48,46 @@ export const DownloadOptionsModal = ({
   const [loading, setLoading] = useState<ExportKind | null>(null);
   const [copied, setCopied] = useState(false);
   const [exported, setExported] = useState(false);
+  const [sendingAnalysis, setSendingAnalysis] = useState(false);
+  // Dust team session + direct sending enabled: the pack and the instruction go straight to @dust (api/hubspot-export.ts).
+  const [dustToken, setDustToken] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isOpen || import.meta.env.VITE_HUBSPOT_DIRECT !== 'true') return;
+    supabase.auth.getSession().then(({ data }) => {
+      const s = data.session;
+      setDustToken(s?.user?.email?.toLowerCase().endsWith('@dust.tt') ? s.access_token : null);
+    });
+  }, [isOpen]);
+
+  const sendAnalysisToDust = () => {
+    if (!dustToken) return;
+    const lang = fr ? 'fr' : 'en';
+    const pack = buildDiagnosticPack(participants, companyName, campaignName, lang);
+    const slug = companyName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'client';
+    const fileName = `diagnostic-${slug}-${new Date().toISOString().slice(0, 10)}.json`;
+    const tab = window.open('', '_blank');
+    if (tab) {
+      tab.opener = null;
+      tab.document.body.innerHTML = '<p style="font:15px system-ui;margin:40px;color:#555">Envoi vers Dust…</p>';
+    }
+    setSendingAnalysis(true);
+    fetch('/api/hubspot-export', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${dustToken}` },
+      body: JSON.stringify({ kind: 'analysis', fileName, message: dustAnalysisPrompt(companyName, lang), exportJson: JSON.stringify(pack), title: `Diagnostic IA · ${companyName}` }),
+    })
+      .then(async (res) => {
+        const data = (await res.json().catch(() => ({}))) as { url?: string };
+        if (!res.ok || !data.url) throw new Error(String(res.status));
+        if (tab) tab.location.href = data.url;
+        toast.success(fr ? 'Envoyé à Dust : la présentation se construit dans la conversation.' : 'Sent to Dust: the presentation is being built in the conversation.');
+      })
+      .catch(() => {
+        tab?.close();
+        toast.error(fr ? 'Envoi direct impossible : utilise Télécharger puis Consigne.' : 'Direct sending failed: use Download, then Instruction.');
+      })
+      .finally(() => setSendingAnalysis(false));
+  };
 
   const copyPrompt = async () => {
     try {
@@ -130,8 +171,14 @@ export const DownloadOptionsModal = ({
             <li className="flex flex-col rounded-lg bg-card p-3 ring-1 ring-border">
               <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-brand-ink">1 · {fr ? 'Exporter' : 'Export'}</span>
               <span className="mt-1 text-[12px] text-muted-foreground">{fr ? 'Les données anonymes du diagnostic.' : 'The anonymous diagnostic data.'}</span>
-              <div className="mt-auto pt-2.5">
-              <Button size="sm" className="w-full" onClick={() => run('pack')} disabled={loading !== null}>
+              <div className="mt-auto space-y-1.5 pt-2.5">
+              {dustToken && (
+                <Button size="sm" className="w-full" onClick={sendAnalysisToDust} disabled={sendingAnalysis}>
+                  {sendingAnalysis ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                  {fr ? 'Envoyer à Dust' : 'Send to Dust'}
+                </Button>
+              )}
+              <Button size="sm" variant={dustToken ? 'outline' : 'default'} className="w-full" onClick={() => run('pack')} disabled={loading !== null}>
                 {loading === 'pack' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : exported ? <Check className="h-3.5 w-3.5" /> : <Download className="h-3.5 w-3.5" />}
                 {exported ? (fr ? 'Téléchargé' : 'Downloaded') : fr ? 'Télécharger' : 'Download'}
               </Button>
