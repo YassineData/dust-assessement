@@ -37,6 +37,17 @@ const CAMPAIGN_COLUMNS = 'id, code, company_name, campaign_name, creator_email, 
 export const ADMIN_EMAIL_KEY = 'dust_admin_email';
 
 const EMAIL_LOGIN_ENABLED = import.meta.env.VITE_EMAIL_LOGIN === 'true';
+/** « Continuer avec Google »: shown once the Google provider is enabled in Supabase (Vercel env VITE_GOOGLE_LOGIN=true). */
+const GOOGLE_LOGIN_ENABLED = import.meta.env.VITE_GOOGLE_LOGIN === 'true';
+
+const GoogleMark = () => (
+  <svg viewBox="0 0 48 48" className="h-4 w-4" aria-hidden>
+    <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
+    <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+    <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" />
+    <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" />
+  </svg>
+);
 
 /**
  * Console access. Every way in is checked by the database (row level security):
@@ -78,18 +89,51 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
   useEffect(() => {
     if (!isOpen) return;
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const code = hash.get('error_code') || hash.get('error');
+    const query = new URLSearchParams(window.location.search);
+    const code = hash.get('error_code') || hash.get('error') || query.get('error_code') || query.get('error');
     if (!code) return;
+    const description = (hash.get('error_description') || query.get('error_description') || '').toLowerCase();
     window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
     setPartnerOpen(true);
     setDustOpen(false);
     setError(
-      code === 'otp_expired'
+      /partner|dust/.test(description)
+        ? fr ? 'Cette adresse n’est rattachée à aucun partenaire Dust. Contactez votre interlocuteur Dust.' : 'This address is not linked to a Dust partner. Contact your Dust contact.'
+        : code === 'otp_expired'
         ? fr ? 'Ce lien a expiré ou a déjà été ouvert (certaines messageries l’ouvrent pour le vérifier). Demandez un nouveau lien, puis saisissez le code reçu dans l’e-mail.' : 'This link has expired or was already opened (some mail systems open links to scan them). Request a new link, then enter the code from the email.'
         : fr ? 'La connexion n’a pas abouti. Demandez un nouveau lien.' : 'Sign-in did not go through. Request a new link.'
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  // Google account (Google Workspace partners, Dust team): no email to wait for. Who gets in is still decided by the
+  // database (Dust address or partner domain), and anyone else is signed out right away by the effect above.
+  const handleGoogle = async () => {
+    setError('');
+    setIsLoading(true);
+    const { error: oauthErr } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/dashboard${partnerOpen ? '?partenaire' : ''}`, queryParams: { prompt: 'select_account' } },
+    });
+    if (oauthErr) {
+      setIsLoading(false);
+      setError(fr ? 'Connexion Google indisponible pour le moment. Utilisez le lien par e-mail.' : 'Google sign-in is unavailable right now. Use the email link.');
+    }
+  };
+
+  const googleBlock = GOOGLE_LOGIN_ENABLED ? (
+    <>
+      <Button type="button" variant="outline" className="w-full gap-2 bg-card font-medium" onClick={handleGoogle} disabled={isLoading}>
+        <GoogleMark />
+        {fr ? 'Continuer avec Google' : 'Continue with Google'}
+      </Button>
+      <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        {fr ? 'ou recevoir un lien par e-mail' : 'or get a link by email'}
+        <span className="h-px flex-1 bg-border" />
+      </div>
+    </>
+  ) : null;
 
   // The code in the email signs in too: works even when a mail scanner has already used the link.
   const handleCodeSubmit = async (address: string) => {
@@ -342,6 +386,7 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
           </div>
         ) : (
           <form onSubmit={handlePartnerSubmit} className="mt-2 space-y-3">
+            {googleBlock}
             <div className="space-y-2">
               <Label htmlFor="partner-email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
@@ -411,6 +456,7 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
           </div>
         ) : (
           <form onSubmit={handleEmailSubmit} className="mt-2 space-y-3">
+            {googleBlock}
             <div className="space-y-2">
               <Label htmlFor="dust-email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
