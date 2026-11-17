@@ -30,7 +30,7 @@ export default async function handler(req: Request): Promise<Response> {
   const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
   if (!token) return json(401, { error: 'no_session' });
   const who = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: supabaseKey, authorization: `Bearer ${token}` } });
-  if (!who.ok) return json(401, { error: 'bad_session' });
+  if (!who.ok) return json(401, { error: 'bad_session', supabase_status: who.status, supabase_host: new URL(supabaseUrl).host.split('.')[0].slice(0, 4) });
   const email = String(((await who.json()) as { email?: string }).email || '').toLowerCase();
   if (!email.endsWith('@dust.tt')) return json(403, { error: 'dust_team_only' });
 
