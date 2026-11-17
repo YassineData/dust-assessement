@@ -13,7 +13,9 @@ import {
   buildHubspotMessage,
   dustNewConversationUrl,
   hubspotFileName,
+  MIN_RESPONDENTS_FOR_HUBSPOT,
   normalizeHubspotDomain,
+  suggestHubspotDomain,
   type HubspotExportCampaign,
 } from '@/lib/hubspot-export';
 
@@ -82,9 +84,27 @@ export const HubspotExportButton = ({
       ? fr ? 'Lancez supabase/010-hubspot.sql dans Supabase pour exporter.' : 'Run supabase/010-hubspot.sql in Supabase to export.'
       : state === 'ready' && !domain
         ? 'Renseigne le domaine HubSpot du client pour exporter.'
-        : state === 'ready' && completed === 0
-          ? fr ? 'Aucune réponse complète à exporter.' : 'No completed answer to export.'
+        : state === 'ready' && completed < MIN_RESPONDENTS_FOR_HUBSPOT
+          ? fr
+            ? `Il faut au moins ${MIN_RESPONDENTS_FOR_HUBSPOT} réponses complètes pour exporter (${completed} pour l’instant).`
+            : `At least ${MIN_RESPONDENTS_FOR_HUBSPOT} completed answers are needed to export (${completed} so far).`
           : null;
+
+  // No domain yet: proposed from the respondents' work addresses, saved in one click.
+  const suggested = state === 'ready' && !domain ? suggestHubspotDomain(participants.map((p) => p.email)) : null;
+  const [savingDomain, setSavingDomain] = useState(false);
+  const useSuggested = async () => {
+    if (!row || !suggested) return;
+    setSavingDomain(true);
+    const { error } = await supabase.from('campaigns').update({ hubspot_domain: suggested } as never).eq('id', row.id);
+    setSavingDomain(false);
+    if (error) {
+      toast.error(fr ? 'Enregistrement du domaine impossible.' : 'Could not save the domain.');
+      return;
+    }
+    setRow({ ...row, hubspot_domain: suggested });
+    toast.success(fr ? `Domaine HubSpot enregistré : ${suggested}` : `HubSpot domain saved: ${suggested}`);
+  };
 
   // Copy the message (started while this page still has focus) and open Dust with the agent preselected:
   // called from a click, so the browser allows both.
@@ -230,6 +250,18 @@ export const HubspotExportButton = ({
       <p className="mb-3 mt-1 text-[12px] text-muted-foreground">
         {fr ? 'Envoie la synthèse chiffrée et les réponses brutes dans une note sur la Company HubSpot du client, via l’agent Dust @hubspot-assessment.' : 'Sends the figures and the raw answers to a note on the client’s HubSpot Company, through the Dust agent @hubspot-assessment.'}
       </p>
+      {suggested && (
+        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-md bg-card px-3 py-2 text-[12px] ring-1 ring-[#FF7A59]/30">
+          <span className="text-muted-foreground">
+            {fr ? 'Domaine trouvé dans les adresses des répondants : ' : 'Domain found in the respondents’ addresses: '}
+            <span className="font-medium text-foreground">{suggested}</span>
+          </span>
+          <Button size="sm" variant="outline" className="ml-auto h-7" onClick={useSuggested} disabled={savingDomain}>
+            {savingDomain ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+            {fr ? 'Utiliser ce domaine' : 'Use this domain'}
+          </Button>
+        </div>
+      )}
       {trigger}
       {(domain || row?.hubspot_exported_at) && (
         <p className="mt-2 text-[12px] text-muted-foreground">

@@ -61,8 +61,7 @@ export const normalizeEmails = (raw: string) => [
 ];
 
 /** Public email providers can never be a partner domain: everyone there would see the partner's clients. */
-const PUBLIC_DOMAINS = new Set(['gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 'hotmail.fr', 'live.com', 'live.fr', 'yahoo.com', 'yahoo.fr', 'icloud.com', 'me.com', 'orange.fr', 'free.fr', 'sfr.fr', 'laposte.net', 'wanadoo.fr', 'proton.me', 'protonmail.com', 'gmx.com', 'gmx.fr', 'aol.com']);
-export const publicDomainsIn = (domains: string[]) => domains.filter((d) => PUBLIC_DOMAINS.has(d));
+export { publicDomainsIn } from '@/lib/email-domains';
 
 /** Ready-to-send invitation for a partner: where to sign in, with which address, what they will find. */
 export const partnerInvite = (p: Pick<Partner, 'name' | 'domains' | 'emails'>, origin: string, lang: 'fr' | 'en') => {

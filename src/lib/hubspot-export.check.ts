@@ -13,6 +13,8 @@ import {
   dustNewConversationUrl,
   hubspotFileName,
   normalizeHubspotDomain,
+  suggestHubspotDomain,
+  MIN_RESPONDENTS_FOR_HUBSPOT,
   type HubspotExportCampaign,
 } from '@/lib/hubspot-export';
 
@@ -169,6 +171,12 @@ const domains: [string, string | null][] = [
   ['localhost', null],
 ];
 domains.forEach(([raw, want]) => check(`normalizeHubspotDomain(${JSON.stringify(raw)})`, normalizeHubspotDomain(raw) === want, normalizeHubspotDomain(raw)));
+// Domain suggested from the respondents' addresses
+check('suggest: most frequent work domain', suggestHubspotDomain(['a@client.com', 'b@Client.com', 'c@gmail.com', 'd@other.fr']) === 'client.com');
+check('suggest: public providers and Dust ignored', suggestHubspotDomain(['a@gmail.com', 'b@outlook.com', 'c@dust.tt']) === null);
+check('suggest: no clear majority → nothing', suggestHubspotDomain(['a@one.com', 'b@two.com', 'c@three.com']) === null);
+check('suggest: empty → nothing', suggestHubspotDomain([]) === null);
+check('minimum respondents is 5', MIN_RESPONDENTS_FOR_HUBSPOT === 5);
 check('Dust link with workspace and agent', dustNewConversationUrl('0ec9852c2f', 'kmBRw33kFz') === 'https://app.dust.tt/w/0ec9852c2f/conversation/new?agent=kmBRw33kFz');
 check('Dust link without agent', dustNewConversationUrl('0ec9852c2f', '') === 'https://app.dust.tt/w/0ec9852c2f/conversation/new');
 check('Dust link without workspace', dustNewConversationUrl(undefined) === 'https://app.dust.tt');

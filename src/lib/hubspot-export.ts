@@ -3,6 +3,7 @@ import { DIMENSION_IDS, OPEN_FIELDS as SURVEY_OPEN_FIELDS, V2_AS_LEGACY_QUESTION
 import { PRESALES_ONLY_OPEN_FIELDS } from '@/lib/presales';
 import { FOLLOWUP_ONLY_OPEN_FIELDS } from '@/lib/followup';
 import { buildResponsesTable } from '@/lib/export-csv';
+import { PUBLIC_DOMAINS } from '@/lib/email-domains';
 import {
   LIKERT_LABELS,
   averageReadiness,
@@ -24,6 +25,9 @@ import {
  */
 
 export const HUBSPOT_EXPORT_SCHEMA_VERSION = 1;
+
+/** Below this many completed answers the export is not offered: figures would be thin and people easy to recognise. */
+export const MIN_RESPONDENTS_FOR_HUBSPOT = 5;
 
 /** The notes are replicated to Snowflake: no email addresses unless decided otherwise. */
 export const INCLUDE_EMAILS_IN_HUBSPOT_EXPORT = false;
@@ -66,6 +70,23 @@ export const normalizeHubspotDomain = (raw: string | null | undefined): string |
     .replace(/[/?#].*$/, '')
     .replace(/\.$/, '');
   return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d) ? d : null;
+};
+
+/**
+ * The client's likely domain, read from the respondents' work addresses: the most frequent company domain
+ * (public providers, Dust and partners left out), when it covers at least half of the addresses that have one.
+ */
+export const suggestHubspotDomain = (emails: (string | null | undefined)[], exclude: string[] = []): string | null => {
+  const counts = new Map<string, number>();
+  let total = 0;
+  emails.forEach((e) => {
+    const d = normalizeHubspotDomain((e ?? '').split('@')[1]);
+    if (!d || PUBLIC_DOMAINS.has(d) || d === 'dust.tt' || exclude.includes(d)) return;
+    total++;
+    counts.set(d, (counts.get(d) ?? 0) + 1);
+  });
+  const best = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+  return best && best[1] * 2 >= total ? best[0] : null;
 };
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);

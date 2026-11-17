@@ -47,7 +47,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { validateProfessionalEmail } from '@/lib/email-validation';
 import { isGlobalCampaignId, GLOBAL_CAMPAIGN_PREFIX } from '@/lib/global-campaign';
-import { normalizeHubspotDomain } from '@/lib/hubspot-export';
+import { normalizeHubspotDomain, suggestHubspotDomain } from '@/lib/hubspot-export';
 
 type Participant = Tables<'participants'>;
 type MemberRole = 'participant' | 'manager' | 'consultant' | 'admin';
@@ -179,13 +179,15 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
         .not('hubspot_domain' as never, 'is', null)
         .limit(1);
       if (cancelled) return;
-      const suggestion = (sibling as unknown as { hubspot_domain: string }[] | null)?.[0]?.hubspot_domain ?? '';
+      // Otherwise: the most frequent work domain among the respondents.
+      const suggestion = (sibling as unknown as { hubspot_domain: string }[] | null)?.[0]?.hubspot_domain ?? suggestHubspotDomain((campaignParticipants ?? []).map((p) => p.email)) ?? '';
       setHubspotDomain({ saved: null, draft: suggestion, suggested: !!suggestion });
     })();
     return () => {
       cancelled = true;
     };
-  }, [campaignId, isDustTeam]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaignId, isDustTeam, campaignParticipants?.length]);
   const handleSaveHubspotDomain = async () => {
     if (!hubspotDomain || hubspotDomain === 'missing') return;
     const raw = hubspotDomain.draft.trim();
@@ -1000,7 +1002,7 @@ export const SettingsTab = ({ campaignId, campaignCode, companyName, isAdmin, ca
                 {fr ? 'Enregistrer' : 'Save'}
               </Button>
               {hubspotDomain.suggested && (
-                <span className="text-[12px] text-muted-foreground">{fr ? 'Proposé depuis une autre campagne de ce client.' : 'Suggested from another campaign of this client.'}</span>
+                <span className="text-[12px] text-muted-foreground">{fr ? 'Proposé à partir des adresses des répondants ou d’une autre campagne de ce client : vérifie puis enregistre.' : 'Suggested from the respondents’ addresses or another campaign of this client: check, then save.'}</span>
               )}
             </form>
           )}
