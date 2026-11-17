@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, Key, AlertCircle, Eye, EyeOff, Loader2, MousePointerClick, Link2, Mail, CheckCircle2, Handshake } from 'lucide-react';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { enterDemo } from '@/demo/demo-data';
@@ -121,12 +122,29 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
     }
   };
 
+  // Google's own button (popup naming dust-assessment.com): the session listener above opens the space.
+  const googleStart = () => {
+    setError('');
+    setIsLoading(true);
+  };
+  const googleError = (message: string) => {
+    setIsLoading(false);
+    setError(message);
+  };
+
   const googleBlock = GOOGLE_LOGIN_ENABLED ? (
     <>
-      <Button type="button" variant="outline" className="w-full gap-2 bg-card font-medium" onClick={handleGoogle} disabled={isLoading}>
-        <GoogleMark />
-        {fr ? 'Continuer avec Google' : 'Continue with Google'}
-      </Button>
+      <GoogleSignInButton
+        fr={fr}
+        onStart={googleStart}
+        onError={googleError}
+        fallback={
+          <Button type="button" variant="outline" className="w-full gap-2 bg-card font-medium" onClick={handleGoogle} disabled={isLoading}>
+            <GoogleMark />
+            {fr ? 'Continuer avec Google' : 'Continue with Google'}
+          </Button>
+        }
+      />
       <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
         <span className="h-px flex-1 bg-border" />
         {fr ? 'ou recevoir un lien par e-mail' : 'or get a link by email'}
@@ -490,10 +508,17 @@ export const DashboardAccessModal = ({ isOpen, onAccessGranted, onAdminAccessGra
           <form onSubmit={handleAdminSubmit} className="mt-2 space-y-3">
             {GOOGLE_LOGIN_ENABLED && (
               <>
-                <Button type="button" variant="outline" className="w-full gap-2 bg-card font-medium" onClick={handleGoogle} disabled={isLoading}>
-                  <GoogleMark />
-                  {fr ? 'Continuer avec Google (@dust.tt)' : 'Continue with Google (@dust.tt)'}
-                </Button>
+                <GoogleSignInButton
+                  fr={fr}
+                  onStart={googleStart}
+                  onError={googleError}
+                  fallback={
+                    <Button type="button" variant="outline" className="w-full gap-2 bg-card font-medium" onClick={handleGoogle} disabled={isLoading}>
+                      <GoogleMark />
+                      {fr ? 'Continuer avec Google (@dust.tt)' : 'Continue with Google (@dust.tt)'}
+                    </Button>
+                  }
+                />
                 <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
                   <span className="h-px flex-1 bg-border" />
                   {fr ? 'ou avec la clé admin' : 'or with the admin key'}
