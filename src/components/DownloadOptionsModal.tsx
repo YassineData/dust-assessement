@@ -81,7 +81,9 @@ export const DownloadOptionsModal = ({
       body: JSON.stringify({
         kind: 'analysis',
         fileName,
+        // Direct send only: start with the Frame skill when one is configured (e.g. « /Yassine Frame Maker v2 »).
         message:
+          (import.meta.env.VITE_DUST_FRAME_SKILL ? `${String(import.meta.env.VITE_DUST_FRAME_SKILL).trim()}\n\n` : '') +
           dustAnalysisPrompt(companyName, lang) +
           (fr
             ? `\n\nDeux fichiers sont joints : ${fileName} (synthèse et réponses libres) et ${csvName} (réponses brutes, une ligne par répondant, sans e-mail). Utilise le CSV pour vérifier les chiffres et nommer les personnes à mobiliser. Termine par la présentation en Frame.`
