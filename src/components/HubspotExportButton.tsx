@@ -52,7 +52,16 @@ export const HubspotExportButton = ({
   const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'notfound'>('loading');
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [sending, setSending] = useState(false);
   const [guide, setGuide] = useState<{ message: string; fileName: string } | null>(null);
+  // Signed in with an @dust.tt address: the export can go straight to Dust (api/hubspot-export.ts).
+  const [dustToken, setDustToken] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const s = data.session;
+      setDustToken(s?.user?.email?.toLowerCase().endsWith('@dust.tt') ? s.access_token : null);
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,20 +147,52 @@ export const HubspotExportButton = ({
     const fileName = hubspotFileName(exp);
     const message = buildHubspotMessage(exp, fileName);
 
-    // 1. File
-    const url = URL.createObjectURL(new Blob([JSON.stringify(exp)], { type: 'application/json' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const exportJson = JSON.stringify(exp);
 
-    // 2-3. First time: an animated explanation, whose button copies the message and opens Dust.
-    // Otherwise straight away, still inside this click.
-    if (hubspotGuideHidden()) sendToDust(message);
-    else setGuide({ message, fileName });
+    // Manual flow: file in the downloads, then (explanation the first times) message copied and Dust opened.
+    const manual = (forceGuide = false) => {
+      const url = URL.createObjectURL(new Blob([exportJson], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      // After a failed direct send we are outside the click: the explanation's button keeps Dust opening allowed.
+      if (!forceGuide && hubspotGuideHidden()) sendToDust(message);
+      else setGuide({ message, fileName });
+    };
+
+    if (dustToken && import.meta.env.VITE_HUBSPOT_DIRECT === 'true') {
+      // Direct: a tab is opened inside the click (browsers allow it), then pointed at the new conversation.
+      const tab = window.open('', '_blank');
+      if (tab) {
+        tab.opener = null;
+        tab.document.title = 'Dust…';
+        tab.document.body.innerHTML = '<p style="font:15px system-ui;margin:40px;color:#555">Envoi vers Dust…</p>';
+      }
+      setSending(true);
+      fetch('/api/hubspot-export', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${dustToken}` },
+        body: JSON.stringify({ fileName, message, exportJson, title: `[Assessment IA] ${row.company_name}` }),
+      })
+        .then(async (res) => {
+          const data = (await res.json().catch(() => ({}))) as { url?: string };
+          if (!res.ok || !data.url) throw new Error(String(res.status));
+          if (tab) tab.location.href = data.url;
+          else window.open(data.url, '_blank', 'noopener');
+          toast.success(fr ? 'Envoyé à @hubspot-assessment. Dans Dust, vérifie l’aperçu de l’agent puis confirme.' : 'Sent to @hubspot-assessment. In Dust, check the agent’s preview, then confirm.', { duration: 9000 });
+        })
+        .catch(() => {
+          tab?.close();
+          manual(true);
+        })
+        .finally(() => setSending(false));
+    } else {
+      manual();
+    }
 
     // 4. Last export date (best effort, after the click).
     const at = new Date().toISOString();
@@ -165,9 +206,9 @@ export const HubspotExportButton = ({
     <Button
       className={`${compact ? '' : 'w-full '}gap-2 bg-[#D9481E] font-semibold text-white hover:bg-[#BF3D17] focus-visible:ring-[#FF7A59] disabled:bg-[#D9481E]/45`}
       onClick={run}
-      disabled={state !== 'ready' || !!disabledReason}
+      disabled={state !== 'ready' || !!disabledReason || sending}
     >
-      {state === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+      {state === 'loading' || sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
       {fr ? 'Exporter vers HubSpot' : 'Export to HubSpot'}
     </Button>
   );
