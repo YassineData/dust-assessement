@@ -129,8 +129,8 @@ export const TopBar = ({
           {(userEmail || onEditBrand || brandLogoUrl) && (
             <>
               <span className="mx-2 hidden h-5 w-px bg-border md:block" aria-hidden />
-              <div className="hidden items-center gap-2 md:flex">
-                <div className="text-right leading-tight">
+              <div className={cn('items-center gap-2', onEditBrand || brandLogoUrl ? 'flex' : 'hidden md:flex')}>
+                <div className="hidden text-right leading-tight md:block">
                   {userEmail && <p className="max-w-[180px] truncate text-[12px] font-semibold text-foreground">{userEmail}</p>}
                   {roleLabel && <p className="text-[11px] text-muted-foreground">{roleLabel}</p>}
                 </div>
