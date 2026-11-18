@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { SectionCard } from '@/components/console/SectionCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PartnerLogoUpload } from '@/components/PartnerLogoUpload';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeDomains, normalizeEmails, partnerInvite, publicDomainsIn, type Partner, type PartnerIdentity } from '@/lib/partners';
@@ -161,10 +162,21 @@ export const PartnersTab = ({ fr, campaigns, onCampaignsChanged, onOpenCampaign,
     cn('flex flex-1 cursor-pointer flex-col rounded-md p-3 text-left ring-1 transition-colors', on ? 'bg-brand-soft ring-brand' : 'bg-card ring-border hover:bg-paper');
   const editor = (
     <div className="space-y-3 rounded-lg bg-paper p-4 ring-1 ring-border">
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2">
         <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={fr ? 'Nom du partenaire' : 'Partner name'} maxLength={120} />
         <Input value={form.domains} onChange={(e) => setForm({ ...form, domains: e.target.value })} placeholder={fr ? 'Domaine e-mail (ex. cabinet.fr)' : 'Email domain (e.g. firm.com)'} />
-        <Input value={form.logo} onChange={(e) => setForm({ ...form, logo: e.target.value })} placeholder={fr ? 'Logo https:// (facultatif)' : 'Logo https:// (optional)'} />
+      </div>
+      <div>
+        <p className="text-[13px] font-medium text-foreground">{fr ? 'Logo (facultatif)' : 'Logo (optional)'}</p>
+        <p className="text-[12px] text-muted-foreground">{fr ? 'Affiché dans l’espace du partenaire. Il peut aussi le changer lui-même. Pensez à enregistrer.' : 'Shown in the partner space. The partner can change it too. Remember to save.'}</p>
+        <PartnerLogoUpload
+          className="mt-2"
+          partnerId={editing && editing !== 'new' ? editing : 'dust-uploads'}
+          value={form.logo || null}
+          mode="dust"
+          fr={fr}
+          onSaved={(url) => setForm((f) => ({ ...f, logo: url ?? '' }))}
+        />
       </div>
       <div>
         <p className="text-[13px] font-medium text-foreground">{fr ? 'Qui peut se connecter ?' : 'Who can sign in?'}</p>

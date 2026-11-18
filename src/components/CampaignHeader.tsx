@@ -14,6 +14,9 @@ interface TopBarProps {
   campaignCode?: string | null;
   userEmail?: string;
   roleLabel?: string;
+  /** Partner space: the partner's logo next to its name, and a click to change it. */
+  brandLogoUrl?: string | null;
+  onEditBrand?: () => void;
   isDemo?: boolean;
   onOpenNav: () => void;
   onOpenSettings?: () => void;
@@ -30,6 +33,8 @@ export const TopBar = ({
   campaignCode,
   userEmail,
   roleLabel,
+  brandLogoUrl,
+  onEditBrand,
   isDemo,
   onOpenNav,
   onOpenSettings,
@@ -121,17 +126,34 @@ export const TopBar = ({
               <span className="hidden xl:inline">{fr ? 'Paramètres' : 'Settings'}</span>
             </Button>
           )}
-          {userEmail && (
+          {(userEmail || onEditBrand || brandLogoUrl) && (
             <>
               <span className="mx-2 hidden h-5 w-px bg-border md:block" aria-hidden />
               <div className="hidden items-center gap-2 md:flex">
                 <div className="text-right leading-tight">
-                  <p className="max-w-[180px] truncate text-[12px] font-semibold text-foreground">{userEmail}</p>
+                  {userEmail && <p className="max-w-[180px] truncate text-[12px] font-semibold text-foreground">{userEmail}</p>}
                   {roleLabel && <p className="text-[11px] text-muted-foreground">{roleLabel}</p>}
                 </div>
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-strong text-[12px] font-semibold uppercase text-white">
-                  {userEmail.charAt(0)}
-                </span>
+                {onEditBrand || brandLogoUrl ? (
+                  <button
+                    type="button"
+                    onClick={onEditBrand}
+                    disabled={!onEditBrand}
+                    title={onEditBrand ? (fr ? 'Logo de votre cabinet' : 'Your firm’s logo') : undefined}
+                    aria-label={fr ? 'Logo de votre cabinet' : 'Your firm’s logo'}
+                    className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-md bg-card ring-1 ring-border transition-colors enabled:hover:ring-brand"
+                  >
+                    {brandLogoUrl ? (
+                      <img src={brandLogoUrl} alt="" className="h-full w-full object-contain p-0.5" />
+                    ) : (
+                      <span className="text-[12px] font-semibold uppercase text-foreground">{(roleLabel || userEmail || '?').charAt(0)}</span>
+                    )}
+                  </button>
+                ) : (
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-strong text-[12px] font-semibold uppercase text-white">
+                    {(userEmail || '?').charAt(0)}
+                  </span>
+                )}
               </div>
             </>
           )}

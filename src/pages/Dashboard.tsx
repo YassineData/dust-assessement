@@ -48,6 +48,8 @@ import { CompareSelector, CompareOption } from '@/components/CompareSelector';
 import { CampaignSelector, Campaign } from '@/components/CampaignSelector';
 import { Loader2, Info, Users, Send, Download, Share2, UserPlus, UserCheck, BadgeCheck, GraduationCap, HelpCircle, ArrowRight, ChevronRight, CheckCircle2, Gauge, Wrench, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PartnerLogoUpload } from '@/components/PartnerLogoUpload';
 import { useCampaignParticipants } from '@/hooks/useCampaignParticipants';
 import { useClientCampaigns } from '@/hooks/useClientCampaigns';
 import { useClientTimeline } from '@/hooks/useClientTimeline';
@@ -535,6 +537,19 @@ const Dashboard = () => {
     localStorage.setItem(SESSION_KEY, JSON.stringify({ access, lastActivity: Date.now(), isAdmin: true, isSuperAdmin: true, allCampaigns: campaigns, partner: p } as StoredSession));
   };
 
+  // The partner changed its own logo: update the space now and the remembered session.
+  const [brandOpen, setBrandOpen] = useState(false);
+  const updatePartnerLogo = (url: string | null) => {
+    setPartner((p) => (p ? { ...p, logo_url: url } : p));
+    setEmptyPartner((p) => (p ? { ...p, logo_url: url } : p));
+    try {
+      const stored = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+      if (stored?.partner) localStorage.setItem(SESSION_KEY, JSON.stringify({ ...stored, partner: { ...stored.partner, logo_url: url } }));
+    } catch {
+      /* the logo is read again from the database on the next sign-in */
+    }
+  };
+
   // Dust previews (or stops previewing) the console as a partner sees it.
   const handleViewAs = (p: PartnerIdentity | null) => {
     setViewAs(p);
@@ -759,6 +774,11 @@ const Dashboard = () => {
               {isFr ? 'Créer votre premier client' : 'Create your first client'}
               <ArrowRight className="h-4 w-4" />
             </Button>
+          </div>
+          <div className="mt-8 rounded-lg bg-paper p-4 ring-1 ring-border">
+            <p className="text-[13px] font-medium text-foreground">{isFr ? 'Logo de votre cabinet' : 'Your firm’s logo'}</p>
+            <p className="text-[12px] text-muted-foreground">{isFr ? 'Affiché dans votre espace.' : 'Shown in your space.'}</p>
+            <PartnerLogoUpload className="mt-3" partnerId={emptyPartner.id} value={emptyPartner.logo_url} mode="self" fr={isFr} onSaved={updatePartnerLogo} />
           </div>
         </main>
       </div>
@@ -986,6 +1006,18 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {partner && !viewAs && (
+        <Dialog open={brandOpen} onOpenChange={setBrandOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{fr ? 'Logo de votre cabinet' : 'Your firm’s logo'}</DialogTitle>
+              <DialogDescription>{fr ? 'Affiché dans votre espace partenaire.' : 'Shown in your partner space.'}</DialogDescription>
+            </DialogHeader>
+            <PartnerLogoUpload partnerId={partner.id} value={partner.logo_url} mode="self" fr={fr} onSaved={updatePartnerLogo} />
+          </DialogContent>
+        </Dialog>
+      )}
+
       <DashboardSidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -1025,6 +1057,8 @@ const Dashboard = () => {
           campaignCode={campaignCodeForLinks}
           userEmail={isAdmin ? (adminEmail || undefined) : undefined}
           roleLabel={partner ? partner.name : viewAs ? (fr ? `Vue ${viewAs.name}` : `${viewAs.name} view`) : isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : 'Manager'}
+          brandLogoUrl={partner ? partner.logo_url : viewAs ? viewAs.logo_url : undefined}
+          onEditBrand={partner && !viewAs ? () => setBrandOpen(true) : undefined}
           isDemo={isDemoMode()}
           onOpenNav={() => setMobileNavOpen(true)}
           onOpenSettings={() => setActiveTab('campaignSettings')}
