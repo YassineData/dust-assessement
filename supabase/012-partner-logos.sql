@@ -13,6 +13,12 @@ create policy partner_logos_insert on storage.objects for insert to authenticate
   with check (bucket_id = 'partner-logos'
     and (public.is_admin() or (storage.foldername(name))[1] = public.my_partner_id()::text));
 
+-- Listing/deleting needs to see the files: same scope (Dust anywhere, a partner in its own folder). Public read of the image is separate.
+drop policy if exists partner_logos_select on storage.objects;
+create policy partner_logos_select on storage.objects for select to authenticated
+  using (bucket_id = 'partner-logos'
+    and (public.is_admin() or (storage.foldername(name))[1] = public.my_partner_id()::text));
+
 drop policy if exists partner_logos_update on storage.objects;
 create policy partner_logos_update on storage.objects for update to authenticated
   using (bucket_id = 'partner-logos'

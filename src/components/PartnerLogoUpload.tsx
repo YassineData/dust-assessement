@@ -44,6 +44,10 @@ export const PartnerLogoUpload = ({
       return false;
     }
     onSaved(url);
+    // The previous image is no longer used: drop it (best effort, the new logo is already saved).
+    const marker = `/object/public/${BUCKET}/`;
+    const oldPath = value && value !== url && value.includes(marker) ? decodeURIComponent(value.split(marker)[1] || '') : '';
+    if (oldPath.startsWith(`${partnerId}/`)) void supabase.storage.from(BUCKET).remove([oldPath]);
     return true;
   };
 
